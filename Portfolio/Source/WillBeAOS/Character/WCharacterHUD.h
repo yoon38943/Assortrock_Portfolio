@@ -84,42 +84,30 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Power;
-	void SetPower();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* AdditionalHealth;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetAH();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Defence;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetDefence();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Speed;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetSpeed();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Level;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetLevel();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Exp;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetExp();
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
+	UTextBlock* Max_Exp;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Gold;
 	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
 	FText SetGold();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* AbilityLevel;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetAbLevel();
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* CurrentHP;
-	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
-	FText SetHP();
 
 public:
 	void SetState();
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 protected:
 	// 위젯 초기화 시 실행되는 함수

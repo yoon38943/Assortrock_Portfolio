@@ -10,11 +10,6 @@ class WILLBEAOS_API AItemStore : public AActor
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, Category = "Widget")
-	TSubclassOf<UUserWidget> StoreWidgetClass;
-	UPROPERTY(EditAnywhere)
-	UUserWidget* StoreWidget;
-
 public:
 	UPROPERTY(EditAnywhere)
 	USceneComponent* DefaultSceneRoot;
@@ -27,8 +22,6 @@ public:
 	
 public:	
 	AItemStore();
-
-	void Shop();
 
 protected:
 	virtual void BeginPlay() override;

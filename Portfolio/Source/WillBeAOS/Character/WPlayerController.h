@@ -45,6 +45,9 @@ public:
 	UUserWidget* RespawnScreen;
 
 	AWCharacterBase* AWC;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Store")
+	bool IsOpenedStore;
 	
 public:
 	UPROPERTY(BlueprintReadWrite)

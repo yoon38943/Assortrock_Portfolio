@@ -46,15 +46,16 @@ void AWCharacterBase::BeginPlay()
 	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 }
 
+void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, CharacterDamage);
+}
+
 void AWCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	AWPlayerState* PState = GetPlayerState<AWPlayerState>();
-	if (PState)
-	{
-		CharacterDamage = PState->CPower;
-	}
 }
 
 void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -224,6 +225,16 @@ void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 {
 	if (HasAuthority())
 	{
+		AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+		if (PC)
+		{
+			AWPlayerState* PState = PC->GetPlayerState<AWPlayerState>();
+			if (PState)
+			{
+				CharacterDamage = PState->CPower;
+			}
+		}
+		
 		UGameplayStatics::ApplyPointDamage(
 			LastHit.GetActor(),
 			CharacterDamage,

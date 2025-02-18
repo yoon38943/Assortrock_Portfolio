@@ -25,20 +25,6 @@ void AItemStore::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AItemStore::Shop()
-{
-	if (!IsShowStore)
-	{
-		StoreWidget = CreateWidget<UUserWidget>(GetWorld()->GetFirstPlayerController(), StoreWidgetClass);
-		StoreWidget->AddToViewport();
-	}
-	else
-	{
-		StoreWidget->RemoveFromParent();
-		StoreWidget = nullptr;
-	}
-}
-
 void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
@@ -50,8 +36,7 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	if (OtherActor == Player)
 	{
-		StoreWidget = CreateWidget<UUserWidget>(PC, StoreWidgetClass);
-		StoreWidget->AddToViewport();
+		PC->IsOpenedStore = true;
 	}
 }
 
@@ -64,9 +49,8 @@ void AItemStore::NotifyActorEndOverlap(AActor* OtherActor)
 	AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
 	APawn* Player = PC->GetPawn();
 
-	if (OtherActor == Player && StoreWidget && StoreWidget->IsInViewport())
+	if (OtherActor == Player)
 	{
-		StoreWidget->RemoveFromParent();
-		StoreWidget = nullptr;
+		PC->IsOpenedStore = false;
 	}
 }

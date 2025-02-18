@@ -8,9 +8,10 @@ AWPlayerState::AWPlayerState()
     bReplicates = true;
     
     // Initialize default values for the player's stats
+    MaxHP = 100;
     HP = MaxHP;
     CPower = 50;
-    CAdditionalHealth = 100;
+    CAdditionalHealth = 0;
     CDefense = 5;
     CSpeed = 600.0f; // Unreal units per second
     CCurrentExp = 0;
@@ -43,6 +44,19 @@ void AWPlayerState::NM_SetHP_Implementation(float NewHP)
 float AWPlayerState::GetHPPercentage()
 {
     return HP / MaxHP;
+}
+
+void AWPlayerState::SetPower_Implementation(int32 Power)
+{
+    CPower += Power;
+}
+
+void AWPlayerState::SetHealth_Implementation(int32 Health)
+{
+    CAdditionalHealth += Health;
+
+    HP += Health;
+    MaxHP += Health;
 }
 
 void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage)
@@ -86,4 +100,7 @@ void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(ThisClass, TeamID);
     DOREPLIFETIME(ThisClass, CGold);
     DOREPLIFETIME(ThisClass, HP);
+    DOREPLIFETIME(ThisClass, MaxHP);
+    DOREPLIFETIME(ThisClass, CPower);
+    DOREPLIFETIME(ThisClass, CAdditionalHealth);
 }

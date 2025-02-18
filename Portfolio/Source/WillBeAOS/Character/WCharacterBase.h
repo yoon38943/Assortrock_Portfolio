@@ -101,8 +101,10 @@ private:
 	virtual void BeginPlay() override;
 	
 public:
-	UPROPERTY(BlueprintReadWrite, Category = "Combat")
+	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Combat")
 	float CharacterDamage;
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
 public:	
 	virtual void Tick(float DeltaTime) override;

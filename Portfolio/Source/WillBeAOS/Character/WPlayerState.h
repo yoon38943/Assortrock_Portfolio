@@ -14,7 +14,7 @@ protected:
 	UPROPERTY(Replicated)
 	float HP;
 	UPROPERTY(Replicated)
-	float MaxHP = 100;
+	float MaxHP;
 	
 public:
     AWPlayerState();
@@ -34,11 +34,15 @@ public:
 	float GetHPPercentage();
 	
     // Attack power
-    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    UPROPERTY(BlueprintReadWrite, Category = "Stats", Replicated)
     int32 CPower;
+	UFUNCTION(Server, Reliable)
+	void SetPower(int32 Power);
     // Additional health
-    UPROPERTY(BlueprintReadWrite, Category = "Stats")
+    UPROPERTY(BlueprintReadWrite, Category = "Stats", Replicated)
     int32 CAdditionalHealth;
+	UFUNCTION(Server, Reliable)
+	void SetHealth(int32 Health);
     // Defense power
     UPROPERTY(BlueprintReadWrite, Category = "Stats")
     int32 CDefense;

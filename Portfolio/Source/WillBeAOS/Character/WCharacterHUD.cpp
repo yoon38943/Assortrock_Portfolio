@@ -91,7 +91,7 @@ float UWCharacterHUD::GetHealthBarPercentage()
 		return 0.0f;
 	}
 		
-	return /*AWPS->GetHPPercentage();*/ AWPS->GetHP() / AWPS->GetMaxHP();
+	return AWPS->GetHP() / AWPS->GetMaxHP();
 }
 
 void UWCharacterHUD::SetSkillTimer(FSkillCooldownData& SkillData)
@@ -203,72 +203,35 @@ void UWCharacterHUD::SetState()
 		FString SpeedString = FString::Printf(TEXT("Speed: %.1f"), AWPS->CSpeed);
 		Speed->SetText(FText::FromString(SpeedString));
 
+		FString CExpString = FString::Printf(TEXT("%d / "), AWPS->CCurrentExp);
+		Exp->SetText(FText::FromString(CExpString));
+
+		FString MExpString = FString::Printf(TEXT("%d"), AWPS->CExperience);
+		Max_Exp->SetText(FText::FromString(MExpString));
+
+		FString LevelString = FString::Printf(TEXT("Level: %d"), AWPS->CLevel);
+		Level->SetText(FText::FromString(LevelString));
+
+		FString AbLevelString = FString::Printf(TEXT("ALv: %d"), AWPS->CAbLevel);
+		AbilityLevel->SetText(FText::FromString(AbLevelString));
+
+		FString HealthString = FString::Printf(TEXT("%.f / %.f"), AWPS->GetHP(), AWPS->GetMaxHP());
+		CurrentHP->SetText(FText::FromString(HealthString));
+		
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 	}
 }
 
-void UWCharacterHUD::SetPower()
+void UWCharacterHUD::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
 	if (AWPS)
 	{
-		FString PowerString = FString::Printf(TEXT("Attack: %d"), AWPS->CPower);
-		Power->SetText(FText::FromString(PowerString));
-	}
-	else
-	{
-		Power->SetText(FText::FromString("Attack: 0"));
+		SetState();
 	}
 }
 
-FText UWCharacterHUD::SetAH()
-{
-	if (AWPS)
-	{
-		FString AHString = FString::Printf(TEXT("AddHealth: % d"), AWPS->CAdditionalHealth);
-		return FText::FromString(AHString);
-	}
-	return FText::FromString(TEXT("AddHealth: 0"));
-}
-
-FText UWCharacterHUD::SetDefence()
-{
-	if (AWPS)
-	{
-		FString DefenceString = FString::Printf(TEXT("Def: %d"), AWPS->CDefense);
-		return FText::FromString(DefenceString);
-	}
-	return FText::FromString(TEXT("Def: 0"));
-}
-
-FText UWCharacterHUD::SetSpeed()
-{
-	if (AWPS)
-	{
-		FString SpeedString = FString::Printf(TEXT("Speed: %.1f"), AWPS->CSpeed);
-		return FText::FromString(SpeedString);
-	}
-	return FText::FromString(TEXT("Speed: 0"));
-}
-
-FText UWCharacterHUD::SetLevel()
-{
-	if (AWPS)
-	{
-		FString LevelString = FString::Printf(TEXT("Lv.%d"), AWPS->CLevel);
-		return FText::FromString(LevelString);
-	}
-	return FText();
-}
-
-FText UWCharacterHUD::SetExp()
-{
-	if (AWPS)
-	{
-		FString ExpString = FString::Printf(TEXT("%d / %d"), AWPS->CCurrentExp ,AWPS->CExperience);
-		return FText::FromString(ExpString);
-	}
-	return FText();
-}
 
 FText UWCharacterHUD::SetGold()
 {
@@ -278,24 +241,4 @@ FText UWCharacterHUD::SetGold()
 		return FText::FromString(GoldString);
 	}
 	return FText();
-}
-
-FText UWCharacterHUD::SetAbLevel()
-{
-	if (AWPS)
-	{
-		FString AbString = FString::Printf(TEXT("ALv.: %d"), AWPS->CAbLevel);
-		return FText::FromString(AbString);
-	}
-	return FText();
-}
-
-FText UWCharacterHUD::SetHP()
-{
-	if (AWPS)
-	{
-		FString HPString = FString::Printf(TEXT("%.f/%.f"), AWPS->GetHP(), AWPS->GetMaxHP());
-		return FText::FromString(HPString);
-	}
-	return FText::FromString(TEXT("0/0"));
 }
