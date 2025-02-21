@@ -20,6 +20,9 @@ public:
 	UPROPERTY()
 	UUserWidget* MainMenu;
 	
-protected:
+public:
 	virtual void BeginPlay() override;
+
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void ServerSetReady(bool bReady);	
 };

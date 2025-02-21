@@ -45,7 +45,7 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 
 	// 게임이 끝나면 로직 끊기
 	AWGameState* WGS = Cast<AWGameState>(GetWorld()->GetGameState());
-	if (WGS && WGS->CurrentGameState == E_GamePlay::GameEnded)
+	if (WGS && WGS->CurrentGameState==E_GamePlay::GameEnded)
 	{
 		AWMinionsAIController* MinionController = Cast<AWMinionsAIController>(GetController());
 		if(MinionController)

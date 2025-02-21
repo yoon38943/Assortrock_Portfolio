@@ -191,16 +191,16 @@ void UWCharacterHUD::SetState()
 {
 	if (AWPS)
 	{
-		FString PowerString = FString::Printf(TEXT("Attack: %d"), AWPS->CPower);
+		FString PowerString = FString::Printf(TEXT("공격력: %d"), AWPS->CPower);
 		Power->SetText(FText::FromString(PowerString));
 
-		FString AHString = FString::Printf(TEXT("AddHealth: %d"), AWPS->CAdditionalHealth);
+		FString AHString = FString::Printf(TEXT("추가체력: %d"), AWPS->CAdditionalHealth);
 		AdditionalHealth->SetText(FText::FromString(AHString));
 
-		FString DefenceString = FString::Printf(TEXT("Def: %d"), AWPS->CDefense);
+		FString DefenceString = FString::Printf(TEXT("방어력: %.0f"), AWPS->CDefense);
 		Defence->SetText(FText::FromString(DefenceString));
 
-		FString SpeedString = FString::Printf(TEXT("Speed: %.1f"), AWPS->CSpeed);
+		FString SpeedString = FString::Printf(TEXT("스피드: %.1f"), AWPS->CSpeed/600);
 		Speed->SetText(FText::FromString(SpeedString));
 
 		FString CExpString = FString::Printf(TEXT("%d / "), AWPS->CCurrentExp);
@@ -209,7 +209,7 @@ void UWCharacterHUD::SetState()
 		FString MExpString = FString::Printf(TEXT("%d"), AWPS->CExperience);
 		Max_Exp->SetText(FText::FromString(MExpString));
 
-		FString LevelString = FString::Printf(TEXT("Level: %d"), AWPS->CLevel);
+		FString LevelString = FString::Printf(TEXT("레벨: %d"), AWPS->CLevel);
 		Level->SetText(FText::FromString(LevelString));
 
 		FString AbLevelString = FString::Printf(TEXT("ALv: %d"), AWPS->CAbLevel);

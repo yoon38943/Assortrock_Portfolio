@@ -66,17 +66,21 @@ public:
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void NM_Behavior();
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void SkillR(const FInputActionValue& Value);
+	void UpdateAcceleration();
 	
-	// Multicast로 Client에 보내주는 함수
+	// ---- Attack 관련 함수 ----
+	void Attack();
+	void Behavior();
 	UFUNCTION(Server, Reliable)
 	void S_Behavior();
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_Behavior(int32 Combo);
+
+	// ---- Dead 관련 함수 -----
 	UFUNCTION(Server, Reliable)
 	void S_BeingDead(class AWPlayerController* PC, APawn* Player);
-
 	// 일반 죽는 함수(죽는 클라이언트 본인만 실행되도록)
 	void BeingDead();
 	// 클라이언트

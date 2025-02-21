@@ -46,25 +46,64 @@ float AWPlayerState::GetHPPercentage()
     return HP / MaxHP;
 }
 
-void AWPlayerState::SetPower_Implementation(int32 Power)
+void AWPlayerState::AddPower_Implementation(int32 Power)
 {
     CPower += Power;
+    C_SetPower(CPower);
 }
 
-void AWPlayerState::SetHealth_Implementation(int32 Health)
+void AWPlayerState::C_SetPower_Implementation(int32 NewPower)
+{
+    CPower = NewPower;
+}
+
+void AWPlayerState::AddHealth_Implementation(int32 Health)
 {
     CAdditionalHealth += Health;
 
     HP += Health;
     MaxHP += Health;
+    C_SetHealth(HP, MaxHP, CAdditionalHealth);
+}
+
+void AWPlayerState::C_SetHealth_Implementation(int32 NewHP, int32 NewMaxHP, int32 NewAddHealth)
+{
+    CAdditionalHealth = NewAddHealth;
+    
+    HP = NewHP;
+    MaxHP = NewMaxHP;
+}
+
+void AWPlayerState::AddDefence_Implementation(float Defence)
+{
+    CDefense += Defence;
+    C_SetDefence(CDefense);
+}
+
+void AWPlayerState::C_SetDefence_Implementation(float NewDefence)
+{
+    CDefense = NewDefence;
+}
+
+void AWPlayerState::AddSpeed_Implementation(float Speed)
+{
+    CSpeed += Speed;
+    C_SetSpeed(CSpeed);
+}
+
+void AWPlayerState::C_SetSpeed_Implementation(float NewSpeed)
+{
+    CSpeed = NewSpeed;
 }
 
 void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage)
 {
     if (HP > 0)
     {
-        if (HP > Damage)
-            NM_SetHP(HP -= Damage);
+        const float Reduction = CDefense / (CDefense + 100.f);
+        const int32 FinalDamage = StaticCast<int32>(Damage * (1.f - Reduction));
+        if (HP > FinalDamage)
+            NM_SetHP(HP -= FinalDamage);
         else
             NM_SetHP(0);
         
@@ -87,6 +126,7 @@ bool AWPlayerState::Server_ApplyDamage_Validate(int32 Damage)
 void AWPlayerState::Server_AddGold_Implementation(int Amount)
 {
     CGold += Amount;
+    C_AddGold(CGold);
 }
 
 bool AWPlayerState::Server_AddGold_Validate(int Amount)
@@ -94,13 +134,13 @@ bool AWPlayerState::Server_AddGold_Validate(int Amount)
     return Amount > 0;
 }
 
+void AWPlayerState::C_AddGold_Implementation(int NewGold)
+{
+	CGold = NewGold;
+}
+
 void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(ThisClass, TeamID);
-    DOREPLIFETIME(ThisClass, CGold);
-    DOREPLIFETIME(ThisClass, HP);
-    DOREPLIFETIME(ThisClass, MaxHP);
-    DOREPLIFETIME(ThisClass, CPower);
-    DOREPLIFETIME(ThisClass, CAdditionalHealth);
 }

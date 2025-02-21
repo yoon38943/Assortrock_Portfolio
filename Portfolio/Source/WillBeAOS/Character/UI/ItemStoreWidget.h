@@ -21,4 +21,10 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	void AddHealthState();
+
+	UFUNCTION(BlueprintCallable)
+	void AddDefenceState();
+
+	UFUNCTION(BlueprintCallable)
+	void AddSpeedState();
 };

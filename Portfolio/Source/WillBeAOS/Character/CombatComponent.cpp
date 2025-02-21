@@ -1,5 +1,8 @@
 #include "CombatComponent.h"
+
+#include "WCharacterBase.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Minions/WMinionsCharacterBase.h"
 #include "Net/UnrealNetwork.h"
 
 UCombatComponent::UCombatComponent()
@@ -83,7 +86,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (IsCollisionEnabled)
+	if (IsCollisionEnabled && GetOwner()->HasAuthority())
 	{
 		CollisionTrace();
 	}
@@ -99,12 +102,24 @@ void UCombatComponent::CollisionTrace()
 	//HitResults 배열 선언
 	TArray<FHitResult> OutHits = {};
 
+	AWCharacterBase* Char = Cast<AWCharacterBase>(GetOwner());
+	if (Char)
+	{
+		HalfSize = FVector(30, 30, Char->GetMesh()->Bounds.BoxExtent.Z);
+	}
+	AWMinionsCharacterBase* MinionChar = Cast<AWMinionsCharacterBase>(GetOwner());
+	if (MinionChar)
+	{
+		HalfSize = FVector(30, 30, MinionChar->GetMesh()->Bounds.BoxExtent.Z);
+	}
+	
 	//SphereTraceMultForObjects함수로 트레이스
-	bool Hit = UKismetSystemLibrary::SphereTraceMultiForObjects(
+	bool Hit = UKismetSystemLibrary::BoxTraceMultiForObjects(
 		GetWorld(),
-		CollisionMeshComponent->GetSocketLocation(StartSocket),
-		CollisionMeshComponent->GetSocketLocation(EndSocket),
-		Radius,
+		GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 100,
+		GetOwner()->GetActorLocation() + GetOwner()->GetActorForwardVector() * 100,
+		HalfSize,
+		Orientation,
 		ObjectTypes,
 		false,
 		AlreadyHitActors,
@@ -113,8 +128,8 @@ void UCombatComponent::CollisionTrace()
 		true,
 		FLinearColor::Red,
 		FLinearColor::Green,
-		5.0f
-	);
+		5.f
+		);
 
 	if (Hit)
 	{

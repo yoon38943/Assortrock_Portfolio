@@ -18,7 +18,7 @@ void UItemStoreWidget::AddPowerState()
 {
 	if (PS)
 	{
-		PS->SetPower(10);
+		PS->AddPower(10);
 	}
 }
 
@@ -26,6 +26,22 @@ void UItemStoreWidget::AddHealthState()
 {
 	if (PS)
 	{
-		PS->SetHealth(200);
+		PS->AddHealth(200);
+	}
+}
+
+void UItemStoreWidget::AddDefenceState()
+{
+	if (PS)
+	{
+		PS->AddDefence(10.f);
+	}
+}
+
+void UItemStoreWidget::AddSpeedState()
+{
+	if (PS)
+	{
+		PS->AddSpeed(60);
 	}
 }

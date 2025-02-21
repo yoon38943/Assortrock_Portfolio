@@ -20,7 +20,9 @@ public:
 	UPROPERTY(VisibleDefaultsOnly)
 	UPrimitiveComponent* CollisionMeshComponent;
 	UPROPERTY(EditAnywhere, Category = "Collision")
-	float Radius;
+	FVector HalfSize = FVector(50);
+	UPROPERTY(EditAnywhere, Category = "Collision")
+	FRotator Orientation = FRotator(0, 0, 0);
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = {};
 	
