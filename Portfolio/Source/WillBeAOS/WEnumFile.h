@@ -3,9 +3,9 @@
 UENUM(BlueprintType)
 enum class E_TeamID : uint8
 {
+	Neutral		UMETA(DisplayName = "Neutral"),
 	Red			UMETA(DisplayName = "Red"),
 	Blue		UMETA(DisplayName = "Blue"),
-	Neutral		UMETA(DisplayName = "Neutral")
 };
 
 UENUM(BlueprintType)
@@ -38,4 +38,15 @@ enum class E_MovementSpeed : uint8
 	Walking			UMETA(DisplayName = "Walking"),
 	Jogging			UMETA(DisplayName = "Jogging"),
 	Sprinting			UMETA(DisplayName = "Sprinting"),
+};
+
+UENUM(BlueprintType)
+enum class E_GamePlay : uint8
+{
+	Nothing,
+	GameInit,
+	PlayerReady,
+	ReadyCountdown,
+	Gameplaying,
+	GameEnded
 };

@@ -1,4 +1,6 @@
 #include "WCharacterBase.h"
+
+#include "AOSActor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -14,6 +16,8 @@
 #include "Game/WGameMode.h"
 #include "Net/UnrealNetwork.h"
 
+
+class AAOSActor;
 
 AWCharacterBase::AWCharacterBase()
 {
@@ -44,6 +48,12 @@ void AWCharacterBase::BeginPlay()
 	Super::BeginPlay();
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
+
+	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	if (PC)
+	{
+		PC->SetControlRotation(FRotator(0, 0, 0));
+	}
 }
 
 void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
@@ -88,7 +98,7 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
 		EnhancedInputComponent->BindAction(IA_SkillR, ETriggerEvent::Started, this, &AWCharacterBase::SkillR);
-
+		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 	}
 }
 
@@ -105,6 +115,12 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
+	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	if (PC && PC->IsRecalling)
+	{
+		PC->CancelRecall();
+	}
+	
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -122,6 +138,14 @@ void AWCharacterBase::Move(const FInputActionValue& Value)
 
 void AWCharacterBase::Attack()
 {
+	if (IsDead == true) return;
+	
+	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	if (PC && PC->IsRecalling)
+	{
+		PC->CancelRecall();
+	}
+	
 	if (HasAuthority())
 	{
 		Behavior();
@@ -202,8 +226,41 @@ void AWCharacterBase::UpdateAcceleration()
 	GetCharacterMovement()->MaxAcceleration = NewAcceleration;
 }
 
+void AWCharacterBase::CallRecall()
+{
+	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	if (PC)
+	{
+		PC->StartRecall();
+	}
+}
+
+void AWCharacterBase::ServerPlayMontage_Implementation(UAnimMontage* Montage)
+{
+	MultiPlayMontage(Montage);
+}
+
+void AWCharacterBase::MultiPlayMontage_Implementation(UAnimMontage* Montage)
+{
+	if (Montage)
+	{
+		PlayAnimMontage(Montage);
+	}
+}
+
+void AWCharacterBase::SpawnHitEffect_Implementation(FVector HitLocation)
+{
+}
+
+void AWCharacterBase::NM_SpawnHitEffect_Implementation(FVector HitLocation)
+{
+	SpawnHitEffect(HitLocation);
+}
+
 void AWCharacterBase::BeingDead()
 {
+	IsDead = true;
+	
 	//죽음 메세지 출력
 	auto Message = FString::Printf(TEXT("Dead"));
 	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, Message);
@@ -215,7 +272,7 @@ void AWCharacterBase::BeingDead()
 }
 
 void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* Player)
-{
+{	
 	//캐릭터 리스폰
 	AWGameState* GameState = Cast<AWGameState>(GetWorld()->GetGameState());
 	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
@@ -257,8 +314,23 @@ void AWCharacterBase::C_BeingDead_Implementation(AWPlayerController* PC)
 //포인트 데미지 주는 함수
 void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 {
-if (HasAuthority())
+	if (HasAuthority())
 	{
+		// ----- 같은팀 캐릭터, 미니언 타격 무효 -----
+		AAOSCharacter* HitCharacter = Cast<AAOSCharacter>(LastHit.GetActor());
+		if (HitCharacter)
+		{
+			if (this->TeamID == HitCharacter->TeamID) return;
+		}
+		// ----- 같은팀 타워, 넥서스 타격 무효 -----
+		AAOSActor* HitObject = Cast<AAOSActor>(LastHit.GetActor());
+		if (HitObject)
+		{
+			if (this->TeamID == HitObject->TeamID) return;
+		}
+
+		NM_SpawnHitEffect(LastHit.Location);
+		
 		AWPlayerController* PC = Cast<AWPlayerController>(GetController());
 		if (PC)
 		{

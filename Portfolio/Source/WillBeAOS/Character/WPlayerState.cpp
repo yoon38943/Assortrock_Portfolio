@@ -129,11 +129,6 @@ void AWPlayerState::Server_AddGold_Implementation(int Amount)
     C_AddGold(CGold);
 }
 
-bool AWPlayerState::Server_AddGold_Validate(int Amount)
-{
-    return Amount > 0;
-}
-
 void AWPlayerState::C_AddGold_Implementation(int NewGold)
 {
 	CGold = NewGold;

@@ -1,5 +1,6 @@
 #include "Game/SelectGameMode.h"
 #include "SelectGameState.h"
+#include "WEnumFile.h"
 #include "WGameInstance.h"
 #include "GameFramework/PlayerState.h"
 
@@ -10,8 +11,6 @@ ASelectGameMode::ASelectGameMode()
 	{
 		Destroy();
 	}
-	
-	bUseSeamlessTravel = true;
 }
 
 void ASelectGameMode::BeginPlay()
@@ -35,11 +34,11 @@ void ASelectGameMode::LoadPlayerTeamsFromGameInstance()
 	UWGameInstance* WGI = Cast<UWGameInstance>(GetGameInstance());
 	if (WGI)
 	{
-		TMap<FString, int32> LoadedMap = WGI->GetSavedTeam();
+		TMap<FString, E_TeamID> LoadedMap = WGI->GetSavedTeam();
 		for (auto& It : LoadedMap)
 		{
 			FString PlayerName = It.Key;
-			int32 TeamID = It.Value;
+			E_TeamID TeamID = It.Value;
 			if (!PlayerName.IsEmpty())
 			{
 				SelectPlayerReadyStatus.Add(PlayerName, FPlayerValue(TeamID, false,nullptr));
@@ -78,7 +77,7 @@ void ASelectGameMode::DecreaseTimer()
 	SelectGS->SelectTime--;
 }
 
-void ASelectGameMode::SetIsReady(APlayerController* PlayerController,int32 TeamVal, bool bReady, TSubclassOf<APawn> PawnClass)
+void ASelectGameMode::SetIsReady(APlayerController* PlayerController,E_TeamID TeamVal, bool bReady, TSubclassOf<APawn> PawnClass)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("SetPlayerReady is called"));
 	if (!PlayerController)
@@ -152,11 +151,11 @@ bool ASelectGameMode::AreTeambalanced()
 	
 	for (auto It = SelectPlayerReadyStatus.CreateIterator(); It; ++It)
 	{
-		if (It->Value.TeamValue==1)
+		if (It->Value.TeamValue==E_TeamID::Blue)
 		{
 			BlueTeamCount++;
 		}
-		else if (It->Value.TeamValue==2)
+		else if (It->Value.TeamValue==E_TeamID::Red)
 		{
 			RedTeamCount++;
 		}

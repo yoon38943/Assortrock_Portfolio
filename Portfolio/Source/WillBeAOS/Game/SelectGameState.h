@@ -4,7 +4,7 @@
 #include "GameFramework/GameState.h"
 #include "SelectGameState.generated.h"
 
-#define SELECTTIME 10.0f
+#define SELECTTIME 20.0f;
 
 UCLASS()
 class WILLBEAOS_API ASelectGameState : public AGameState

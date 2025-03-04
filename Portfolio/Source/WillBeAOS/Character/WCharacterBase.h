@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AOSCharacter.h"
 #include "WDelegateDefine.h"
 #include "WEnumFile.h"
 #include "GameFramework/Character.h"
@@ -12,7 +13,7 @@ class UAnimMontage;
 class UWidgetComponent;
 
 UCLASS()
-class WILLBEAOS_API AWCharacterBase : public ACharacter
+class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 {
 
 	GENERATED_BODY()
@@ -28,10 +29,6 @@ class WILLBEAOS_API AWCharacterBase : public ACharacter
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* WidgetComponent;
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Team")
-	E_TeamID TeamID = E_TeamID::Blue;
 	
 public:
 	AWCharacterBase();
@@ -50,10 +47,12 @@ private:
 	UInputAction* IA_Behavior;
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_SkillR;
+	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* IA_Recall;
 	
 public:
 	UPROPERTY(BlueprintReadonly)
-	bool IsDead;
+	bool IsDead = false;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
 	UAnimMontage* DeadAnimMontage;	//죽을???�일 몽�?�?
@@ -69,6 +68,19 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void SkillR(const FInputActionValue& Value);
 	void UpdateAcceleration();
+
+	// ---- 귀환 관련 함수 ----
+	void CallRecall();
+
+	UPROPERTY(EditAnywhere, Category = "Recall")
+	UAnimMontage* StartRecallMontage;
+	UPROPERTY(EditAnywhere, Category = "Recall")
+	UAnimMontage* CompleteRecallMontage;
+
+	UFUNCTION(Server, Reliable)
+	void ServerPlayMontage(UAnimMontage* Montage);
+	UFUNCTION(NetMulticast, Reliable)
+	void MultiPlayMontage(UAnimMontage* Montage);
 	
 	// ---- Attack 관련 함수 ----
 	void Attack();
@@ -77,6 +89,12 @@ public:
 	void S_Behavior();
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_Behavior(int32 Combo);
+
+	// ----- Hit 이벤트 -----
+	UFUNCTION(BlueprintNativeEvent)
+	void SpawnHitEffect(FVector HitLocation);
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_SpawnHitEffect(FVector HitLocation);
 
 	// ---- Dead 관련 함수 -----
 	UFUNCTION(Server, Reliable)
@@ -116,8 +134,5 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UPROPERTY(BlueprintReadWrite, Category = "Skill")//���� ����
 	bool SkillREnable;
-
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<APawn> SpawnsearchLocation;
+	
 };

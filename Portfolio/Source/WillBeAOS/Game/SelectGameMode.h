@@ -24,7 +24,7 @@ protected:	//매칭시스템
 	void LoadPlayerTeamsFromGameInstance();
 public:
 	UFUNCTION()
-	void SetIsReady(APlayerController* PlayerController, int32 TeamVal,bool bReady, TSubclassOf<APawn> PawnClass);
+	void SetIsReady(APlayerController* PlayerController, E_TeamID TeamVal,bool bReady, TSubclassOf<APawn> PawnClass);
 	// 모든 플레이어가 준비되었는지 확인
 	void CheckMatch();
 	// 플레이어 수가 충족되었는지 확인

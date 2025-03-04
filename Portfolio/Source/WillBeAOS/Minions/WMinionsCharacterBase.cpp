@@ -9,7 +9,10 @@
 #include "Components/ProgressBar.h"
 #include "HealthBar.h"
 #include "../Game/WGameState.h"
+#include "Character/WCharacterBase.h"
 #include "Game/WGameMode.h"
+#include "Gimmick/Tower.h"
+#include "Net/UnrealNetwork.h"
 
 
 AWMinionsCharacterBase::AWMinionsCharacterBase()
@@ -23,6 +26,8 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
 	WidgetComponent->SetupAttachment(GetMesh());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
+
+	SetGoldReward(KILLGOLD);
 }
 
 void AWMinionsCharacterBase::BeginPlay()
@@ -38,6 +43,8 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!HasAuthority()) return;
+	
 	float HP = CombatComponent->Health;
 	float MAXHP = CombatComponent->Max_Health;
 
@@ -51,12 +58,6 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 		if(MinionController)
 			MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
 	}
-}
-
-void AWMinionsCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void AWMinionsCharacterBase::S_SetHpPercentage_Implementation(float Health, float MaxHealth)
@@ -73,6 +74,50 @@ void AWMinionsCharacterBase::SetHpPercentage_Implementation(float Health, float 
 		if (MaxHealth != 0)
 			Widget->HealthBar->SetPercent(Health / MaxHealth);
 	}
+}
+
+void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
+{
+	static FLinearColor HealthBarColor;
+	switch (TeamID)
+	{
+	case E_TeamID::Red:
+		HealthBarColor = FLinearColor::Red;
+		break;
+	case E_TeamID::Blue:
+		HealthBarColor = FLinearColor::Blue;
+		break;
+	case E_TeamID::Neutral:
+		HealthBarColor = FLinearColor::Yellow;
+		break;
+	}
+
+	SetHPbarColor(HealthBarColor);
+}
+
+void AWMinionsCharacterBase::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
+{
+	UHealthBar* Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+	if (!Widget)
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
+		{
+			SetHPbarColor(HealthBarColor);
+		});
+		return;
+	}
+	
+	if (Widget->HealthBar)
+	{
+		Widget->HealthBar->SetFillColorAndOpacity(HealthBarColor);
+
+		Widget->InvalidateLayoutAndVolatility();
+	}
+}
+
+void AWMinionsCharacterBase::RetrySetHPbarColor(FLinearColor HealthBarColor)
+{
+	SetHPbarColor(HealthBarColor);
 }
 
 void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
@@ -108,15 +153,24 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 	PlayAnimMontage(DeadAnimMontage);
 }
 
-int32 AWMinionsCharacterBase::GetGoldReward() const
-{
-	return GoldReward;
-}
-
 void AWMinionsCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 {
 	if (HasAuthority())
 	{
+		// ----- 같은팀 캐릭터, 미니언 타격 무효 -----
+		AAOSCharacter* HitCharacter = Cast<AAOSCharacter>(LastHit.GetActor());
+		if (HitCharacter)
+		{
+			if (this->TeamID == HitCharacter->TeamID) return;
+		}
+		// ----- 같은팀 타워, 넥서스 타격 무효 -----
+		AAOSActor* HitObject = Cast<AAOSActor>(LastHit.GetActor());
+		if (HitObject)
+		{
+			if (this->TeamID == HitObject->TeamID) return;
+		}
+
+		// ------ 다른팀 오브젝트 타격시 -----
 		UGameplayStatics::ApplyPointDamage(
 			LastHit.GetActor(),
 			CharacterDamage,
@@ -140,4 +194,10 @@ float AWMinionsCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const&
 	SetHpPercentage((CombatComponent->Health), (CombatComponent->Max_Health));
 
 	return DamageAmount;
+}
+
+void AWMinionsCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ThisClass,TrackNum);
 }

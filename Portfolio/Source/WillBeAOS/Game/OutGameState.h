@@ -8,10 +8,11 @@ UCLASS()
 class WILLBEAOS_API AOutGameState : public AGameState
 {
 	GENERATED_BODY()
-	// 현재 접속한 플레이어 수 (클라이언트에 복제됨)
 public:
-	UPROPERTY(ReplicatedUsing = OnRep_PlayerCount, BlueprintReadOnly, Category = "Match")
-	int32 CurrentPlayerCount = 0;
+
+	//접속한 플레이어 컨트롤러
+	UPROPERTY(EditAnywhere)
+	TArray<class AOutPlayerController*> PlayerControllers;
 
 	UPROPERTY(ReplicatedUsing = OnRep_IsMatched, BlueprintReadOnly, Category = "Match")
 	bool IsMatched = false;
@@ -20,7 +21,9 @@ public:
 	void OnRep_PlayerCount();
 	UFUNCTION()
 	void OnRep_IsMatched();
-
+	
 	UFUNCTION(NetMulticast, reliable)
-	void Controll();
+	void ControllerIsReady();
+
+	void BeginPlay();
 };

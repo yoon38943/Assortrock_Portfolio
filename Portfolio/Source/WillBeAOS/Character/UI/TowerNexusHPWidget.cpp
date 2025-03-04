@@ -1,5 +1,4 @@
 #include "Character/UI/TowerNexusHPWidget.h"
-
 #include "Components/ProgressBar.h"
 #include "Game/WGameState.h"
 
@@ -14,11 +13,11 @@ float UTowerNexusHPWidget::SetTowerProgress()
 {
 	if (AWGS != nullptr)
 	{
-		if (AWGS->GetTowerNum() == 0)
+		if (AWGS->GetBlueTowerNum() == 0)
 		{
 			FriendTowerProgress->SetVisibility(ESlateVisibility::Hidden);
 		}
-		return (AWGS->GetTowerNum()/6.0f); // 6.0f -> 타워 MAX_NUM으로 변경
+		return (AWGS->GetBlueTowerNum()/6.0f); // 6.0f -> 타워 MAX_NUM으로 변경
 	}
 	return 0.5f;
 }
@@ -27,7 +26,29 @@ float UTowerNexusHPWidget::SetNexusHealth()
 {
 	if (AWGS != nullptr)
 	{
-		return AWGS->GetNexusHP();
+		return AWGS->GetBlueNexusHP();
+	}
+	return 0.0f;
+}
+
+float UTowerNexusHPWidget::SetRedTowerProgress()
+{
+	if (AWGS != nullptr)
+	{
+		if (AWGS->RedTowerArray.Num() == 0)
+		{
+			FriendTowerProgress->SetVisibility(ESlateVisibility::Hidden);
+		}
+		return (AWGS->RedTowerArray.Num()/6.0f); // 6.0f -> 타워 MAX_NUM으로 변경
+	}
+	return 0.5f;
+}
+
+float UTowerNexusHPWidget::SetRedNexusHealth()
+{
+	if (AWGS != nullptr)
+	{
+		return AWGS->GetRedNexusHP();
 	}
 	return 0.0f;
 }

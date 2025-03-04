@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Destructible.h"
-#include "GameFramework/Character.h"
+#include "Character/AOSCharacter.h"
 #include "WMinionsCharacterBase.generated.h"
+
+#define KILLGOLD 30
 
 class UAnimMontage;
 class UCombatComponent;
@@ -11,7 +12,7 @@ class UWidgetComponent;
 class UProgressBar;
 
 UCLASS()
-class WILLBEAOS_API AWMinionsCharacterBase : public ACharacter, public IDestructible
+class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter
 {
 	GENERATED_BODY()
 
@@ -20,51 +21,57 @@ public:
 	UCombatComponent* CombatComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* WidgetComponent;
-	
+
 public:
 	AWMinionsCharacterBase();
-	
-	UPROPERTY(BlueprintReadWrite, Category = Combo)
-	TArray<UAnimMontage*> AttackMontages = {};
 
-	UPROPERTY(BlueprintReadWrite, Category = Dead)
-	UAnimMontage* DeadAnimMontage;
+public://트랙 관련
+	UPROPERTY(Replicated,EditAnywhere, BlueprintReadOnly, Category = "Track")
+	int32 TrackNum;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Track")
+	void SetTrackPoint();//트랙 정하는 이벤트
+	void SetTrackPoint_Implementation(){}
 	
+public:	//골드 관련
+	virtual void SetGoldReward(int32 NewGold){GoldReward = NewGold;}
+	
+public:	//타격 관련
 	AController* LastHitBy;		// 마지막 타격 주체 저장
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Rewards")
-	int32 GoldReward = 30;
-
-	virtual int32 GetGoldReward() const override;
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAnimMontage* MinionAttackMontage;
+	
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void HandleApplyPointDamage(FHitResult LastHit);//포인트 데미지를 줄시 델리게이트로 호출될 함수
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
 	UPROPERTY(BlueprintReadWrite, Category = "Combat")
 	float CharacterDamage;	//데미지
-	
-protected:
-	virtual void BeginPlay() override;
+	UFUNCTION(NetMulticast,BlueprintCallable, Reliable)
+	void NM_Minion_Attack();
 
-public:	
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+public:	//체력관련
 	UFUNCTION(NetMulticast, Reliable)
 	void SetHpPercentage(float Health, float MaxHealth);
 	UFUNCTION(Server, Reliable)
 	void S_SetHpPercentage(float Health, float MaxHealth);
-	
+	UFUNCTION(Server, Reliable)
+	void S_SetHPbarColor();
+	UFUNCTION(NetMulticast, Reliable)
+	void SetHPbarColor(FLinearColor HealthBarColor);
+	void RetrySetHPbarColor(FLinearColor HealthBarColor);
+
+public: //죽을 때
+	UPROPERTY(BlueprintReadWrite, Category = Dead)
+	UAnimMontage* DeadAnimMontage;
 	UFUNCTION()
 	void Dead();
 	UFUNCTION(NetMulticast, Reliable)
-	void NM_BeingDead();	// Multicast로 Client들에게 전달
-	
-	UFUNCTION(NetMulticast,BlueprintCallable, Reliable)
-	void NM_Minion_Attack();
+	void NM_BeingDead();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UAnimMontage* MinionAttackMontage;
+protected:
+	virtual void BeginPlay() override;
+	
+	virtual void Tick(float DeltaTime) override;
 };

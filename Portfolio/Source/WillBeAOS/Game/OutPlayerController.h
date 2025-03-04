@@ -17,8 +17,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TSubclassOf<UUserWidget> MainMenuClass;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	UUserWidget* MainMenu;
+	
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void IsMatched();
 	
 public:
 	virtual void BeginPlay() override;

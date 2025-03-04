@@ -73,7 +73,7 @@ public:
 	TArray<AActor*> AlreadyHitActors = {};
 
 	UPROPERTY(Replicated ,BlueprintReadOnly, Category = "Health")
-	float Health = 10;
+	float Health;
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float Max_Health = 100;
 	UPROPERTY(BlueprintReadOnly, Category = "Health")

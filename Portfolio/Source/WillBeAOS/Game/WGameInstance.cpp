@@ -1,7 +1,7 @@
 #include "WGameInstance.h"
 #include "GameFramework/PlayerState.h"
 
-void UWGameInstance::SavePlayerTeam(APlayerState* PlayerState, int32 TeamID)
+void UWGameInstance::SavePlayerTeam(APlayerState* PlayerState, E_TeamID TeamID)
 {
 	if (PlayerState)
 	{
@@ -11,11 +11,12 @@ void UWGameInstance::SavePlayerTeam(APlayerState* PlayerState, int32 TeamID)
 	}
 }
 
-void UWGameInstance::SaveMatchPlayerTeam(FString PlayerName, int32 TeamID, TSubclassOf<class APawn> PawnClass)
+void UWGameInstance::SaveMatchPlayerTeam(FString PlayerName, E_TeamID TeamID, TSubclassOf<class APawn> PawnClass)
 {
 	if (!PlayerName.IsEmpty())
 	{
 		MatchPlayerTeams.Add(PlayerName, FPlayerValue(TeamID,false,PawnClass));
+		UE_LOG(LogTemp, Warning, TEXT("🔹 저장된 플레이어: %s, 팀 ID: %d, 폰 클래스: %s"), *PlayerName, TeamID, *PawnClass->GetClass()->GetName());
 	}
 	else
 	{
@@ -23,7 +24,7 @@ void UWGameInstance::SaveMatchPlayerTeam(FString PlayerName, int32 TeamID, TSubc
 	}
 }
 
-TMap<FString, int32> UWGameInstance::GetSavedTeam()
+TMap<FString, E_TeamID> UWGameInstance::GetSavedTeam()
 {
 	return SavedPlayerTeams;
 }

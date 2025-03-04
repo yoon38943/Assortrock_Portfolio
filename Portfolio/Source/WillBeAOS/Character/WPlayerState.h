@@ -9,7 +9,19 @@ UCLASS()
 class WILLBEAOS_API AWPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+	
+public:
+	UPROPERTY(BlueprintReadWrite,Replicated, Category = "Teams")
+	E_TeamID TeamID;
+	UPROPERTY(BlueprintReadWrite, Category = "Pawn")
+	TSubclassOf<APawn> SelectedPawnClass;
+	
+	void SetTeamID(E_TeamID NewTeamID){TeamID = NewTeamID;}
+	void SetPawnClass(TSubclassOf<APawn> SpawnClass) { SelectedPawnClass = SpawnClass; }
 
+public:
+	class APlayerSpawner* PlayerSpawner;
+	
 protected:
 	float HP;
 	float MaxHP;
@@ -76,16 +88,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Gold")
 	int32 CGold;
 
+	int Gold_Attack = 60;
+	int Gold_Health = 150;
+	int Gold_Defence = 30;
+	int Gold_Speed = 30;
+
 	// 서버에서 골드를 추가하는 함수
-	UFUNCTION(Server, Reliable, WithValidation)
+	UFUNCTION(Server, Reliable)
 	void Server_AddGold(int Amount);
 	UFUNCTION(Client, Reliable)
 	void C_AddGold(int NewGold);
-public:
-	UPROPERTY(BlueprintReadWrite,Replicated, Category = "Teams")
-	E_TeamID TeamID;
 	
-	void SetTeamID(E_TeamID NewTeamID){TeamID = NewTeamID;}
-
+public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

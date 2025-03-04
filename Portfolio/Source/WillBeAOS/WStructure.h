@@ -11,7 +11,7 @@ struct FPlayerValue
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 TeamValue;
+	E_TeamID TeamValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool IsReady;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -19,8 +19,8 @@ struct FPlayerValue
 
 	
 	// 기본 생성자
-	explicit FPlayerValue(): TeamValue(0), IsReady(false), WPawnClass(nullptr) {}
+	explicit FPlayerValue(): TeamValue(E_TeamID::Neutral), IsReady(false), WPawnClass(nullptr) {}
 
 	// 커스텀 생성자
-	FPlayerValue(int32 IntValue, bool BoolValue, TSubclassOf<class APawn> PawnClass): TeamValue(IntValue), IsReady(BoolValue) ,WPawnClass(PawnClass){}
+	FPlayerValue(E_TeamID IntValue, bool BoolValue, TSubclassOf<class APawn> PawnClass): TeamValue(IntValue), IsReady(BoolValue) ,WPawnClass(PawnClass){}
 };

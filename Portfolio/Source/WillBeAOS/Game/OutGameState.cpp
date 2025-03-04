@@ -1,4 +1,5 @@
 #include "Game/OutGameState.h"
+#include "OutPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -9,15 +10,25 @@ void AOutGameState::OnRep_PlayerCount()
 
 void AOutGameState::OnRep_IsMatched()
 {
-	Controll();
+	ControllerIsReady();
 }
 
-void AOutGameState::Controll_Implementation()
+void AOutGameState::BeginPlay()
 {
+	Super::BeginPlay();
+}
+
+void AOutGameState::ControllerIsReady_Implementation()
+{
+	AOutPlayerController* PlayerController = Cast<AOutPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (PlayerController)
+	{
+		PlayerController->IsMatched();
+	}
 }
 
 void AOutGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AOutGameState, CurrentPlayerCount);
+	DOREPLIFETIME(AOutGameState,IsMatched);
 }

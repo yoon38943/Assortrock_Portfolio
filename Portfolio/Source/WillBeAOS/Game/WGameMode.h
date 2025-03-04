@@ -13,20 +13,25 @@ class WILLBEAOS_API AWGameMode : public AGameMode
 public:
 	AWGameMode();
 	
-	UPROPERTY(BlueprintReadWrite)
-	TArray<class APlayerController*> AllPlayerController;
-	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class AWGameState* WGS;
 
-	
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Level")
 	TSoftObjectPtr<UWorld> L_MainMenu;
-
+	
 public:	
 	void SpawnTower();
-	void PlayerAssignTeam();
+	
+	UPROPERTY(EditAnywhere)
+	TArray<class AWPlayerController*> PlayerControllers;
+	
+	void SetGSPlayerControllers();
+
+	TArray<class APlayerSpawner*> PlayerSpawners;
+	void GetPlayerSpawners();
+	void SetPlayerSpawners(AWPlayerState* PlayerState);
+
 private:
 	TMap<AActor*, int32> TeamMap;      // 팀정보 맵
 
@@ -51,10 +56,13 @@ protected:
 
 public:
 	// 스폰 함수
-	UFUNCTION(Server, Reliable)
+	UFUNCTION()
 	void RespawnPlayer(APawn* Player, AController* PlayerController);
 
 	// 몬스터 사망시 이벤트
 	UFUNCTION()
 	void OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer);
+
+	// 넥서스 파괴
+	void OnNexusDestroyed();
 };

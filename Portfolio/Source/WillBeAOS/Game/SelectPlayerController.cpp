@@ -112,7 +112,7 @@ void ASelectPlayerController::S_MapTravel_Implementation()
 	}
 }
 
-void ASelectPlayerController::S_IsReady_Implementation(int32 TeamID, bool Ready, TSubclassOf<APawn> PawnClass)
+void ASelectPlayerController::S_IsReady_Implementation(E_TeamID TeamID, bool Ready, TSubclassOf<APawn> PawnClass)
 {
 	if (ASelectGameMode* SelectGM = Cast<ASelectGameMode>(GetWorld()->GetAuthGameMode()))
 	{

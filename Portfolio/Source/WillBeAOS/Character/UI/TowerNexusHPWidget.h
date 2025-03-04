@@ -29,6 +29,17 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Nexus")
 	float SetNexusHealth();
 
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Tower")
+	TObjectPtr<class UProgressBar>RedTowerProgress;//아군 타워 진행상황
+	UFUNCTION(BlueprintPure, Category = "Tower")
+	float SetRedTowerProgress();//타워 진행상황 받아오는 함수
+	//추후 피아 식별 후 수정
+	
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Nexus")
+	TObjectPtr<class UProgressBar>RedNexusHealth;//아군 타워 진행상황
+	UFUNCTION(BlueprintPure, Category = "Nexus")
+	float SetRedNexusHealth();
+
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "GameTimer")
 	UTextBlock* GameTimer;
 	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "GameTimer")

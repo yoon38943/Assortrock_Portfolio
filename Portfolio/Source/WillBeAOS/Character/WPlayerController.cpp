@@ -1,7 +1,9 @@
 #include "WPlayerController.h"
+#include "WCharacterBase.h"
 #include "Blueprint/UserWidget.h"
 #include "WCharacterHUD.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Game/WGameMode.h"
 #include "UI/TowerNexusHPWidget.h"
 
 void AWPlayerController::BeginPlay()
@@ -41,10 +43,6 @@ void AWPlayerController::OnGameStateChanged(E_GamePlay CurrentGameState)
 {
 	switch (CurrentGameState)
 	{
-	case E_GamePlay::GameInit:
-		DisableInput(this);
-		break;
-    
 	case E_GamePlay::ReadyCountdown:
 		DisableInput(this);
 		// 카운트다운 UI 표시
@@ -65,19 +63,110 @@ void AWPlayerController::OnGameStateChanged(E_GamePlay CurrentGameState)
 	}
 }
 
-
-void AWPlayerController::GameHasEnded(AActor* EndGameFocus, bool bIsWinner)
+void AWPlayerController::StartRecall()
 {
-	Super::GameHasEnded(EndGameFocus, bIsWinner);
+	if (IsRecalling) return;
 
+	IsRecalling = true;
+	UE_LOG(LogTemp, Warning, TEXT("귀환 시작!"));
+
+	if (!RecallWidget)
+	{
+		RecallWidget = CreateWidget<UUserWidget>(this, RecallWidgetClass);
+		if (RecallWidget)
+		{
+			RecallWidget->AddToViewport();
+		}
+	}
+
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
+	if (PlayerChar)
+	{
+		if (PlayerChar)
+		{
+			PlayerChar->ServerPlayMontage(PlayerChar->StartRecallMontage);
+		}
+	}
+
+	GetWorldTimerManager().SetTimer(RecallTimerHandle, this, &ThisClass::CompleteRecall, RecallTime, false);
+}
+
+void AWPlayerController::CancelRecall()
+{
+	if (!IsRecalling) return;
+
+	IsRecalling = false;
+	GetWorldTimerManager().ClearTimer(RecallTimerHandle);
+
+	if (RecallWidget && RecallWidget->IsInViewport())
+	{
+		RecallWidget->RemoveFromParent();
+		RecallWidget = nullptr;
+	}
+
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
+	if (PlayerChar)
+	{
+		PlayerChar->StopAnimMontage();
+	}
+	
+	UE_LOG(LogTemp, Warning, TEXT("귀환 취소됨!"));
+}
+
+void AWPlayerController::CompleteRecall()
+{
+	if (!IsRecalling) return;
+
+	IsRecalling = false;
+	UE_LOG(LogTemp, Warning, TEXT("귀환 성공함"));
+	
+	if (RecallWidget && RecallWidget->IsInViewport())
+	{
+		RecallWidget->RemoveFromParent();
+		RecallWidget = nullptr;
+	}
+	
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
+	if (PlayerChar)
+	{
+		PlayerChar->ServerPlayMontage(PlayerChar->CompleteRecallMontage);
+	}
+	
+	RecallToBase();
+	SetControlRotation(FRotator(0, 0, 0));
+	//SetActorRotation(FRotator(0, 0, 0));		// 캐릭터가 컨트롤러가 바라보는 방향에 묶여있음
+	
+	GetWorldTimerManager().ClearTimer(RecallTimerHandle);
+}
+
+void AWPlayerController::RecallToBase_Implementation()
+{
+	AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		AActor* PlayerStart = GM->FindPlayerStart(this);
+		AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetCharacter());
+		PlayerChar->SetActorLocation(PlayerStart->GetActorLocation());
+	}
+}
+
+void AWPlayerController::GameEnded_Implementation(bool bIsWinner)
+{
+	if (!IsLocalController()) return;
+	
 	if (GamePlayHUD)
 		GamePlayHUD->RemoveFromParent();
 	
 	if(PlayerHUD)
 		PlayerHUD->RemoveFromParent();
 
-	if (bIsWinner)
+	if (bIsWinner)	// 본인의 팀 ID == bIsWinner로 바꾸기
 	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetWidgetToFocus(nullptr);
+
+		SetInputMode(InputMode);
 		SetShowMouseCursor(true);
 		UUserWidget* WinScreen = CreateWidget(this, WinScreenClass);
 		if (WinScreen != nullptr)
@@ -87,6 +176,11 @@ void AWPlayerController::GameHasEnded(AActor* EndGameFocus, bool bIsWinner)
 	}
 	else
 	{
+		FInputModeUIOnly InputMode;
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		InputMode.SetWidgetToFocus(nullptr);
+
+		SetInputMode(InputMode);
 		SetShowMouseCursor(true);
 		UUserWidget* LoseScreen = CreateWidget(this, LoseScreenClass);
 		if (LoseScreen != nullptr)

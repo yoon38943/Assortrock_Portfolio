@@ -2,11 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "OutPlayerController.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "OutGameMode.generated.h"
 
 UCLASS()
-class WILLBEAOS_API AOutGameMode : public AGameModeBase
+class WILLBEAOS_API AOutGameMode : public AGameMode
 {
 	GENERATED_BODY()
 protected:
@@ -40,9 +40,6 @@ public:
 	// 최소 플레이어 수 (블루프린트에서 설정 가능)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Match")
 	int32 MinPlayersToStart = 2;
-	
-	//GameState에 리플리케이트
-	void UpdatePlayerCount();
 	
 	void UpdateMatchIsReady(bool Matched);
 	

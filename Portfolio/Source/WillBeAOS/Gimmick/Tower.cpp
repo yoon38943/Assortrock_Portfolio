@@ -5,7 +5,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "NiagaraComponent.h"
-#include "../Character/WCharacterBase.h"
 #include "../Character/CombatComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h"
@@ -13,7 +12,6 @@
 #include "../Game/WGameState.h"
 #include "../Minions/WMinionsCharacterBase.h"
 #include "Game/WGameMode.h"
-#include "Net/UnrealNetwork.h"
 
 ATower::ATower()
 {
@@ -23,9 +21,6 @@ ATower::ATower()
 
 	DefaultSceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
 	SetRootComponent(DefaultSceneRoot);
-
-	DamagedNiagara = CreateDefaultSubobject<UNiagaraComponent>(TEXT("DamagedParticle"));
-	DamagedNiagara->SetupAttachment(GetRootComponent());
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraParticleSystem"));
 	NiagaraComponent->SetupAttachment(GetRootComponent());
@@ -51,20 +46,14 @@ ATower::ATower()
 	// 특정 요소의 오버랩 함수 바인드하기 ( OverlapTrigger의 )
 	OverlapTrigger->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
 	OverlapTrigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
-	
-}
 
-int32 ATower::GetGoldReward() const
-{
-	return GoldReward;
+	SetGoldReward(GOLDAMOUNT);
 }
 
 void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 }
-
-
 
 void ATower::Tick(float DeltaTime)
 {
@@ -96,16 +85,11 @@ void ATower::Tick(float DeltaTime)
 	}
 }
 
-void ATower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(ThisClass, TowerTeamID);
-}
-
-
 float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (!HasAuthority()) return 0;
 
 	LastHitBy = EventInstigator;
 	
@@ -119,8 +103,8 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 		// 타워의 HP가 일정 이하로 떨어지면 데미지 받은 메쉬로 바꾸고 파티클 생성
 		if (CombatComp->Health <= (CombatComp->Max_Health / 2) && !IsParticleSpawned)
 		{
-			StaticMesh->SetStaticMesh(DamagedStaticMesh);
-			DamagedNiagara->SetAsset(DamageParticle);
+			S_SetDamaged();
+			
 			IsParticleSpawned = true;
 
 			AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
@@ -136,7 +120,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 			//DefaultSceneRoot->SetVisibility(false, true);
 			if (AWGS != nullptr)
 			{
-				AWGS->TowerArray.Remove(this);
+				AWGS->RemoveTower(this);
 			}
 
 			AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
@@ -154,9 +138,8 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AWCharacterBase* EnemyChar = Cast<AWCharacterBase>(OtherActor);
-	AWMinionsCharacterBase* EnemyMinion = Cast<AWMinionsCharacterBase>(OtherActor);
-	if ((EnemyChar && EnemyChar->TeamID != TowerTeamID) || EnemyMinion)
+	AAOSCharacter* EnemyChar = Cast<AAOSCharacter>(OtherActor);
+	if ((EnemyChar && EnemyChar->TeamID != TeamID))
 	{
 		OverlappingActors.AddUnique(OtherActor);
 	}
@@ -181,6 +164,10 @@ void ATower::spawn()
 	GetWorld()->SpawnActor<AActor>(SpawnActors, AttackStartPoint->GetComponentTransform(), SpawnParams);
 }
 
+void ATower::DamagedParticle_Implementation()
+{
+}
+
 void ATower::S_SetHpPercentage_Implementation(float Health, float MaxHealth)
 {
 	SetHpPercentage(Health, MaxHealth);
@@ -195,4 +182,54 @@ void ATower::SetHpPercentage_Implementation(float Health, float MaxHealth)
 		if (MaxHealth != 0)
 			Widget->HealthBar->SetPercent(Health / MaxHealth);
 	}
+}
+
+void ATower::S_SetHPbarColor_Implementation()
+{
+	static FLinearColor HealthBarColor;
+	switch (TeamID)
+	{
+	case E_TeamID::Red:
+		HealthBarColor = FLinearColor::Red;
+		break;
+	case E_TeamID::Blue:
+		HealthBarColor = FLinearColor::Blue;
+		break;
+	case E_TeamID::Neutral:
+		HealthBarColor = FLinearColor::Yellow;
+		break;
+	}
+
+	SetHPbarColor(HealthBarColor);
+}
+
+void ATower::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
+{
+	UHealthBar* Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+	if (!Widget)
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
+		{
+			SetHPbarColor(HealthBarColor);
+		});
+		return;
+	}
+	
+	if (Widget->HealthBar)
+	{
+		Widget->HealthBar->SetFillColorAndOpacity(HealthBarColor);
+
+		Widget->InvalidateLayoutAndVolatility();
+	}
+}
+
+void ATower::S_SetDamaged_Implementation()
+{
+	NM_SetDamaged();
+}
+
+void ATower::NM_SetDamaged_Implementation()
+{
+	StaticMesh->SetStaticMesh(DamagedStaticMesh);
+	DamagedParticle();
 }

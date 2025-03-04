@@ -61,6 +61,6 @@ public:		//맵 이동
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Server")
 	void S_MapTravel();
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Server")
-	void S_IsReady(int TeamID, bool Ready, TSubclassOf<APawn> PawnClass);
+	void S_IsReady(E_TeamID TeamID, bool Ready, TSubclassOf<APawn> PawnClass);
 	
 };
