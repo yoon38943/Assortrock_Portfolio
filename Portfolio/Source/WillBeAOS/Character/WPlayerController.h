@@ -17,6 +17,8 @@ class WILLBEAOS_API AWPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+	E_TeamID PlayerTeamID;
+
 	//이김 위젯
 	UPROPERTY(EditAnywhere, Category = "Widget")
 	TSubclassOf< UUserWidget> WinScreenClass;
@@ -42,13 +44,12 @@ public:
 	UWCharacterHUD* PlayerHUD;
 	UTowerNexusHPWidget* GamePlayHUD;
 	UUserWidget* RespawnScreen;
-	AWCharacterBase* AWC;
 	
 public:	//상점 관련
 	UPROPERTY(BlueprintReadWrite, Category = "Store")
 	bool IsOpenedStore;
-public:
 	
+public:
 	// ---- 귀환 관련 함수 ----
 	bool IsRecalling = false;
 	FTimerHandle RecallTimerHandle;
@@ -74,7 +75,7 @@ public://리스폰
 	FTimerHandle RespawnTimerHandle;
 public://리스폰 함수(PlayerController->GameHasEnded())
 	UFUNCTION(NetMulticast, Reliable)
-	void GameEnded(bool bIsWinner);
+	void GameEnded(E_TeamID LoseTeam);
 	void ShowRespawnWidget();
 	void UpdateRespawnWidget();
 	void HideRespawnWidget();

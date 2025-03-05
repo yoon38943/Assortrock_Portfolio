@@ -13,7 +13,6 @@ AOutPlayerController::AOutPlayerController()
 
 void AOutPlayerController::IsMatched_Implementation()
 {
-	
 }
 
 void AOutPlayerController::BeginPlay()
@@ -53,7 +52,6 @@ void AOutPlayerController::ServerSetReady_Implementation(bool bReady)
 
 bool AOutPlayerController::ServerSetReady_Validate(bool bReady)
 {
-
 	// 서버에서만 실행 가능하도록 설정
 	AOutGameMode* GameMode = Cast<AOutGameMode>(GetWorld()->GetAuthGameMode());
 	if (!GameMode)

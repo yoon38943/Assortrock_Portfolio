@@ -2,6 +2,7 @@
 #include "WCharacterBase.h"
 #include "Blueprint/UserWidget.h"
 #include "WCharacterHUD.h"
+#include "WPlayerState.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Game/WGameMode.h"
 #include "UI/TowerNexusHPWidget.h"
@@ -36,6 +37,16 @@ void AWPlayerController::BeginPlay()
 void AWPlayerController::OnPossess(APawn* InPawn)
 {	
 	Super::OnPossess(InPawn);
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(InPawn);
+	if (PlayerChar)
+	{
+		if (PlayerChar)
+		{
+			if (AWPlayerState* WPlayerState = GetPlayerState<AWPlayerState>())
+			PlayerChar->TeamID = WPlayerState->TeamID;
+			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
+		}
+	}
 }
 
 
@@ -150,7 +161,7 @@ void AWPlayerController::RecallToBase_Implementation()
 	}
 }
 
-void AWPlayerController::GameEnded_Implementation(bool bIsWinner)
+void AWPlayerController::GameEnded_Implementation(E_TeamID LoseTeam)
 {
 	if (!IsLocalController()) return;
 	
@@ -160,7 +171,13 @@ void AWPlayerController::GameEnded_Implementation(bool bIsWinner)
 	if(PlayerHUD)
 		PlayerHUD->RemoveFromParent();
 
-	if (bIsWinner)	// 본인의 팀 ID == bIsWinner로 바꾸기
+	AWPlayerState* PS = GetPlayerState<AWPlayerState>();
+	if (PS)
+	{
+		PlayerTeamID = PS->TeamID;
+	}
+	
+	if (PlayerTeamID != LoseTeam)
 	{
 		FInputModeUIOnly InputMode;
 		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);

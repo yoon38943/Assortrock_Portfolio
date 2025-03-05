@@ -3,7 +3,6 @@
 #include "Components/BoxComponent.h"
 #include "../Character/CombatComponent.h"
 #include "Game/WGameMode.h"
-#include "Net/UnrealNetwork.h"
 
 ANexus::ANexus()
 {
@@ -48,7 +47,7 @@ float ANexus::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 				AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
 				if (GM)
 				{
-					GM->OnNexusDestroyed();
+					GM->OnNexusDestroyed(TeamID);
 				}
 				
 				FTimerHandle TimerHandle;

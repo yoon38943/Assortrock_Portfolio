@@ -64,5 +64,6 @@ public:
 	void OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer);
 
 	// 넥서스 파괴
-	void OnNexusDestroyed();
+	// ---------- 3.4 현규 수정
+	void OnNexusDestroyed(E_TeamID LoseTeam);
 };

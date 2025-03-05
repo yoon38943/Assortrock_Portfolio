@@ -11,6 +11,7 @@
 #include "../Minions/HealthBar.h"
 #include "../Game/WGameState.h"
 #include "../Minions/WMinionsCharacterBase.h"
+#include "Character/WPlayerController.h"
 #include "Game/WGameMode.h"
 
 ATower::ATower()
@@ -53,11 +54,33 @@ ATower::ATower()
 void ATower::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AWPlayerController* PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (PlayerController)
+	{
+		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
+	}
 }
 
 void ATower::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (PlayerChar && WidgetComponent)
+	{
+		float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
+
+		if (Distance > MaxVisibleDistance)
+		{
+			WidgetComponent->SetVisibility(false);
+		}
+		else
+		{
+			WidgetComponent->SetVisibility(true);
+			float ScaleFactor = FMath::Clamp(1.0f - (Distance / MaxVisibleDistance), MinWidgetScale, MaxWidgetScale);
+			WidgetComponent->SetRelativeScale3D(FVector(ScaleFactor));
+		}
+	}
 
 	if (OverlappingActors.IsValidIndex(0))
 	{
@@ -190,13 +213,13 @@ void ATower::S_SetHPbarColor_Implementation()
 	switch (TeamID)
 	{
 	case E_TeamID::Red:
-		HealthBarColor = FLinearColor::Red;
+		HealthBarColor = RedTeamColor;
 		break;
 	case E_TeamID::Blue:
-		HealthBarColor = FLinearColor::Blue;
+		HealthBarColor = BlueTeamColor;
 		break;
 	case E_TeamID::Neutral:
-		HealthBarColor = FLinearColor::Yellow;
+		HealthBarColor = DefaultColor;
 		break;
 	}
 
@@ -205,8 +228,8 @@ void ATower::S_SetHPbarColor_Implementation()
 
 void ATower::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
 {
-	UHealthBar* Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
-	if (!Widget)
+	UHealthBar* HealthBarWidget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+	if (!HealthBarWidget)
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
 		{
@@ -215,11 +238,11 @@ void ATower::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
 		return;
 	}
 	
-	if (Widget->HealthBar)
+	if (HealthBarWidget->HealthBar)
 	{
-		Widget->HealthBar->SetFillColorAndOpacity(HealthBarColor);
+		HealthBarWidget->HealthBar->SetFillColorAndOpacity(HealthBarColor);
 
-		Widget->InvalidateLayoutAndVolatility();
+		HealthBarWidget->InvalidateLayoutAndVolatility();
 	}
 }
 

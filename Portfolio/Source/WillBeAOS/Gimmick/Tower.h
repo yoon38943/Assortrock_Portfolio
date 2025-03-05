@@ -1,9 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WEnumFile.h"
 #include "Character/AOSActor.h"
+#include "Character/WCharacterBase.h"
 #include "GameFramework/Actor.h"
+#include "Minions/HealthBar.h"
 #include "Tower.generated.h"
 
 class USceneComponent;
@@ -17,6 +18,13 @@ class WILLBEAOS_API ATower : public AAOSActor
 {
 
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor BlueTeamColor;
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor RedTeamColor;
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor DefaultColor;
 	
 public:
 	ATower();
@@ -87,6 +95,19 @@ public://타격 관련
 	TArray<FHitResult> OutHits;
 	
 	AController* LastHitBy;
+
+public:
+	// ----- HP 위젯 조절 함수 -----
+	UPROPERTY(EditAnywhere, Category = "UI")
+	float MaxVisibleDistance = 5000.f;		// 최대 가시 거리
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	float MinWidgetScale = 0.2f;
+
+	UPROPERTY(EditAnywhere, Category = "UI")
+	float MaxWidgetScale = 1.f;
+
+	AWCharacterBase* PlayerChar;
 
 public:
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);

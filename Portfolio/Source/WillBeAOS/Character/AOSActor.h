@@ -14,7 +14,7 @@ class WILLBEAOS_API AAOSActor : public AActor, public IDestructible
 public:	
 	AAOSActor();
 
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Team")
+	UPROPERTY(Replicated, EditAnywhere,BlueprintReadWrite, Category = "Team")
 	E_TeamID TeamID;
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Gold")
 	int32 GoldReward = 0;

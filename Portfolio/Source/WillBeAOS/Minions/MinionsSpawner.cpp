@@ -41,7 +41,7 @@ void AMinionsSpawner::SpawnMinions_Implementation()
 	else
 	{
 		SpawnCount = 0;
-		GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &ThisClass::SpawnMinions, 20.f, false);
+		GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &ThisClass::SpawnMinions, 30.f, false);
 	}
 }
 
