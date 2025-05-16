@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "NiagaraComponent.h"
+#include "Projectile.h"
 #include "../Character/CombatComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h"
@@ -70,6 +71,14 @@ void ATower::BeginPlay()
 void ATower::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!HasAuthority() && OverlappingActors.IsValidIndex(0))
+	{
+		TargetOfActors = OverlappingActors[0];
+
+		// 타겟에 빔 조준
+		BeamToTarget(TargetOfActors->GetActorLocation());
+	}
 	
 	if (HasAuthority() && OverlappingActors.IsValidIndex(0))
 	{
@@ -83,16 +92,17 @@ void ATower::Tick(float DeltaTime)
 			Delta = 0;
 			FActorSpawnParameters SpawnParams;
 			SpawnParams.Owner = this;
-			GetWorld()->SpawnActor<AActor>(SpawnActors, AttackStartPoint->GetComponentTransform(), SpawnParams);
+
+			FVector SpawnLocation = AttackStartPoint->GetComponentLocation();
+			FRotator SpawnRotation = (TargetOfActors->GetActorLocation() - SpawnLocation).Rotation();
+			
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(SpawnActors, SpawnLocation, SpawnRotation, SpawnParams);
+
+			if (Projectile)
+			{
+				Projectile->SetHomingTarget();
+			}
 		}
-	}
-
-	if (!HasAuthority() && OverlappingActors.IsValidIndex(0))
-	{
-		TargetOfActors = OverlappingActors[0];
-
-		// 타겟에 빔 조준
-		BeamToTarget(TargetOfActors->GetActorLocation());
 	}
 }
 

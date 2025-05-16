@@ -4,15 +4,19 @@
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystemComponent.h"
 
 
 AProjectile::AProjectile()
 {
+	bReplicates = true;
+	SetReplicateMovement(true);
 	PrimaryActorTick.bCanEverTick = true;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
 	CollisionComponent->InitSphereRadius(15);
+	CollisionComponent->SetNotifyRigidBodyCollision(true);
 	RootComponent = CollisionComponent;
 
 	Particle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Particle"));
@@ -20,33 +24,58 @@ AProjectile::AProjectile()
 	Particle->bAutoActivate = true;
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->UpdatedComponent = CollisionComponent;
-	ProjectileMovement->InitialSpeed = 1500.f;
+	ProjectileMovement->UpdatedComponent = CollisionComponent;		// 발사체 지정(없으면 무엇을 발사할지 인식 못함)
+	ProjectileMovement->InitialSpeed = 1200.f;
+	ProjectileMovement->bIsHomingProjectile = true;		// 발사체 유도 기능
+	ProjectileMovement->HomingAccelerationMagnitude = 3000.f;	// 발사체 유도 민감도
+	ProjectileMovement->SetIsReplicated(true);
 
-	InitialLifeSpan = 5.f;
+
+	InitialLifeSpan = 5.f;	// 발사체 존재 가능 시간
 }
 
 void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (!HasAuthority()) return;
-
-	ATower* Tower = Cast<ATower>(GetOwner());
-
-	Target = Tower->TargetOfActors;
+	if (HasAuthority() && Target)
+	{
+		FVector Direction = (Target->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+		ProjectileMovement->Velocity = Direction * ProjectileMovement->InitialSpeed;
+		ProjectileMovement->Activate();
+	}
 }
 
 void AProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 클라이언트 투사체 위치 보간
-	if (!HasAuthority())  // 클라이언트에서만 실행
+	// 투사체 위치 보간
+	if (!HasAuthority() || !Target) return;
+
+	FVector CurrentLocation = GetActorLocation();
+	FVector TargetLocation = Target->GetActorLocation();
+
+	// 현재 속도 방향
+	FVector CurrentVelocity = ProjectileMovement->Velocity;
+	FVector DesiredDirection = (TargetLocation - CurrentLocation).GetSafeNormal();
+
+	// 방향 보간
+	FVector NewDirection = FMath::VInterpNormalRotationTo(
+		CurrentVelocity.GetSafeNormal(),
+		DesiredDirection,
+		DeltaTime,
+		TurnSpeed
+	);
+
+	// 새로운 속도 적용
+	ProjectileMovement->Velocity = NewDirection * ProjectileMovement->InitialSpeed;
+
+	if (!ProjectileMovement->Velocity.IsNearlyZero())
 	{
-		FVector TargetLocation = GetActorLocation();  // 서버에서 동기화된 위치
-		SetActorLocation(FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, 10.0f));
+		ReplicatedRotation = ProjectileMovement->Velocity.GetSafeNormal().Rotation();
+		ReplicatedVelocity = ProjectileMovement->Velocity;
+		SetActorRotation(ReplicatedRotation);
 	}
 }
 
@@ -71,3 +100,43 @@ void AProjectile::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, cl
 	}
 }
 
+void AProjectile::SetHomingTarget()
+{
+	ATower* Tower = Cast<ATower>(GetOwner());
+
+	if (!Tower)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Projectile has no valid tower owner!"));
+		return;
+	}
+	
+	Target = Tower->TargetOfActors;
+	HomingTargetComponent = Target->GetRootComponent();
+
+	if (!Target || !HomingTargetComponent)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Homing target invalid!"));
+		return;
+	}
+	
+	ProjectileMovement->HomingTargetComponent = HomingTargetComponent;
+}
+
+void AProjectile::OnRep_ChangeRotation()
+{
+	// 클라이언트에서 회전 동기화
+	SetActorRotation(ReplicatedRotation);
+}
+
+void AProjectile::OnRep_Velocity()
+{
+	ProjectileMovement->Velocity = ReplicatedVelocity;
+}
+
+void AProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AProjectile, ReplicatedRotation);
+	DOREPLIFETIME(AProjectile, ReplicatedVelocity);
+}
