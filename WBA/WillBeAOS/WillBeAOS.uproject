@@ -1,0 +1,39 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{AE2FB72B-44CA-A46C-01D5-D0A3815BC8CD}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "WillBeAOS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": false
+		},
+		{
+			"Name": "CascadeToNiagaraConverter",
+			"Enabled": false
+		},
+		{
+			"Name": "Landmass",
+			"Enabled": false
+		},
+		{
+			"Name": "Water",
+			"Enabled": false
+		},
+		{
+			"Name": "VisualStudioTools",
+			"Enabled": false
+		}
+	],
+	"TargetPlatforms": [],
+	"AdditionalRootDirectories": [],
+	"AdditionalPluginDirectories": [],
+	"EpicSampleNameHash": ""
+}
