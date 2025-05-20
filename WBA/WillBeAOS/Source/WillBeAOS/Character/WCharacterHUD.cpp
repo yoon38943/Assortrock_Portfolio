@@ -50,14 +50,15 @@ void UWCharacterHUD::TryGetPlayerState()
 		{
 			auto Message = FString::Printf(TEXT("PlayerState 가져오기 성공: %s"), *AWPS->GetName());
 			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, Message);
+			GetWorld()->GetTimerManager().ClearTimer(ErrorTimerHandle);
 			UpdateCharacter();  // ✅ UI 업데이트
-			return;
+			//return;
 		}
 	}
 	
-	auto Message = FString::Printf(TEXT("여전히 PlayerState가 NULL. 0.5초 후 재시도."));
+	/*auto Message = FString::Printf(TEXT("여전히 PlayerState가 NULL. 0.5초 후 재시도."));
 	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, Message);
-	GetWorld()->GetTimerManager().SetTimer(ErrorTimerHandle, this, &UWCharacterHUD::TryGetPlayerState, 0.5f, false);
+	GetWorld()->GetTimerManager().SetTimer(ErrorTimerHandle, this, &UWCharacterHUD::TryGetPlayerState, 0.5f, false);*/
 }
 
 void UWCharacterHUD::UpdateCharacter()

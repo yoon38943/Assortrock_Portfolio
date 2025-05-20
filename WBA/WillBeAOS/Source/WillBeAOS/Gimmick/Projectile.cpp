@@ -18,6 +18,8 @@ AProjectile::AProjectile()
 	CollisionComponent->InitSphereRadius(15);
 	CollisionComponent->SetNotifyRigidBodyCollision(true);
 	RootComponent = CollisionComponent;
+	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AProjectile::OnComponentBeginOverlap);
+	CollisionComponent->SetGenerateOverlapEvents(true);
 
 	Particle = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Particle"));
 	Particle->SetupAttachment(GetRootComponent());
@@ -79,14 +81,12 @@ void AProjectile::Tick(float DeltaTime)
 	}
 }
 
-void AProjectile::NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp,
-	bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit)
+void AProjectile::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	Super::NotifyHit(MyComp, Other, OtherComp, bSelfMoved, HitLocation, HitNormal, NormalImpulse, Hit);
-
 	if (!HasAuthority()) return;
 
-	if (Target == Other)
+	if (Target == OtherActor)
 	{
 		UGameplayStatics::ApplyDamage(
 			Target,

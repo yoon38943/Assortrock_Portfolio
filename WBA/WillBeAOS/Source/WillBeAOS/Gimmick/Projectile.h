@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/SphereComponent.h"
 #include "Projectile.generated.h"
 
 UCLASS()
@@ -15,7 +16,7 @@ class WILLBEAOS_API AProjectile : public AActor
 	float TurnSpeed = 1000.f;		// 조절 가능 회전 속도
 
 	UPROPERTY(VisibleAnywhere, Category = "Collision")
-	class USphereComponent* CollisionComponent;
+	USphereComponent* CollisionComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "Particle")
 	class UParticleSystemComponent* Particle;
@@ -46,8 +47,15 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-
-	virtual void NotifyHit(class UPrimitiveComponent* MyComp, AActor* Other, class UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	
+	UFUNCTION()
+	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult
+);
 
 	void SetHomingTarget();
 };

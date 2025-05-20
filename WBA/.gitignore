@@ -75,7 +75,17 @@ DerivedDataCache/*
 
 # Git에서 무시할 폴더
 Content/
+
+# 빌드 결과물
 Binaries/
+DerivedDataCache/
 Intermediate/
-.idea/
 Saved/
+
+# IDE 관련
+.vs/
+.idea/
+*.suo
+*.user
+*.VC.db
+*.sln.iml
