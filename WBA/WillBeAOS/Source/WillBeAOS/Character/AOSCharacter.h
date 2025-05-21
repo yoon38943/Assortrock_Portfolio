@@ -24,6 +24,10 @@ public:
 	
 	virtual int32 GetGoldReward() const {return GoldReward;};
 	virtual void SetGoldReward(int32 NewGold){GoldReward = NewGold;}
+
+	// 죽음 변수
+	UPROPERTY(BlueprintReadWrite, Category = "Dead")
+	bool bIsDead = false;
 	
 protected:
 	virtual void BeginPlay() override;

@@ -79,6 +79,13 @@ void AProjectile::Tick(float DeltaTime)
 		ReplicatedVelocity = ProjectileMovement->Velocity;
 		SetActorRotation(ReplicatedRotation);
 	}
+
+	// 날아가는 와중 타겟이 죽거나 사라졌을 경우
+	if (HasAuthority() && !IsValid(Target))
+	{
+		Target = nullptr;
+		Destroy();
+	}
 }
 
 void AProjectile::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

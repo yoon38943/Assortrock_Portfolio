@@ -274,7 +274,9 @@ void AWCharacterBase::BeingDead()
 }
 
 void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* Player)
-{	
+{
+	bIsDead = true;
+	
 	//캐릭터 리스폰
 	AWGameState* GameState = Cast<AWGameState>(GetWorld()->GetGameState());
 	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());

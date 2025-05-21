@@ -146,6 +146,8 @@ void AWMinionsCharacterBase::Dead()
 		// AI가 죽으면 BT 연결 끊기
 		AWMinionsAIController* MinionController = Cast<AWMinionsAIController>(GetController());
 		MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
+
+		bIsDead = true;
 	}
 	
 	NM_BeingDead();
@@ -156,6 +158,7 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 	//콜리전 없애기
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	GetMesh()->SetSimulatePhysics(true);
 
 	// 죽는 애니메이션 실행
 	PlayAnimMontage(DeadAnimMontage);

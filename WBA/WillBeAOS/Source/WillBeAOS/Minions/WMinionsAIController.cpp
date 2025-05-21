@@ -1,7 +1,6 @@
 #include "WMinionsAIController.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
 
 void AWMinionsAIController::BeginPlay()
 {

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "WMinionsAIController.generated.h"
 
 class UBehaviorTree;
@@ -13,6 +14,9 @@ class WILLBEAOS_API AWMinionsAIController : public AAIController
 	
 	UPROPERTY(EditAnywhere, Category = BehaviorTree)
 	UBehaviorTree* MinionBT;
+
+	UPROPERTY(EditAnywhere, Category = "AIPerception")
+	UAIPerceptionComponent* AIPerception;
 
 protected:
 	virtual void BeginPlay() override;
