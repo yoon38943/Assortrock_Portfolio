@@ -11,6 +11,7 @@
 #include "../Game/WGameState.h"
 #include "Character/WCharacterBase.h"
 #include "Character/WPlayerController.h"
+#include "Function/WEnemyDetectorComponent.h"
 #include "Game/WGameMode.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Gimmick/Tower.h"
@@ -29,6 +30,11 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	WidgetComponent->SetupAttachment(GetMesh());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
 
+	EnemyDetector = CreateDefaultSubobject<UWEnemyDetectorComponent>(TEXT("Perception"));
+	EnemyDetector->EnemyClass = AActor::StaticClass();
+	EnemyDetector->DetectionRadius = 1000.f;
+	EnemyDetector->OnEnemyDetected.AddDynamic(this, &ThisClass::HandleEnemyDetected);
+	
 	SetGoldReward(KILLGOLD);
 }
 
@@ -162,6 +168,13 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 
 	// 죽는 애니메이션 실행
 	PlayAnimMontage(DeadAnimMontage);
+}
+
+void AWMinionsCharacterBase::HandleEnemyDetected(AActor* Enemy)
+{
+	if (!Enemy) return;
+
+	OnEnemyDetected.Broadcast(Enemy);
 }
 
 void AWMinionsCharacterBase::HandleApplyPointDamage(FHitResult LastHit)

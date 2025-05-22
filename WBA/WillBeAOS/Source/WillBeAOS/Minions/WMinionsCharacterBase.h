@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Character/AOSCharacter.h"
+#include "Function/WEnemyDetectorComponent.h"
 #include "WMinionsCharacterBase.generated.h"
 
 #define KILLGOLD 30
@@ -12,6 +13,8 @@ class UAnimMontage;
 class UCombatComponent;
 class UWidgetComponent;
 class UProgressBar;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDetectedSignature, AActor*, DetectedActor);
 
 UCLASS()
 class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter
@@ -54,6 +57,16 @@ public://트랙 관련
 	UFUNCTION(BlueprintNativeEvent, Category = "Track")
 	void SetTrackPoint();//트랙 정하는 이벤트
 	void SetTrackPoint_Implementation(){}
+
+	// 적 탐지
+	UPROPERTY(BlueprintAssignable, Category="Detection")
+	FOnEnemyDetectedSignature OnEnemyDetected;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Perception")
+	UWEnemyDetectorComponent* EnemyDetector;
+
+	UFUNCTION(BlueprintCallable)
+	void HandleEnemyDetected(AActor* Enemy);
 	
 public:	//골드 관련
 	virtual void SetGoldReward(int32 NewGold){GoldReward = NewGold;}

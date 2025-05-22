@@ -82,14 +82,14 @@ public://타격 관련
 	UPROPERTY(BlueprintReadWrite, Category = SpawnActor)
 	TSubclassOf<AActor> SpawnActors;
 	UPROPERTY(BlueprintReadOnly, Category = SpawnActor, Replicated)
-	AActor* TargetOfActors;
+	AAOSCharacter* TargetOfActors;
 	FVector HitLocation;
 	FVector HitNormal;
 	FName BoneName;
 	FHitResult OutHit;
 	// 오버랩된 액터들의 배열 ( 공격 대상들 )
 	UPROPERTY(BlueprintReadWrite, Category = SpawnActor)
-	TArray<AActor*> OverlappingActors = {};
+	TArray<AAOSCharacter*> OverlappingActors = {};
 	ETraceTypeQuery TraceChannel;
 	TArray<AActor*> ActorsToIgnore;
 	TArray<FHitResult> OutHits;

@@ -53,7 +53,10 @@ void AWCharacterBase::BeginPlay()
 	if (PC)
 	{
 		FVector StartLocation = GetActorLocation();  // 현재 위치
-		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(-500, 0, -7400) - StartLocation).Rotator();
+
+		TArray<AActor*> MiddlePoint;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), MiddlePointClass, MiddlePoint);
+		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(MiddlePoint[0]->GetActorLocation()) - StartLocation).Rotator();
     
 		PC->SetControlRotation(LookAtRotation);
 	}

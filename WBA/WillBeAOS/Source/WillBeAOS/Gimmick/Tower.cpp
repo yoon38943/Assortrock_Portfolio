@@ -205,13 +205,15 @@ void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherAc
 	AAOSCharacter* EnemyChar = Cast<AAOSCharacter>(OtherActor);
 	if ((EnemyChar && EnemyChar->TeamID != TeamID))
 	{
-		OverlappingActors.AddUnique(OtherActor);
+		OverlappingActors.AddUnique(EnemyChar);
 	}
 }
 
 void ATower::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	OverlappingActors.Remove(OtherActor);
+	AAOSCharacter* DetectedEnemy = Cast<AAOSCharacter>(OtherActor);
+	if (IsValid(DetectedEnemy))
+		OverlappingActors.Remove(DetectedEnemy);
 	
 	// 타깃 배열이 비어있으면 스폰 시간 초기화 및 Niagara 비활성화
 	if (OverlappingActors.IsEmpty())

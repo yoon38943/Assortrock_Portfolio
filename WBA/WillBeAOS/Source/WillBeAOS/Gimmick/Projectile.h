@@ -1,8 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "Character/AOSCharacter.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
 
 UCLASS()
@@ -10,7 +11,7 @@ class WILLBEAOS_API AProjectile : public AActor
 {
 	GENERATED_BODY()
 
-	AActor* Target;
+	AAOSCharacter* Target;
 
 	UPROPERTY(EditAnywhere, Category = "Homing")
 	float TurnSpeed = 1000.f;		// 조절 가능 회전 속도

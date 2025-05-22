@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WEnumFile.h"
 #include "UObject/NoExportTypes.h"  // UObject 관련 기능 사용 가능
 #include "WStructure.generated.h"
 

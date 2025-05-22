@@ -81,7 +81,7 @@ void AProjectile::Tick(float DeltaTime)
 	}
 
 	// 날아가는 와중 타겟이 죽거나 사라졌을 경우
-	if (HasAuthority() && !IsValid(Target))
+	if (HasAuthority() && !IsValid(Target) || Target->bIsDead == true)
 	{
 		Target = nullptr;
 		Destroy();

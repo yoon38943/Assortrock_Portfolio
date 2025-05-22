@@ -2,6 +2,7 @@
 
 #include "NavigationSystemTypes.h"
 #include "Blueprint/UserWidget.h"
+#include "Character/WCharacterBase.h"
 #include "Character/WPlayerController.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -31,6 +32,8 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	if (!OtherActor) return;
 
+	if(!IsValid(Cast<AWCharacterBase>(OtherActor))) return;
+	
 	AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
 	APawn* Player = PC->GetPawn();
 
