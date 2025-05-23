@@ -69,7 +69,7 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 	DOREPLIFETIME(ThisClass, CharacterDamage);
 }
 
-void AWCharacterBase::Tick(float DeltaTime)
+void AWCharacterBase::Tick(float DeltaTime)	
 {
 	Super::Tick(DeltaTime);
 

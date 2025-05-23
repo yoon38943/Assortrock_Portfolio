@@ -5,7 +5,7 @@ SET ENGINE_PATH=D:\UnrealEngine-5.5.3-release\Engine\Binaries\Win64
 REM 프로젝트 경로
 SET PROJECT_PATH=D:\AOSPortfolio\WBA\WillBeAOS\WillBeAOS.uproject
 REM 실행시킬 맵
-SET MAP_NAME=/Game/Portfolio/Menu/Test
+SET MAP_NAME=/Game/Portfolio/Menu/L_InGame
 
 REM 에디터에서 Dedicated Server 모드 실행
 "%ENGINE_PATH%\UnrealEditor-Cmd.exe" "%PROJECT_PATH%" "%MAP_NAME%" -server -log -nosteam
