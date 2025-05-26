@@ -46,7 +46,7 @@ void AWMinionsCharacterBase::BeginPlay()
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComponent->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
-	FindPlayerPC();	//주석 다시 없애기
+	FindPlayerPC();
 }
 
 void AWMinionsCharacterBase::Tick(float DeltaTime)
@@ -57,10 +57,15 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 void AWMinionsCharacterBase::FindPlayerPC()
 {
 	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
-	FTimerHandle PCTimerManager;
+	FTimerHandle MinionPCTimerManager;
 	if (!PlayerController)
 	{
-		GetWorldTimerManager().SetTimer(PCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
+		GetWorldTimerManager().SetTimer(MinionPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
+	}
+	else
+	{
+		if (MinionPCTimerManager.IsValid())
+			GetWorldTimerManager().ClearTimer(MinionPCTimerManager);
 	}
 	
 	FindPlayerPawn();

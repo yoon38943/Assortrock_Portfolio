@@ -5,8 +5,7 @@
 
 APlayerSpawner::APlayerSpawner()
 {
-	PrimaryActorTick.bCanEverTick = true;
-
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void APlayerSpawner::BeginPlay()

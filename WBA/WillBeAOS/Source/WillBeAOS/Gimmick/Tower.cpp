@@ -59,13 +59,16 @@ void ATower::BeginPlay()
 
 	FindPlayerPC();
 
-	GetWorldTimerManager().SetTimer(
-		CheckDistanceTimer,
-		this,
-		&ATower::CheckDistanceToPlayer,
-		0.3f,
-		true
-		);
+	if (HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(
+			CheckDistanceTimer,
+			this,
+			&ATower::CheckDistanceToPlayer,
+			0.3f,
+			true
+			);
+	}
 }
 
 void ATower::Tick(float DeltaTime)
@@ -132,10 +135,15 @@ void ATower::CheckDistanceToPlayer()
 void ATower::FindPlayerPC()
 {
 	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
-	FTimerHandle PCTimerManager;
+	FTimerHandle TowerPCTimerManager;
 	if (!PlayerController)
 	{
-		GetWorldTimerManager().SetTimer(PCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
+		GetWorldTimerManager().SetTimer(TowerPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
+	}
+	else
+	{
+		if (TowerPCTimerManager.IsValid())
+			GetWorldTimerManager().ClearTimer(TowerPCTimerManager);
 	}
 	
 	FindPlayerPawn();

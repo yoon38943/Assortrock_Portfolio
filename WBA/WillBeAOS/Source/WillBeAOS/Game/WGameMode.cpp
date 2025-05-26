@@ -44,7 +44,6 @@ void AWGameMode::PostLogin(APlayerController* NewPlayer)
 		if (WGS)
 		{
 			SetGSPlayerControllers();
-			//WGS->CheckPlayerIsReady();
 		}
 	}
 }
@@ -166,7 +165,7 @@ void AWGameMode::SpawnMinions()		// 미니언 스폰
 		{
 			if (AMinionsSpawner* MinionsSpawner = Cast<AMinionsSpawner>(It))
 			{
-				MinionsSpawner->StartSpawnMinions();	
+				MinionsSpawner->StartSpawnMinions();
 			}
 		}
 	}
@@ -222,8 +221,11 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 					UE_LOG(LogTemp, Warning, TEXT("Player Spawner NULL"));
 					return;
 				}
+
+				FActorSpawnParameters Params;
+				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 				
-				APawn* Respawnpawn = GetWorld()->SpawnActor<APawn>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
+				AAOSCharacter* Respawnpawn = GetWorld()->SpawnActor<AAOSCharacter>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation(), Params);
 				if (Respawnpawn)
 				{
 					AWCharacterBase* RespawnChar = Cast<AWCharacterBase>(Respawnpawn);
@@ -248,38 +250,37 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 							UE_LOG(LogTemp, Log, TEXT("첫 스폰!"));
 						}
 					}
-					
 					else
 					{
 						UE_LOG(LogTemp, Warning, TEXT("RespawnChar is null!"));
 					}
 				}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("PawnClass is null!"));
-					}
-				}
 				else
 				{
-					AWCharacterBase* RespawnChar = GetWorld()->SpawnActor<AWCharacterBase>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
-
-					PC->OnPossess(RespawnChar);
-					
-					PS->SetHP(PS->GetMaxHP());
-					
-					UE_LOG(LogTemp, Log, TEXT("리스폰!"));
+					UE_LOG(LogTemp, Warning, TEXT("PawnClass is null!"));
 				}
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("리스폰 %s PlayerState 없음!"),*PlayerController->GetName());
+				AWCharacterBase* RespawnChar = GetWorld()->SpawnActor<AWCharacterBase>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
+
+				PC->OnPossess(RespawnChar);
+					
+				PS->SetHP(PS->GetMaxHP());
+					
+				UE_LOG(LogTemp, Log, TEXT("리스폰!"));
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("리스폰 %s 없음!"),*PlayerController->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("리스폰 %s PlayerState 없음!"),*PlayerController->GetName());
 		}
 	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("리스폰 %s 없음!"),*PlayerController->GetName());
+	}
+}
 
 void AWGameMode::OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer)
 {
