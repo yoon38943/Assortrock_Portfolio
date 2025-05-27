@@ -43,6 +43,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	float MaxWidgetScale = 1.f;
 
+	FTimerHandle CheckDistanceTimer;
+	void CheckDistanceToPlayer();
+	
 	AWCharacterBase* PlayerChar;
 	AWPlayerController* PlayerController;
 

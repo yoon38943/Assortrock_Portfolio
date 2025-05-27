@@ -11,7 +11,7 @@ void AMinionsSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//StartSpawnMinions();	// 테스트 맵에서 테스트 끝나면 없앨 것
+	StartSpawnMinions();	// 테스트 맵에서 테스트 끝나면 없앨 것
 }
 
 void AMinionsSpawner::StartSpawnMinions()

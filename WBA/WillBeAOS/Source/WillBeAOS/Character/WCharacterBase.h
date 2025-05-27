@@ -50,8 +50,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<AActor> MiddlePointClass;
 public:
 	UPROPERTY(BlueprintReadonly)
 	bool IsDead = false;

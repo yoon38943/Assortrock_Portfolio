@@ -13,7 +13,6 @@
 #include "Character/WPlayerController.h"
 #include "Function/WEnemyDetectorComponent.h"
 #include "Game/WGameMode.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "Gimmick/Tower.h"
 #include "Net/UnrealNetwork.h"
 
@@ -29,6 +28,7 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
 	WidgetComponent->SetupAttachment(GetMesh());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
+	WidgetComponent->SetVisibility(false);
 
 	EnemyDetector = CreateDefaultSubobject<UWEnemyDetectorComponent>(TEXT("Perception"));
 	EnemyDetector->EnemyClass = AActor::StaticClass();
@@ -47,6 +47,17 @@ void AWMinionsCharacterBase::BeginPlay()
 	CombatComponent->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
 	FindPlayerPC();
+
+	if (!HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(
+			CheckDistanceTimer,
+			this,
+			&AWMinionsCharacterBase::CheckDistanceToPlayer,
+			0.3f,
+			true
+			);
+	}
 }
 
 void AWMinionsCharacterBase::Tick(float DeltaTime)
@@ -54,12 +65,28 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+void AWMinionsCharacterBase::CheckDistanceToPlayer()
+{
+	if (!PlayerChar) return;
+
+	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
+	bool bIsVisible = Distance <= MaxVisibleDistance;
+	
+	if (WidgetComponent->IsVisible() != bIsVisible)
+	{
+		WidgetComponent->SetVisibility(bIsVisible);
+	}
+}
+
 void AWMinionsCharacterBase::FindPlayerPC()
 {
+	if (HasAuthority()) return;
+	
 	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
 	FTimerHandle MinionPCTimerManager;
 	if (!PlayerController)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerController is null"));
 		GetWorldTimerManager().SetTimer(MinionPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
 	}
 	else
@@ -73,6 +100,8 @@ void AWMinionsCharacterBase::FindPlayerPC()
 
 void AWMinionsCharacterBase::FindPlayerPawn()
 {
+	if (HasAuthority()) return;
+	
 	if (PlayerController)
 	{
 		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
@@ -146,20 +175,19 @@ void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
 
 void AWMinionsCharacterBase::Dead()
 {
+	if (!HasAuthority()) return;
+	
 	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
 	if (GameMode)
 	{
 		GameMode->OnObjectKilled(this, LastHitBy);
 	}
 	
-	if (HasAuthority())
-	{
-		// AI가 죽으면 BT 연결 끊기
-		AWMinionsAIController* MinionController = Cast<AWMinionsAIController>(GetController());
-		MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
+	// AI가 죽으면 BT 연결 끊기
+	AWMinionsAIController* MinionController = Cast<AWMinionsAIController>(GetController());
+	MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
 
-		bIsDead = true;
-	}
+	bIsDead = true;
 	
 	NM_BeingDead();
 }
@@ -173,6 +201,9 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 
 	// 죽는 애니메이션 실행
 	PlayAnimMontage(DeadAnimMontage);
+
+	// HP Widget 없애기
+	WidgetComponent->DestroyComponent();
 }
 
 void AWMinionsCharacterBase::HandleEnemyDetected(AActor* Enemy)

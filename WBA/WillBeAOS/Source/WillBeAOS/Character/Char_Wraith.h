@@ -9,5 +9,11 @@ class WILLBEAOS_API AChar_Wraith : public AWCharacterBase
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditDefaultsOnly, Category = "HitParticle")
+	UParticleSystem* HitParticle;
+
+public:
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void WraithAttack(FVector EnemyLocation);
 	
 };

@@ -11,9 +11,9 @@
 #include "Components/ProgressBar.h"
 #include "../Minions/HealthBar.h"
 #include "../Game/WGameState.h"
-#include "../Minions/WMinionsCharacterBase.h"
 #include "Character/WPlayerController.h"
 #include "Game/WGameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 ATower::ATower()
@@ -43,6 +43,8 @@ ATower::ATower()
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
 	WidgetComponent->SetupAttachment(GetRootComponent());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
+	WidgetComponent->SetIsReplicated(false);
+	WidgetComponent->SetVisibility(false);
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 
@@ -59,7 +61,7 @@ void ATower::BeginPlay()
 
 	FindPlayerPC();
 
-	if (HasAuthority())
+	if (!HasAuthority())
 	{
 		GetWorldTimerManager().SetTimer(
 			CheckDistanceTimer,
@@ -134,6 +136,8 @@ void ATower::CheckDistanceToPlayer()
 
 void ATower::FindPlayerPC()
 {
+	if (HasAuthority()) return;
+	
 	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
 	FTimerHandle TowerPCTimerManager;
 	if (!PlayerController)
@@ -151,6 +155,8 @@ void ATower::FindPlayerPC()
 
 void ATower::FindPlayerPawn()
 {
+	if (HasAuthority()) return;
+	
 	if (PlayerController)
 	{
 		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
@@ -189,7 +195,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 		if ((CombatComp->GetIsDead()))
 		{
 			AWGS = Cast<AWGameState>(GetWorld()->GetGameState());
-			//DefaultSceneRoot->SetVisibility(false, true);
+
 			if (AWGS != nullptr)
 			{
 				AWGS->RemoveTower(this);
@@ -201,7 +207,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 				GameMode->OnObjectKilled(this, LastHitBy);
 			}
 			
-			Destroy();
+			TowerDestroyInClient();
 		}
 	}
 
@@ -229,6 +235,24 @@ void ATower::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 		Delta = 0;
 		NiagaraComponent->SetVisibility(false);
 	}
+}
+
+void ATower::TowerDestroyInClient_Implementation()
+{
+	if (IsValid(CapsuleCollisionComponet))
+	{
+		FVector DestroyLocation = CapsuleCollisionComponet->GetComponentLocation();
+		
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			DestroyParticle,
+			DestroyLocation,
+			FRotator::ZeroRotator,
+			FVector(2.f),
+			true);
+	}
+
+	Destroy();
 }
 
 void ATower::spawn()

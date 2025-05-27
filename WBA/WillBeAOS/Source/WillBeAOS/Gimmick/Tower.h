@@ -48,6 +48,9 @@ public:
 	void S_SetDamaged();
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_SetDamaged();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void TowerDestroyInClient();
 	
 public://스폰
 	float Delta;
@@ -68,13 +71,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* AttackStartPoint;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	class UWidgetComponent* WidgetComponent;
-	UPROPERTY(VisibleAnywhere)
-	class UCombatComponent* CombatComp;
+	UWidgetComponent* WidgetComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UCombatComponent* CombatComp;
 	UPROPERTY(BlueprintReadWrite)
-	class UStaticMesh* DamagedStaticMesh;
+	UStaticMesh* DamagedStaticMesh;
 	UFUNCTION(BlueprintNativeEvent)
 	void DamagedParticle();
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* DestroyParticle;
 	
 	bool IsParticleSpawned = false;
 
