@@ -31,4 +31,5 @@ void AAOSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ThisClass, TeamID);
 	DOREPLIFETIME(ThisClass, GoldReward);
+	DOREPLIFETIME(ThisClass, bIsDead);
 }

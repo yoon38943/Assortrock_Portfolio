@@ -150,6 +150,8 @@ void UCombatComponent::CollisionTrace()
 
 void UCombatComponent::EnableCollision()
 {
+	if (!GetOwner()->HasAuthority()) return;
+	
 	ClearHitActor();
 	IsCollisionEnabled = true;
 }

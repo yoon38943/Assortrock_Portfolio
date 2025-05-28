@@ -26,7 +26,7 @@ public:
 	virtual void SetGoldReward(int32 NewGold){GoldReward = NewGold;}
 
 	// 죽음 변수
-	UPROPERTY(BlueprintReadWrite, Category = "Dead")
+	UPROPERTY(BlueprintReadWrite, Category = "Dead", Replicated)
 	bool bIsDead = false;
 	
 protected:

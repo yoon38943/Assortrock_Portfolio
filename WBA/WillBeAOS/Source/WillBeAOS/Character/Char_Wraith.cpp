@@ -3,7 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocation)
+void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocationParam)
 {
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add((UEngineTypes::ConvertToObjectType(ECC_Pawn)));
@@ -22,22 +22,14 @@ void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocation)
 	ObjectTypes,
 	false,
 	IgnoreActors,
-	EDrawDebugTrace::ForDuration,
+	EDrawDebugTrace::None,
 	HitResult,
 	true
 	);
 
 	if (TraceSuccess)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			HitParticle,
-			HitResult.Location,
-			FRotator::ZeroRotator,
-			FVector(0.7f),
-			true
-			);
-
+		NM_HitParticle(HitResult.Location);
 		HandleApplyPointDamage(HitResult);
 
 		if (GEngine)
@@ -50,4 +42,16 @@ void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocation)
 			);
 		}
 	}
+}
+
+void AChar_Wraith::NM_HitParticle_Implementation(FVector HitLocation)
+{
+	UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			HitParticle,
+			HitLocation,
+			FRotator::ZeroRotator,
+			FVector(0.7f),
+			true
+			);
 }

@@ -149,11 +149,7 @@ void AWCharacterBase::Attack()
 		PC->CancelRecall();
 	}
 	
-	if (HasAuthority())
-	{
-		Behavior();
-	}
-	else
+	if (!HasAuthority())
 	{
 		S_Behavior();
 	}

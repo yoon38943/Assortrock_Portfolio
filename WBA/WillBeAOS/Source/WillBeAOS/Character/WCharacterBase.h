@@ -84,7 +84,7 @@ public:
 	
 	// ---- Attack 관련 함수 ----
 	void Attack();
-	void Behavior();
+	virtual void Behavior();
 	UFUNCTION(Server, Reliable)
 	void S_Behavior();
 	UFUNCTION(NetMulticast, Reliable)

@@ -67,7 +67,7 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 
 void AWMinionsCharacterBase::CheckDistanceToPlayer()
 {
-	if (!PlayerChar) return;
+	if (bIsDead || !PlayerChar) return;
 
 	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
 	bool bIsVisible = Distance <= MaxVisibleDistance;
@@ -145,13 +145,17 @@ void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
 
 void AWMinionsCharacterBase::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
 {
-	UHealthBar* Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
-	if (!Widget)
-	{
+	if (!WidgetComponent || !WidgetComponent->GetWidget()) {
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
 		{
 			SetHPbarColor(HealthBarColor);
 		});
+		return;
+	}
+
+	UHealthBar* Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+	if (!Widget || !Widget->HealthBar)
+	{
 		return;
 	}
 	
@@ -188,6 +192,14 @@ void AWMinionsCharacterBase::Dead()
 	MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
 
 	bIsDead = true;
+
+	GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimer);
+
+	FTimerHandle MinionDeadTimer;
+	GetWorld()->GetTimerManager().SetTimer(MinionDeadTimer, [this]()
+	{
+		Destroy();
+	}, 2.5f, false);
 	
 	NM_BeingDead();
 }
@@ -199,11 +211,14 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	GetMesh()->SetSimulatePhysics(true);
 
-	// 죽는 애니메이션 실행
-	PlayAnimMontage(DeadAnimMontage);
+	if (!HasAuthority())
+	{
+		// 죽는 애니메이션 실행
+		PlayAnimMontage(DeadAnimMontage);
 
-	// HP Widget 없애기
-	WidgetComponent->DestroyComponent();
+		// HP Widget 없애기
+		WidgetComponent->SetVisibility(false);
+	}
 }
 
 void AWMinionsCharacterBase::HandleEnemyDetected(AActor* Enemy)

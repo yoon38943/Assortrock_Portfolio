@@ -12,8 +12,14 @@ class WILLBEAOS_API AChar_Wraith : public AWCharacterBase
 	UPROPERTY(EditDefaultsOnly, Category = "HitParticle")
 	UParticleSystem* HitParticle;
 
+protected:
+	UPROPERTY(BlueprintReadWrite)
+	FVector EnemyLocation;
+
+	UFUNCTION(NetMulticast, reliable)
+	void NM_HitParticle(FVector HitLocation);
+
 public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void WraithAttack(FVector EnemyLocation);
-	
+	void WraithAttack(FVector EnemyLocationParam);
 };
