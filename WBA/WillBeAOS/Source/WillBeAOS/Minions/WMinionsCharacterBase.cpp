@@ -172,11 +172,6 @@ void AWMinionsCharacterBase::RetrySetHPbarColor(FLinearColor HealthBarColor)
 	SetHPbarColor(HealthBarColor);
 }
 
-void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
-{
-	PlayAnimMontage(MinionAttackMontage);
-}
-
 void AWMinionsCharacterBase::Dead()
 {
 	if (!HasAuthority()) return;
@@ -269,6 +264,10 @@ float AWMinionsCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const&
 	SetHpPercentage((CombatComponent->Health), (CombatComponent->Max_Health));
 
 	return DamageAmount;
+}
+
+void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
+{
 }
 
 void AWMinionsCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
