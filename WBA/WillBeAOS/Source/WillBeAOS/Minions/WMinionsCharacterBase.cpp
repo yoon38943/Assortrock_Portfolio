@@ -268,6 +268,7 @@ float AWMinionsCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
 {
+	    PlayAnimMontage(MinionAttackMontage);
 }
 
 void AWMinionsCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
