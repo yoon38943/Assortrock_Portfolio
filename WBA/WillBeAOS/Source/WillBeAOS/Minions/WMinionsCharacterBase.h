@@ -108,8 +108,13 @@ public: //죽을 때
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_BeingDead();
 
+	// 게임 엔딩
+	void HandleGameEnd();
+
 protected:
 	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	virtual void Tick(float DeltaTime) override;
 };

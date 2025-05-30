@@ -75,6 +75,7 @@ DerivedDataCache/*
 
 # Git에서 무시할 폴더
 Content/
+패키징/
 
 # 빌드 결과물
 Binaries/

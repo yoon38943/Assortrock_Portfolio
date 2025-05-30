@@ -49,6 +49,13 @@ void AWCharacterBase::BeginPlay()
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
+	AWGameMode* GM = Cast<AWGameMode>(UGameplayStatics::GetGameMode(this));
+	if (GM)
+	{
+		// 게임 종료 델리게이트 바인딩 ( 서버에서만 일어남 )
+		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
+	}
+
 	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
 	if (PC)
 	{
@@ -370,4 +377,17 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 	//ServerPlayMontage(HitAnimMontage);
 	return DamageAmount;
+}
+
+void AWCharacterBase::HandleGameEnd()
+{
+	GetCharacterMovement()->DisableMovement();
+
+	if (IsLocallyControlled())
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		if (PC) PC->DisableInput(PC);
+
+		PrimaryActorTick.bCanEverTick = false;
+	}
 }

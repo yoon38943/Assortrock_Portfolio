@@ -303,6 +303,8 @@ void AWGameMode::OnNexusDestroyed(E_TeamID LoseTeam)
 		GS->SetGamePlay(E_GamePlay::GameEnded);
 	}
 //고쳐야함
+
+	OnGameEnd.Broadcast();
 	
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{

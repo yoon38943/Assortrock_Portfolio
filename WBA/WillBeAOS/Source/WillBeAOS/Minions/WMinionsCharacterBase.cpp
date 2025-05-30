@@ -38,6 +38,17 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	SetGoldReward(KILLGOLD);
 }
 
+void AWMinionsCharacterBase::HandleGameEnd()
+{
+	if (AAIController* AICon = Cast<AAIController>(GetController()))
+	{
+		AICon->StopMovement();
+		AICon->BrainComponent->StopLogic("Game Ended");
+
+		PrimaryActorTick.bCanEverTick = false;
+	}
+}
+
 void AWMinionsCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -45,6 +56,12 @@ void AWMinionsCharacterBase::BeginPlay()
 	CombatComponent->DelegateDead.BindUObject(this, &ThisClass::Dead);
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComponent->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
+
+	AWGameMode* GM = Cast<AWGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (GM)
+	{
+		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
+	}
 
 	FindPlayerPC();
 
@@ -60,6 +77,13 @@ void AWMinionsCharacterBase::BeginPlay()
 	}
 }
 
+void AWMinionsCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorldTimerManager().ClearTimer(CheckDistanceTimer);
+}
+
 void AWMinionsCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -67,7 +91,7 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 
 void AWMinionsCharacterBase::CheckDistanceToPlayer()
 {
-	if (bIsDead || !PlayerChar) return;
+	if (bIsDead || !PlayerChar || !IsValid(this)) return;
 
 	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
 	bool bIsVisible = Distance <= MaxVisibleDistance;

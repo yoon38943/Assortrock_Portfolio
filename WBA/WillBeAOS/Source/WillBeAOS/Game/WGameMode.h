@@ -6,6 +6,7 @@
 #include "WGameMode.generated.h"
 
 class AWPlayerState;
+DECLARE_MULTICAST_DELEGATE(FOnGameEnd);
 
 UCLASS(config = Game)
 class WILLBEAOS_API AWGameMode : public AGameMode
@@ -14,6 +15,8 @@ class WILLBEAOS_API AWGameMode : public AGameMode
 
 public:
 	AWGameMode();
+
+	FOnGameEnd OnGameEnd;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class AWGameState* WGS;
