@@ -13,7 +13,6 @@ class WILLBEAOS_API ASelectGameMode : public AGameMode
 	GENERATED_BODY()
 	
 public:
-	ASelectGameMode();
 	
 	UPROPERTY(BlueprintReadOnly)
 	class ASelectGameState* SelectGS;
@@ -21,7 +20,7 @@ public:
 protected:	//매칭시스템
 	TMap<FString, FPlayerValue> SelectPlayerReadyStatus;
 	
-	void LoadPlayerTeamsFromGameInstance();
+	//void LoadPlayerTeamsFromGameInstance();
 public:
 	UFUNCTION()
 	void SetIsReady(APlayerController* PlayerController, E_TeamID TeamVal,bool bReady, TSubclassOf<APawn> PawnClass);

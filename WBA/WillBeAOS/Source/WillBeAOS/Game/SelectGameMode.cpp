@@ -5,14 +5,6 @@
 #include "GameFramework/PlayerState.h"
 
 
-ASelectGameMode::ASelectGameMode()
-{
-	if (!HasAuthority()) // 클라이언트가 GameMode를 생성하지 못하도록 제한
-	{
-		Destroy();
-	}
-}
-
 void ASelectGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -25,11 +17,9 @@ void ASelectGameMode::BeginPlay()
 	}
 	
 	GetWorld()->GetTimerManager().SetTimer(DecreaseTimerHandle, this, &ThisClass::DecreaseTimer, 1.0f, true);
-
-	LoadPlayerTeamsFromGameInstance();
 }
 
-void ASelectGameMode::LoadPlayerTeamsFromGameInstance()
+/*void ASelectGameMode::LoadPlayerTeamsFromGameInstance()
 {
 	UWGameInstance* WGI = Cast<UWGameInstance>(GetGameInstance());
 	if (WGI)
@@ -46,7 +36,7 @@ void ASelectGameMode::LoadPlayerTeamsFromGameInstance()
 			}
 		}
 	}
-}
+}*/
 
 void ASelectGameMode::UpdateCharName(int32 MWidgetID, FText MCharName)
 {

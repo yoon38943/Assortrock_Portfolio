@@ -20,12 +20,6 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	UUserWidget* MainMenu;
 	
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void IsMatched();
-	
 public:
 	virtual void BeginPlay() override;
-
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void ServerSetReady(bool bReady);	
 };
