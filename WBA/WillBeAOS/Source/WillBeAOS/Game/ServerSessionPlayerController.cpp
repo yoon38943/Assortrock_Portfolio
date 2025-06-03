@@ -1,11 +1,11 @@
-#include "Game/SeverSessionPlayerController.h"
+#include "Game/ServerSessionPlayerController.h"
 
 #include "LoadingScreenWidget.h"
 #include "OnlineSessionSettings.h"
 #include "WGameInstance.h"
 
 
-void ASeverSessionPlayerController::ClientShowLoadingScreen_Implementation()
+void AServerSessionPlayerController::ClientShowLoadingScreen_Implementation()
 {
 	MatchingWidget = CreateWidget<ULoadingScreenWidget>(this, MatchingWidgetClass);
 	if (MatchingWidget)
@@ -23,7 +23,7 @@ void ASeverSessionPlayerController::ClientShowLoadingScreen_Implementation()
 	}
 }
 
-void ASeverSessionPlayerController::Client_UpdatePlayerCount_Implementation(int32 CurrentPlayers)
+void AServerSessionPlayerController::Client_UpdatePlayerCount_Implementation(int32 CurrentPlayers)
 {
 	if (MatchingWidget)
 	{

@@ -19,16 +19,25 @@ class WILLBEAOS_API UWGameInstance : public UGameInstance
 
 public:
 	UPROPERTY()
-	TMap<FString, FPlayerInfoStruct> MatchPlayersTeamInfo;  // Unique ID를 기반으로 팀 정보 저장
+	TMap<FString, FPlayerInfoStruct> MatchPlayersTeamInfo;  // PlayerName을 기반으로 팀 정보 저장
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 FinalBlueTeamPlayersNum;
+	UPROPERTY(BlueprintReadOnly)
+	int32 FinalRedTeamPlayersNum;
+
+	void LogFinalTeamNum();
 
 	UPROPERTY()
 	TMap<FString,FPlayerValue> MatchPlayerTeams;
 	
 public:
 	// GameInstance에 Key 값 저장
-	void SavePlayerTeamInfo(FString PlayerNameInfo, FPlayerInfoStruct PlayerInfo);
+	void SavePlayerTeamInfo(FString& PlayerNameInfo, FPlayerInfoStruct PlayerInfo);
 
 	void DeletePlayerTeamInfo(FString PlayerName);
+
+	void SortPlayerTeamInfo(FString ExitingPlayerName);
 	
 	void SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID, TSubclassOf<class APawn> PawnClass);
 

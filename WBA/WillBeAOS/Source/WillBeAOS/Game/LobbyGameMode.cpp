@@ -1,7 +1,7 @@
 #include "Game/LobbyGameMode.h"
 
 #include "OutGamePlayerState.h"
-#include "SeverSessionPlayerController.h"
+#include "ServerSessionPlayerController.h"
 #include "WGameInstance.h"
 #include "GameFramework/GameStateBase.h"
 
@@ -19,7 +19,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	AssignTeamToPlayer(NewPlayer);
 
-	ASeverSessionPlayerController* PlayerController = Cast<ASeverSessionPlayerController>(NewPlayer);
+	AServerSessionPlayerController* PlayerController = Cast<AServerSessionPlayerController>(NewPlayer);
 	if (PlayerController)
 	{
 		PlayerController->ClientShowLoadingScreen();
@@ -27,7 +27,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		ASeverSessionPlayerController* PC = Cast<ASeverSessionPlayerController>(It->Get());
+		AServerSessionPlayerController* PC = Cast<AServerSessionPlayerController>(It->Get());
 		if (PC)
 		{
 			PC->Client_UpdatePlayerCount(CurrentPlayersNum);
@@ -40,6 +40,10 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		if (GameInstance->IsSessionFull())
 		{
 			UE_LOG(LogTemp, Log, TEXT("세션이 가득찼으므로 게임 시작!"));
+
+			GameInstance->FinalBlueTeamPlayersNum = BlueTeamNum;
+			GameInstance->FinalRedTeamPlayersNum = RedTeamNum;
+			GameInstance->LogFinalTeamNum();
 
 			StartSelectCharacterMap();
 		}
@@ -61,7 +65,7 @@ void ALobbyGameMode::Logout(AController* Exiting)
 	int32 CurrentPlayers = GameState->PlayerArray.Num();
 	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
 	{
-		ASeverSessionPlayerController* PC = Cast<ASeverSessionPlayerController>(It->Get());
+		AServerSessionPlayerController* PC = Cast<AServerSessionPlayerController>(It->Get());
 		if (PC)
 		{
 			PC->Client_UpdatePlayerCount(CurrentPlayers);
@@ -92,19 +96,21 @@ void ALobbyGameMode::AssignTeamToPlayer(APlayerController* Player)
 	AOutGamePlayerState* PS = Player->GetPlayerState<AOutGamePlayerState>();
 	if (!PS) return;
 
+	PS->PlayerInfo.PlayerName = PS->GetPlayerName();
+
 	if (BlueTeamNum <= RedTeamNum)
 	{
 		PS->PlayerInfo.PlayerTeam = E_TeamID::Blue;
 		PS->PlayerInfo.PlayerTeamID = BlueTeamNum;
 		BlueTeamNum++;
-		UE_LOG(LogTemp, Log, TEXT("플레이어 %s -> 블루팀"), *PS->GetPlayerName());
+		UE_LOG(LogTemp, Log, TEXT("플레이어 %s -> 블루팀"), *PS->PlayerInfo.PlayerName);
 	}
 	else
 	{
 		PS->PlayerInfo.PlayerTeam = E_TeamID::Red;
 		PS->PlayerInfo.PlayerTeamID = RedTeamNum;
 		RedTeamNum++;
-		UE_LOG(LogTemp, Log, TEXT("플레이어 %s -> 레드팀"), *PS->GetPlayerName());
+		UE_LOG(LogTemp, Log, TEXT("플레이어 %s -> 레드팀"), *PS->PlayerInfo.PlayerName);
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("팀 상태 업데이트 - 블루팀 : %d / 레드팀 : %d"), BlueTeamNum, RedTeamNum);
@@ -112,6 +118,7 @@ void ALobbyGameMode::AssignTeamToPlayer(APlayerController* Player)
 	UWGameInstance* GameInstance = Cast<UWGameInstance>(GetGameInstance());
 	if (GameInstance)
 	{
+		UE_LOG(LogTemp, Log, TEXT("저장될 플레이어 이름 : %s"), *PS->PlayerInfo.PlayerName);
 		GameInstance->SavePlayerTeamInfo(PS->PlayerInfo.PlayerName, PS->PlayerInfo);
 	}
 }

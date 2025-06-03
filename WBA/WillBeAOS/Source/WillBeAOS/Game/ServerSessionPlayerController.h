@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "SeverSessionPlayerController.generated.h"
+#include "ServerSessionPlayerController.generated.h"
 
 UCLASS()
-class WILLBEAOS_API ASeverSessionPlayerController : public APlayerController
+class WILLBEAOS_API AServerSessionPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	

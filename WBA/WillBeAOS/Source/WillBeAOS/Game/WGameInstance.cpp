@@ -2,6 +2,7 @@
 #include "Character/WPlayerState.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Net/UnrealNetwork.h"
 
 
 void UWGameInstance::Init()
@@ -34,15 +35,37 @@ void UWGameInstance::Init()
 	}
 }
 
-void UWGameInstance::SavePlayerTeamInfo(FString PlayerNameInfo, FPlayerInfoStruct PlayerInfo)
+void UWGameInstance::LogFinalTeamNum()
 {
-	MatchPlayersTeamInfo.Add(PlayerNameInfo, PlayerInfo);
-	UE_LOG(LogTemp, Warning, TEXT("🔹 저장된 플레이어: %s, 팀 : %s, 팀 ID: %d"), *PlayerNameInfo, PlayerInfo.PlayerTeam == E_TeamID::Blue ? TEXT("블루팀") : TEXT("레드팀"), PlayerInfo.PlayerTeamID);
+	UE_LOG(LogTemp, Warning, TEXT("게임 인스턴스 - Blue : %d, Red : %d"), FinalBlueTeamPlayersNum, FinalRedTeamPlayersNum);
+}
+
+void UWGameInstance::SavePlayerTeamInfo(FString& PlayerNameInfo, FPlayerInfoStruct PlayerInfo)
+{
+	MatchPlayersTeamInfo.Add(*PlayerNameInfo, PlayerInfo);
+	UE_LOG(LogTemp, Warning, TEXT("저장된 플레이어: %s, 팀 : %s, 팀 ID: %d"), *PlayerNameInfo, PlayerInfo.PlayerTeam == E_TeamID::Blue ? TEXT("블루팀") : TEXT("레드팀"), PlayerInfo.PlayerTeamID);
 }
 
 void UWGameInstance::DeletePlayerTeamInfo(FString PlayerName)
 {
+	SortPlayerTeamInfo(PlayerName);
 	MatchPlayersTeamInfo.Remove(PlayerName);
+}
+
+void UWGameInstance::SortPlayerTeamInfo(FString ExitingPlayerName)
+{
+	if (MatchPlayersTeamInfo.Contains(ExitingPlayerName))
+	{
+		int32 ExitingPlayerTeamID = MatchPlayersTeamInfo.Find(ExitingPlayerName)->PlayerTeamID;
+
+		for (TPair<FString, FPlayerInfoStruct>& PlayerInfo : MatchPlayersTeamInfo)
+		{
+			if (PlayerInfo.Value.PlayerTeamID > ExitingPlayerTeamID)
+			{
+				PlayerInfo.Value.PlayerTeamID -= 1;
+			}
+		}
+	}
 }
 
 void UWGameInstance::SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID TeamID, TSubclassOf<class APawn> PawnClass)
