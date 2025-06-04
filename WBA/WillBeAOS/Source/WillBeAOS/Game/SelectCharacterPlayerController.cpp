@@ -11,7 +11,10 @@ void ASelectCharacterPlayerController::BeginPlay()
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
+}
 
+void ASelectCharacterPlayerController::PlayerStateInfoReady_Implementation()
+{
 	UUserWidget* SelectCharacterWidget = CreateWidget<UUserWidget>(this, SelectCharacterWidgetClass);
 	if (SelectCharacterWidget)
 	{

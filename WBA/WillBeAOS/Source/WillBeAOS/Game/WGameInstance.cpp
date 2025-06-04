@@ -139,6 +139,17 @@ void UWGameInstance::OnFindSessionComplete(bool Success)
 
 void UWGameInstance::StartJoinSession()
 {
+	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+	if (OSS)
+	{
+		IOnlineSessionPtr Sessions = OSS->GetSessionInterface();
+		if (Sessions.IsValid() && Sessions->GetNamedSession(NAME_GameSession) != nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("남아 있던 클라 세션 파괴!"));
+			Sessions->DestroySession(NAME_GameSession);
+		}
+	}
+	
 	if (OnlineSessionInterface.IsValid())
 	{
 		FindSessions();

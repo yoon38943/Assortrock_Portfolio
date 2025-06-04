@@ -14,9 +14,12 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
-	UPROPERTY(BlueprintReadOnly, Replicated)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AddWidget)
 	FPlayerInfoStruct PlayerInfo;
 
 	UFUNCTION(Server, Reliable)
 	void Server_ReplicatePlayerInfo(const FString& ClientPlayerName);
+
+	UFUNCTION()
+	void OnRep_AddWidget();
 };

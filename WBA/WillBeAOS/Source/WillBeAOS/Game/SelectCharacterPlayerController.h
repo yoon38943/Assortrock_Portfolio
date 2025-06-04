@@ -14,4 +14,8 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> SelectCharacterWidgetClass;
+
+public:
+	UFUNCTION(Client, Reliable)
+	void PlayerStateInfoReady();
 };

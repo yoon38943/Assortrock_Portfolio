@@ -1,5 +1,6 @@
 #include "Game/SelectPlayerState.h"
 
+#include "SelectCharacterPlayerController.h"
 #include "WGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
@@ -11,6 +12,15 @@ void ASelectPlayerState::BeginPlay()
 	if (HasAuthority())return;
 
 	Server_ReplicatePlayerInfo(GetPlayerName());
+}
+
+void ASelectPlayerState::OnRep_AddWidget()
+{
+	ASelectCharacterPlayerController* PC = Cast<ASelectCharacterPlayerController>(GetPlayerController());
+	if (PC)
+	{
+		PC->PlayerStateInfoReady();
+	}
 }
 
 void ASelectPlayerState::Server_ReplicatePlayerInfo_Implementation(const FString& ClientPlayerName)

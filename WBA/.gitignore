@@ -77,6 +77,12 @@ DerivedDataCache/*
 Content/
 패키징/
 
+# 배치 파일 무시
+ServerBuildStart.bat
+StartGame.bat
+StartServer.bat
+
+
 # 빌드 결과물
 Binaries/
 DerivedDataCache/
