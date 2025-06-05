@@ -16,6 +16,11 @@ protected:
 	TSubclassOf<UUserWidget> SelectCharacterWidgetClass;
 
 public:
+	UUserWidget* SelectCharacterWidget = nullptr;
+	
 	UFUNCTION(Client, Reliable)
 	void PlayerStateInfoReady();
+
+	UFUNCTION(Client, Reliable)
+	void UpdatePlayerWidget();
 };

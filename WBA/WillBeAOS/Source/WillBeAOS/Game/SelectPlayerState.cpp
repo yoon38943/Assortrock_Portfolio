@@ -1,6 +1,7 @@
 #include "Game/SelectPlayerState.h"
 
 #include "SelectCharacterPlayerController.h"
+#include "SelectMapGameState.h"
 #include "WGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
@@ -12,6 +13,14 @@ void ASelectPlayerState::BeginPlay()
 	if (HasAuthority())return;
 
 	Server_ReplicatePlayerInfo(GetPlayerName());
+}
+
+void ASelectPlayerState::Server_ChooseTheCharacter_Implementation(TSubclassOf<APawn> ChosenChar)
+{
+	ASelectMapGameState* GS = Cast<ASelectMapGameState>(GetWorld()->GetGameState());
+	{
+		GS->AddSelectCharacterToPlayerInfo(GetPlayerName(), ChosenChar, PlayerInfo.PlayerTeam);
+	}
 }
 
 void ASelectPlayerState::OnRep_AddWidget()

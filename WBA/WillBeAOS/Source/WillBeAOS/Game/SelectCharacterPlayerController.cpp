@@ -1,6 +1,7 @@
 #include "Game/SelectCharacterPlayerController.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Character/UI/SelectMapUserWidget.h"
 
 void ASelectCharacterPlayerController::BeginPlay()
 {
@@ -15,9 +16,18 @@ void ASelectCharacterPlayerController::BeginPlay()
 
 void ASelectCharacterPlayerController::PlayerStateInfoReady_Implementation()
 {
-	UUserWidget* SelectCharacterWidget = CreateWidget<UUserWidget>(this, SelectCharacterWidgetClass);
+	SelectCharacterWidget = CreateWidget<UUserWidget>(this, SelectCharacterWidgetClass);
 	if (SelectCharacterWidget)
 	{
 		SelectCharacterWidget->AddToViewport(0);
+	}
+}
+
+void ASelectCharacterPlayerController::UpdatePlayerWidget_Implementation()
+{
+	USelectMapUserWidget* Widget = Cast<USelectMapUserWidget>(SelectCharacterWidget);
+	if (Widget)
+	{
+		Widget->UpdateWidget();
 	}
 }

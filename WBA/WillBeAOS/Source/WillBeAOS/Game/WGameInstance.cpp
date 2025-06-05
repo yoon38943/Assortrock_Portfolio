@@ -2,7 +2,7 @@
 #include "Character/WPlayerState.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include "Net/UnrealNetwork.h"
+#include "GameFramework/GameStateBase.h"
 
 
 void UWGameInstance::Init()
@@ -84,6 +84,17 @@ void UWGameInstance::SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID TeamID
 TMap<FString, FPlayerInfoStruct> UWGameInstance::GetSavedPlayerTeamInfo()
 {
 	return MatchPlayersTeamInfo;
+}
+
+void UWGameInstance::AssignPlayerNickName()
+{
+	for (TPair<FString, FPlayerInfoStruct>& PlayerInfo : MatchPlayersTeamInfo)
+	{
+		if (PlayerInfo.Value.PlayerNickName.IsEmpty())
+		{
+			PlayerInfo.Value.PlayerNickName = FString::Printf(TEXT("%s팀 유저 %d"), PlayerInfo.Value.PlayerTeam == E_TeamID::Blue ? TEXT("블루") : TEXT("레드"), PlayerInfo.Value.PlayerTeamID + 1);
+		}
+	}
 }
 
 TMap <FString, FPlayerValue> UWGameInstance::GetMatchTeam()

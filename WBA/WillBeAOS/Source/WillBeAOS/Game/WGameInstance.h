@@ -39,9 +39,11 @@ public:
 
 	void SortPlayerTeamInfo(FString ExitingPlayerName);
 	
-	void SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID, TSubclassOf<class APawn> PawnClass);
-
 	TMap<FString, FPlayerInfoStruct> GetSavedPlayerTeamInfo();
+
+	void AssignPlayerNickName();
+	
+	void SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID, TSubclassOf<class APawn> PawnClass);
 	
 	TMap <FString, FPlayerValue> GetMatchTeam();
 

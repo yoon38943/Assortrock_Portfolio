@@ -40,6 +40,9 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 		if (GameInstance->IsSessionFull())
 		{
 			UE_LOG(LogTemp, Log, TEXT("세션이 가득찼으므로 게임 시작!"));
+			UE_LOG(LogTemp, Log, TEXT("비어 있는 플레이어 닉네임 부여!"));
+
+			GameInstance->AssignPlayerNickName();
 
 			GameInstance->FinalBlueTeamPlayersNum = BlueTeamNum;
 			GameInstance->FinalRedTeamPlayersNum = RedTeamNum;

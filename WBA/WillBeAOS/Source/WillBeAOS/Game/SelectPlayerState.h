@@ -13,9 +13,12 @@ class WILLBEAOS_API ASelectPlayerState : public APlayerState
 protected:
 	virtual void BeginPlay() override;
 
-public:
+public:	
 	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AddWidget)
 	FPlayerInfoStruct PlayerInfo;
+
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Server_ChooseTheCharacter(TSubclassOf<APawn> ChosenChar);
 
 	UFUNCTION(Server, Reliable)
 	void Server_ReplicatePlayerInfo(const FString& ClientPlayerName);
