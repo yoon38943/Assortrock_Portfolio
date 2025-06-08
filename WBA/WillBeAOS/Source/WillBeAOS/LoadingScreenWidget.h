@@ -19,6 +19,9 @@ protected:
 	int32 CurrentSessionPlayers;
 
 public:
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsMatchFull;
+	
 	void UpdateSessionMaxPlayers(int32 MaxPlayersNum);
 	void UpdateSessionPlayersNum(int32 CurrentPlayersNum);
 };

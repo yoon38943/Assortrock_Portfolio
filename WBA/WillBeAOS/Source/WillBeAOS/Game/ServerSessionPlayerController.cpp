@@ -30,3 +30,11 @@ void AServerSessionPlayerController::Client_UpdatePlayerCount_Implementation(int
 		MatchingWidget->UpdateSessionPlayersNum(CurrentPlayers);
 	}
 }
+
+void AServerSessionPlayerController::Client_UpdateMatchingState_Implementation(bool bIsFull)
+{
+	if (MatchingWidget)
+	{
+		MatchingWidget->bIsMatchFull = bIsFull;
+	}
+}

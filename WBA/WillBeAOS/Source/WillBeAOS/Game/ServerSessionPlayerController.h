@@ -21,4 +21,7 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerCount(int32 CurrentPlayers);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateMatchingState(bool bIsFull);
 };

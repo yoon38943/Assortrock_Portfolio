@@ -47,6 +47,16 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			GameInstance->FinalBlueTeamPlayersNum = BlueTeamNum;
 			GameInstance->FinalRedTeamPlayersNum = RedTeamNum;
 			GameInstance->LogFinalTeamNum();
+			
+			for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+			{
+				AServerSessionPlayerController* PC = Cast<AServerSessionPlayerController>(Iterator->Get());
+
+				if (PC)
+				{
+					PC->Client_UpdateMatchingState(true);
+				}
+			}
 
 			StartSelectCharacterMap();
 		}
