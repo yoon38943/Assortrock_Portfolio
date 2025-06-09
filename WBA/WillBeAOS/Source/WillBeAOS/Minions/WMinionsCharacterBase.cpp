@@ -91,7 +91,7 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 
 void AWMinionsCharacterBase::CheckDistanceToPlayer()
 {
-	if (bIsDead || !PlayerChar || !IsValid(this)) return;
+	if (bIsDead || !IsValid(PlayerChar) || !IsValid(this)) return;
 
 	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
 	bool bIsVisible = Distance <= MaxVisibleDistance;

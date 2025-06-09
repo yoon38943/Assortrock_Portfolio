@@ -2,16 +2,8 @@
 
 #include "WGameInstance.h"
 
-void ASelectCharacterGameMode::BeginPlay()
+void ASelectCharacterGameMode::StartInGame()
 {
-	Super::BeginPlay();
-
-	UWGameInstance* GI = Cast<UWGameInstance>(GetGameInstance());
-	if (GI)
-	{
-		for (auto& Info : GI->MatchPlayersTeamInfo)
-		{
-			UE_LOG(LogTemp, Log, TEXT("인스턴스 저장 플레이어 네임 : %s - 호출 완료(Select Character Map)"), *Info.Key);
-		}
-	}
+	UE_LOG(LogTemp, Warning, TEXT("인게임으로 이동!!!"));
+	GetWorld()->ServerTravel("/Game/Portfolio/Menu/L_InGame?listen", true);
 }

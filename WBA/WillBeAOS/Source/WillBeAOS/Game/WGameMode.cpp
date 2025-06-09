@@ -72,7 +72,7 @@ void AWGameMode::SetPlayerSpawners(class AWPlayerState* PlayerState)
 {
 	for (auto It: PlayerSpawners)
 	{
-		if (It->TeamID == PlayerState->TeamID)
+		if (It->TeamID == PlayerState->PlayerInfo.PlayerTeam)
 		{
 			PlayerState->PlayerSpawner = It;
 		}
@@ -225,13 +225,13 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 				FActorSpawnParameters Params;
 				Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 				
-				AAOSCharacter* Respawnpawn = GetWorld()->SpawnActor<AAOSCharacter>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation(), Params);
+				AAOSCharacter* Respawnpawn = GetWorld()->SpawnActor<AAOSCharacter>(PS->PlayerInfo.SelectedCharacter, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation(), Params);
 				if (Respawnpawn)
 				{
 					AWCharacterBase* RespawnChar = Cast<AWCharacterBase>(Respawnpawn);
 					if (RespawnChar)
 					{
-						UE_LOG(LogTemp, Log, TEXT("Player Spawner %s, %d"),*PC->GetName(),PS->TeamID);
+						UE_LOG(LogTemp, Log, TEXT("Player Spawner %s, %d"),*PC->GetName(),PS->PlayerInfo.PlayerTeam);
 
 
 						// 나중에 고칠 부분 --- 캐릭터 많아지면 힘들어짐, 캐릭터 베이스로 퉁칠 수 있을것
@@ -262,7 +262,7 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 			}
 			else
 			{
-				AWCharacterBase* RespawnChar = GetWorld()->SpawnActor<AWCharacterBase>(PS->SelectedPawnClass, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
+				AWCharacterBase* RespawnChar = GetWorld()->SpawnActor<AWCharacterBase>(PS->PlayerInfo.SelectedCharacter, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
 
 				PC->OnPossess(RespawnChar);
 					

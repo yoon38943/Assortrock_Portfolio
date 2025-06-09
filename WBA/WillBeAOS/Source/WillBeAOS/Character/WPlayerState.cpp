@@ -1,8 +1,42 @@
 #include "Character/WPlayerState.h"
 
 #include "WCharacterBase.h"
+#include "Game/WGameMode.h"
 #include "Game/WGameState.h"
 #include "Net/UnrealNetwork.h"
+
+void AWPlayerState::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (HasAuthority()) return;
+
+    Server_TakePlayerInfo(GetPlayerName());
+}
+
+void AWPlayerState::Server_TakePlayerInfo_Implementation(const FString& PlayerName)
+{
+    // 게임 스테이트에서 플레이어 정보 받아오기
+    AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+    if (GS)
+    {
+        for (auto& Elem : GS->MatchPlayersInfo)
+        {
+            if (Elem.PlayerName == PlayerName)
+            {
+                PlayerInfo = Elem;
+                UE_LOG(LogTemp, Log, TEXT("플레이어(%s) 정보 받아오기 완료!"), *PlayerName);
+            }
+        }
+
+        // 정보 받아와서 캐릭터 소환
+        AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+        if (GM)
+        {
+            GM->RespawnPlayer(nullptr, GetPlayerController());
+        }
+    }
+}
 
 void AWPlayerState::S_SetPlayerReady_Implementation(bool bReady)
 {
@@ -155,6 +189,7 @@ void AWPlayerState::C_AddGold_Implementation(int NewGold)
 void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(ThisClass, TeamID);
+
     DOREPLIFETIME(ThisClass, bIsGameReady);
+    DOREPLIFETIME(ThisClass, PlayerInfo);
 }

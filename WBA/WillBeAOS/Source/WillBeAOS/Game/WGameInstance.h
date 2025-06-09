@@ -27,9 +27,6 @@ public:
 	int32 FinalRedTeamPlayersNum;
 
 	void LogFinalTeamNum();
-
-	UPROPERTY()
-	TMap<FString,FPlayerValue> MatchPlayerTeams;
 	
 public:
 	// GameInstance에 Key 값 저장
@@ -42,10 +39,6 @@ public:
 	TMap<FString, FPlayerInfoStruct> GetSavedPlayerTeamInfo();
 
 	void AssignPlayerNickName();
-	
-	void SaveMatchPlayerTeam(FString PlayerNameInfo, E_TeamID, TSubclassOf<class APawn> PawnClass);
-	
-	TMap <FString, FPlayerValue> GetMatchTeam();
 
 public:
 	IOnlineSessionPtr OnlineSessionInterface;

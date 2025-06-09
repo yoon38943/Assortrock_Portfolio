@@ -1,7 +1,6 @@
 #include "WGameState.h"
 #include "WGameInstance.h"
 #include "WGameMode.h"
-#include "WStructure.h"
 #include "../Gimmick/Nexus.h"
 #include "../Gimmick/Tower.h"
 #include "../Character/WPlayerController.h"
@@ -50,12 +49,11 @@ void AWGameState::GamePlayStateChanged(E_GamePlay NewState)
     {
     case E_GamePlay::GameInit:
         UE_LOG(LogTemp, Log, TEXT("Game is initializing..."));
-        GetPlayerNameFromInstance();
+        TakeMatchPlayersInfoToInstance();
         break;
 
     case E_GamePlay::PlayerReady://플레이어 컨트롤러 정보를 다 받아와서
         UE_LOG(LogTemp, Log, TEXT("All Players are ready! Updating PlayerControllers..."));
-        SpawnPlayer();
         break;
 
     case E_GamePlay::ReadyCountdown:
@@ -78,28 +76,20 @@ void AWGameState::GamePlayStateChanged(E_GamePlay NewState)
 //-----------------------------------------------------------
 //인스턴스에서 플레이어스테이트 맵 가져오기
 //-----------------------------------------------------------
-void AWGameState::GetPlayerNameFromInstance()
+void AWGameState::TakeMatchPlayersInfoToInstance()
 {
-        UWGameInstance* WGI = Cast<UWGameInstance>(GetGameInstance());
-        if (WGI)
+    if (!HasAuthority()) return;
+    
+    UWGameInstance* GI = Cast<UWGameInstance>(GetGameInstance());
+    if (GI)
+    {
+        for (auto& Elem : GI->MatchPlayersTeamInfo)
         {
-            TMap<FString, FPlayerValue> MatchedMap = WGI->GetMatchTeam();
-            for (auto& It : MatchedMap)
-            {
-                FString PlayerName = It.Key;
-                E_TeamID TeamID = It.Value.TeamValue;
-                if (!PlayerName.IsEmpty())
-                {
-                    MatchedPlayers.Add(PlayerName, FPlayerValue(TeamID, false, It.Value.WPawnClass));
-                    UE_LOG(LogTemp, Log, TEXT("🔹 불러온 PlayerValue: %s, TeamID: %d"), *PlayerName, TeamID);
-                }
-                else UE_LOG(LogTemp, Warning, TEXT("PlayerName is Empty"));
-            }
+            MatchPlayersInfo.Add(Elem.Value);
         }
-        else
-        {
-            UE_LOG(LogTemp, Warning, TEXT("Instance is nullptr"));
-        }
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("게임 스테이트에 매치 플레이어 정보 넘기기 완료!(InGameMap)"));
 }
 
 void AWGameState::CheckPlayerIsReady()
@@ -131,20 +121,17 @@ bool AWGameState::IsAllPlayerIsReady()
     
     for (auto PS : AllPlayerStates)
     {
-        for (auto It : MatchedPlayers)
+        for (auto It : MatchPlayersInfo)
         {
-            UE_LOG(LogTemp, Log, TEXT("PlayerState %s %d %s"), *It.Key, It.Value.TeamValue, *It.Value.WPawnClass->GetName());
             if (PS)// 특정 이름 패턴을 가진 경우만 처리
             {
-                if (PS->GetPlayerName() == It.Key)
+                if (PS->GetPlayerName() == It.PlayerName)
                 {
-                    SetPlayerState(PS,It.Value);
+                    UE_LOG(LogTemp, Log, TEXT("플레이어 스테이트 네임 : %s"), *PS->GetPlayerName());
+                    UE_LOG(LogTemp, Log, TEXT("게임 스테이트에 저장된 네임 : %s"), *It.PlayerName);
+                    
                     ConnectedPlayerStates.Add(PS);
                     NumPlayers++;
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("PlayerState is not same with matchname."));
                 }
             }
             else
@@ -154,26 +141,11 @@ bool AWGameState::IsAllPlayerIsReady()
         }
     }
 
-    if (NumPlayers == MatchedPlayers.Num())
+    if (NumPlayers == MatchPlayersInfo.Num())
     {
         return true;
     }
     return false;
-}
-
-void AWGameState::SetPlayerState(AWPlayerState* WPlayerState,FPlayerValue WPlayerValue)
-{
-    WPlayerState->TeamID = static_cast<E_TeamID>(WPlayerValue.TeamValue);
-    WPlayerState->SelectedPawnClass = WPlayerValue.WPawnClass;
-    UE_LOG(LogTemp, Log, TEXT("SetPlayerState %s %d %s"), *WPlayerState->GetPlayerName(), WPlayerValue.TeamValue, *WPlayerValue.WPawnClass->GetName());
-}
-
-void AWGameState::SpawnPlayer()
-{
-    for (auto It : PlayerControllers)
-    {
-        WGameMode->RespawnPlayer(nullptr,It);
-    }
 }
 
 void AWGameState::CheckPlayerSpawned(AWPlayerController* WPlayerController)
@@ -181,7 +153,7 @@ void AWGameState::CheckPlayerSpawned(AWPlayerController* WPlayerController)
     UE_LOG(LogTemp, Log, TEXT("CheckPlayerSpawned %s"),*WPlayerController->GetName());
     CheckSpawnedPlayers++;
     
-    if (CheckSpawnedPlayers == MatchedPlayers.Num())
+    if (CheckSpawnedPlayers == MatchPlayersInfo.Num())
     {
         SetGamePlay(E_GamePlay::ReadyCountdown);
     }
@@ -243,6 +215,7 @@ void AWGameState::SetGameStart()
     {
         It->OnGameStateChanged(E_GamePlay::Gameplaying);
     }
+    
     //벽 파괴
     WGameMode->DestroyWall();
     //미니언 스폰
@@ -311,26 +284,29 @@ int32 AWGameState::GetRedTowerNum()
 
 void AWGameState::RemoveTower_Implementation(ATower* WTower)
 {
-    if (WTower->TeamID == E_TeamID::Red)
+    if (WTower)
     {
-        RedTowerArray.Remove(WTower);
-    }
-    else if (WTower->TeamID == E_TeamID::Blue)
-    {
-        BlueTowerArray.Remove(WTower);
-    }
-    else
-    {
-        UE_LOG(LogTemp,Warning,TEXT("Tower is not Found or Netural"));
+        if (WTower->TeamID == E_TeamID::Red && RedTowerArray.Contains(WTower))
+        {
+            RedTowerArray.Remove(WTower);
+        }
+        else if (WTower->TeamID == E_TeamID::Blue && BlueTowerArray.Contains(WTower))
+        {
+            BlueTowerArray.Remove(WTower);
+        }
+        else
+        {
+            UE_LOG(LogTemp,Warning,TEXT("Tower is not Found or Netural"));
+        }
     }
 }
 
 void AWGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    
     DOREPLIFETIME(ThisClass,BlueTowerArray);
     DOREPLIFETIME(ThisClass,RedTowerArray);
     DOREPLIFETIME(ThisClass,BlueNexus);
     DOREPLIFETIME(ThisClass,RedNexus);
-
 }

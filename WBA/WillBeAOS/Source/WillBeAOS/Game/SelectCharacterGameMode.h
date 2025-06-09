@@ -9,6 +9,6 @@ class WILLBEAOS_API ASelectCharacterGameMode : public AGameMode
 {
 	GENERATED_BODY()
 
-protected:
-	virtual void BeginPlay() override;
+public:
+	void StartInGame();
 };

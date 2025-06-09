@@ -75,7 +75,6 @@ DerivedDataCache/*
 
 # Git에서 무시할 폴더
 Content/
-Content
 패키징/
 
 # 배치 파일 무시
@@ -83,12 +82,14 @@ ServerBuildStart.bat
 StartGame.bat
 StartServer.bat
 
-
 # 빌드 결과물
 Binaries/
 DerivedDataCache/
 Intermediate/
 Saved/
+
+# 에디터
+*.uproject
 
 # IDE 관련
 .vs/

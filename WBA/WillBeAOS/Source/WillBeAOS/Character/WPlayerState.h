@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PlayerInfoStruct.h"
 #include "WEnumFile.h"
 #include "GameFramework/PlayerState.h"
 #include "WPlayerState.generated.h"
@@ -9,6 +10,9 @@ UCLASS()
 class WILLBEAOS_API AWPlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
 	
 public:
 	UPROPERTY(Replicated)
@@ -16,14 +20,14 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void S_SetPlayerReady(bool bReady);
-	
-	UPROPERTY(BlueprintReadWrite,Replicated, Category = "Teams")
-	E_TeamID TeamID;
-	UPROPERTY(BlueprintReadWrite, Category = "Pawn")
-	TSubclassOf<APawn> SelectedPawnClass;
-	
-	void SetTeamID(E_TeamID NewTeamID){TeamID = NewTeamID;}
-	void SetPawnClass(TSubclassOf<APawn> SpawnClass) { SelectedPawnClass = SpawnClass; }
+
+	// 유저 정보
+	UPROPERTY(Replicated)
+	FPlayerInfoStruct PlayerInfo;
+
+	// 유저 정보 받아오기
+	UFUNCTION(Server, Reliable)
+	void Server_TakePlayerInfo(const FString& PlayerName);
 
 public:
 	class APlayerSpawner* PlayerSpawner;

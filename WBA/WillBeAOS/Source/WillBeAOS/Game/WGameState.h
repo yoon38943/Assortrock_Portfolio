@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PlayerInfoStruct.h"
 #include "WEnumFile.h"
 #include "WStructure.h"
 #include "GameFramework/GameState.h"
@@ -35,9 +36,9 @@ public://GameInit 단계
 	void GamePlayStateChanged(E_GamePlay NewState);
 
 	//인스턴스에서 받아온 MatchedPlayers
-	UPROPERTY(BlueprintReadWrite)
-	TMap<FString, FPlayerValue> MatchedPlayers;
-	void GetPlayerNameFromInstance();
+	TArray<FPlayerInfoStruct> MatchPlayersInfo;
+	// Info 클라에게 넘겨주기
+	void TakeMatchPlayersInfoToInstance();
 	
 	//접속한 플레이어 컨트롤러
 	UPROPERTY(EditAnywhere)
@@ -46,8 +47,6 @@ public://GameInit 단계
 	void CheckPlayerIsReady();
 	UFUNCTION(BlueprintCallable)
 	bool IsAllPlayerIsReady();
-
-	void SetPlayerState(AWPlayerState* WPlayerState, FPlayerValue WPlayerValue);
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Players")
 	TArray<AWPlayerState*> ConnectedPlayerStates;
@@ -55,8 +54,6 @@ public://GameInit 단계
 	void RemovePlayer(AWPlayerController* WPlayerController);
 	
 public: //PlayerReady단계
-	void SpawnPlayer();
-
 	void CheckPlayerSpawned(AWPlayerController* WPlayerController);
 
 	int32 CheckSpawnedPlayers = 0;

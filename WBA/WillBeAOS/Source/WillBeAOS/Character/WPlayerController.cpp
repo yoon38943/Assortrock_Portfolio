@@ -57,7 +57,7 @@ void AWPlayerController::OnPossess(APawn* InPawn)
 		if (PlayerChar)
 		{
 			if (AWPlayerState* WPlayerState = GetPlayerState<AWPlayerState>())
-			PlayerChar->TeamID = WPlayerState->TeamID;
+			PlayerChar->TeamID = WPlayerState->PlayerInfo.PlayerTeam;
 			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
 		}
 
@@ -207,7 +207,7 @@ void AWPlayerController::GameEnded_Implementation(E_TeamID LoseTeam)
 	AWPlayerState* PS = GetPlayerState<AWPlayerState>();
 	if (PS)
 	{
-		PlayerTeamID = PS->TeamID;
+		PlayerTeamID = PS->PlayerInfo.PlayerTeam;
 	}
 	
 	if (PlayerTeamID != LoseTeam)
