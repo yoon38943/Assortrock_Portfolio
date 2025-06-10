@@ -117,6 +117,8 @@ public:
 	FTimerHandle CheckDistanceTimer;
 	void CheckDistanceToPlayer();
 
+	void StartCheckDistanceToPlayer();
+
 	AWCharacterBase* PlayerChar;
 	AWPlayerController* PlayerController;
 

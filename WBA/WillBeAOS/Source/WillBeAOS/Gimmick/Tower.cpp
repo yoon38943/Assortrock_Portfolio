@@ -59,18 +59,8 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 이것도 컨트롤러 
 	FindPlayerPC();
-
-	if (!HasAuthority())
-	{
-		GetWorldTimerManager().SetTimer(
-			CheckDistanceTimer,
-			this,
-			&ATower::CheckDistanceToPlayer,
-			0.3f,
-			true
-			);
-	}
 }
 
 void ATower::Tick(float DeltaTime)
@@ -131,6 +121,20 @@ void ATower::CheckDistanceToPlayer()
 	if (WidgetComponent->IsVisible() != bIsVisible)
 	{
 		WidgetComponent->SetVisibility(bIsVisible);
+	}
+}
+
+void ATower::StartCheckDistanceToPlayer()
+{
+	if (!HasAuthority())
+	{
+		GetWorldTimerManager().SetTimer(
+			CheckDistanceTimer,
+			this,
+			&ATower::CheckDistanceToPlayer,
+			0.3f,
+			true
+			);
 	}
 }
 

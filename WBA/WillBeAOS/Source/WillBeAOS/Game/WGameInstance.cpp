@@ -110,6 +110,8 @@ void UWGameInstance::FindSessions()
 	SessionSearch->bIsLanQuery = false;
 	SessionSearch->MaxSearchResults = 10;
 
+	SessionSearch->QuerySettings.Set(FName(TEXT("presence")), false, EOnlineComparisonOp::Equals);
+
 	LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 
@@ -159,8 +161,10 @@ void UWGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionComp
 			APlayerController* PC = GetFirstLocalPlayerController();
 			if (PC)
 			{
-				PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
 				UE_LOG(LogTemp, Log, TEXT("클라: 서버로 이동!"));
+				UE_LOG(LogTemp, Log, TEXT("%s"), *SessionName.ToString());
+				UE_LOG(LogTemp, Log, TEXT("%s"), *ConnectString);
+				PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
 			}
 		}
 	}
@@ -186,7 +190,9 @@ void UWGameInstance::CreateGameSession()
 		SessionSettings->bAllowJoinInProgress = true;
 		SessionSettings->bAllowJoinViaPresence = true;
 		SessionSettings->bShouldAdvertise = true;
-		SessionSettings->bUsesPresence = true;
+		SessionSettings->bUsesPresence = false;
+		SessionSettings->bUseLobbiesIfAvailable = false;
+		SessionSettings->bIsDedicated = true;
 
 		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 중..."));
 		OnlineSessionInterface->CreateSession(0, NAME_GameSession, *SessionSettings);
@@ -228,9 +234,10 @@ void UWGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 void UWGameInstance::LeaveGameSession_Implementation()
 {
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (PC)
+	if (PC && OutLobbyMap)
 	{
-		PC->ClientTravel("/Game/Portfolio/Menu/L_MainLobby", ETravelType::TRAVEL_Absolute);
+		FSoftObjectPath ObjectPath = OutLobbyMap.ToSoftObjectPath();
+		PC->ClientTravel(ObjectPath.ToString(), ETravelType::TRAVEL_Absolute);
 		UE_LOG(LogTemp, Log, TEXT("세션 떠나기 완료!"));
 	}
 

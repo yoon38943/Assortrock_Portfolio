@@ -17,6 +17,10 @@ class WILLBEAOS_API UWGameInstance : public UGameInstance
 
 	virtual void Init() override;
 
+	// 맵의 경로 지정
+	UPROPERTY(EditAnywhere, Category = "Map")
+	TSoftObjectPtr<UWorld> OutLobbyMap;
+
 public:
 	UPROPERTY()
 	TMap<FString, FPlayerInfoStruct> MatchPlayersTeamInfo;  // PlayerName을 기반으로 팀 정보 저장
