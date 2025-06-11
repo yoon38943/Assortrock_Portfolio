@@ -45,6 +45,8 @@ public:
 	void AssignPlayerNickName();
 
 public:
+	TSharedPtr<FOnlineSessionSettings> SessionSettings;
+	
 	IOnlineSessionPtr OnlineSessionInterface;
 
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;

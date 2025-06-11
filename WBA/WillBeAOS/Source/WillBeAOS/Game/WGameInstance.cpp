@@ -2,7 +2,7 @@
 #include "Character/WPlayerState.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include "GameFramework/GameStateBase.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 
 
 void UWGameInstance::Init()
@@ -20,6 +20,17 @@ void UWGameInstance::Init()
 			
 			if (IsRunningDedicatedServer())
 			{
+				IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+				if (OnlineSub)
+				{
+					IOnlineIdentityPtr IdentityInterface = OnlineSub->GetIdentityInterface();
+					if (IdentityInterface.IsValid())
+					{
+						ELoginStatus::Type Status = IdentityInterface->GetLoginStatus(0);
+						UE_LOG(LogTemp, Log, TEXT("서버 Steam 로그인 상태: %d"), (int32)Status);
+					}
+				}
+				
 				UE_LOG(LogTemp, Log, TEXT("서버 시작! 세션 생성 시작"));
 			
 				// 델리게이트 연결
@@ -30,6 +41,17 @@ void UWGameInstance::Init()
 			else
 			{
 				UE_LOG(LogTemp, Log, TEXT("클라이언트로 게임 시작!"));
+
+				IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+				if (OnlineSub)
+				{
+					IOnlineIdentityPtr IdentityInterface = OnlineSub->GetIdentityInterface();
+					if (IdentityInterface.IsValid())
+					{
+						ELoginStatus::Type Status = IdentityInterface->GetLoginStatus(0);
+						UE_LOG(LogTemp, Log, TEXT("클라 Steam 로그인 상태: %d"), (int32)Status);
+					}
+				}
 			}
 		}
 	}
@@ -108,9 +130,9 @@ void UWGameInstance::FindSessions()
 
 	SessionSearch = MakeShareable(new FOnlineSessionSearch());
 	SessionSearch->bIsLanQuery = false;
-	SessionSearch->MaxSearchResults = 10;
+	SessionSearch->MaxSearchResults = 10000;
 
-	SessionSearch->QuerySettings.Set(FName(TEXT("presence")), false, EOnlineComparisonOp::Equals);
+	SessionSearch->QuerySettings.Set(FName("AOSPortfolio"), FString("MyAOSGame"), EOnlineComparisonOp::Equals);
 
 	LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 	OnlineSessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
@@ -120,16 +142,34 @@ void UWGameInstance::FindSessions()
 
 void UWGameInstance::OnFindSessionComplete(bool Success)
 {
-	if (Success && SessionSearch.IsValid() && SessionSearch->SearchResults.Num() > 0)
-	{
-		UE_LOG(LogTemp, Log, TEXT("클라: 세션 찾음! Join 시도"));
-
-		OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSearch->SearchResults[0]);
-	}
-	else
+	if (!OnlineSessionInterface.IsValid() || !Success)
 	{
 		UE_LOG(LogTemp, Log, TEXT("클라: 세션 찾기 실패"));
+		return;
 	}
+	
+	for (auto Result : SessionSearch->SearchResults)
+	{
+		for (const TPair<FName, FOnlineSessionSetting>& SettingPair : Result.Session.SessionSettings.Settings)
+		{
+			const FName& Key = SettingPair.Key;
+			const FOnlineSessionSetting& Setting = SettingPair.Value;
+
+			UE_LOG(LogTemp, Log, TEXT("Key: %s, Value: %s"), *Key.ToString(), *Setting.Data.ToString());
+		}
+		
+		FString SessionValue;
+		Result.Session.SessionSettings.Get(FName("AOSPortfolio"), SessionValue);
+
+		if (SessionValue == FString("MyAOSGame"))
+		{
+			UE_LOG(LogTemp, Log, TEXT("세션 Key값에 대한 Value : %s"), *SessionValue);
+
+			OnlineSessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("클라: 모든 검색 세션 경유"));
 }
 
 void UWGameInstance::StartJoinSession()
@@ -184,7 +224,7 @@ void UWGameInstance::CreateGameSession()
 			OnlineSessionInterface->DestroySession(NAME_GameSession);
 		}
 		
-		TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+		SessionSettings = MakeShareable(new FOnlineSessionSettings());
 		SessionSettings->bIsLANMatch = false;
 		SessionSettings->NumPublicConnections = 2;
 		SessionSettings->bAllowJoinInProgress = true;
@@ -193,6 +233,8 @@ void UWGameInstance::CreateGameSession()
 		SessionSettings->bUsesPresence = false;
 		SessionSettings->bUseLobbiesIfAvailable = false;
 		SessionSettings->bIsDedicated = true;
+
+		SessionSettings->Set(FName("AOSPortfolio"), FString("MyAOSGame"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 중..."));
 		OnlineSessionInterface->CreateSession(0, NAME_GameSession, *SessionSettings);
@@ -207,26 +249,20 @@ void UWGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 {
 	if (Success)
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				10.f,
-				FColor::Cyan,
-				FString::Printf(TEXT("서버 : 세션 생성 성공! : %s"),*SessionName.ToString()));
-		}
 		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 성공! : %s"), *SessionName.ToString());
+
+		FString MyValue;
+		if (SessionSettings->Get(FName("AOSPortfolio"), MyValue))
+		{
+			UE_LOG(LogTemp, Log, TEXT("서버에서 AOSPortfolio 등록 확인: %s"), *MyValue);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("서버에서 AOSPortfolio 값이 없다!"));
+		}
 	}
 	else
 	{
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				10.f,
-				FColor::Red,
-				FString::Printf(TEXT("세션 생성 실패!")));
-		}
 		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 실패!"));
 	}
 }
@@ -234,10 +270,12 @@ void UWGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
 void UWGameInstance::LeaveGameSession_Implementation()
 {
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (PC && OutLobbyMap)
+	if (PC)
 	{
-		FSoftObjectPath ObjectPath = OutLobbyMap.ToSoftObjectPath();
-		PC->ClientTravel(ObjectPath.ToString(), ETravelType::TRAVEL_Absolute);
+		if (OutLobbyMap.IsNull()) return;
+		
+		FString MainMap = OutLobbyMap.GetAssetName();
+		PC->ClientTravel(MainMap, ETravelType::TRAVEL_Absolute);
 		UE_LOG(LogTemp, Log, TEXT("세션 떠나기 완료!"));
 	}
 
