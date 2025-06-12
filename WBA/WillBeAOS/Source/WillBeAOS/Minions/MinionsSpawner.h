@@ -35,4 +35,9 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	class AWGameMode* GM;
+
+	bool bGameIsEnd = false;
+
+	void GameStateIsEnd();
 };

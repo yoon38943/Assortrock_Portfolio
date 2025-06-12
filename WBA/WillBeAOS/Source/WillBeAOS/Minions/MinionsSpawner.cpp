@@ -1,5 +1,6 @@
 #include "Minions/MinionsSpawner.h"
 #include "WMinionsCharacterBase.h"
+#include "Game/WGameMode.h"
 
 AMinionsSpawner::AMinionsSpawner()
 {
@@ -10,6 +11,17 @@ AMinionsSpawner::AMinionsSpawner()
 void AMinionsSpawner::BeginPlay()
 {
 	Super::BeginPlay();
+
+	GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		GM->OnGameEnd.AddUObject(this, &ThisClass::GameStateIsEnd);
+	}
+}
+
+void AMinionsSpawner::GameStateIsEnd()
+{
+	bGameIsEnd = true;
 }
 
 void AMinionsSpawner::StartSpawnMinions()
@@ -22,7 +34,12 @@ void AMinionsSpawner::StartSpawnMinions()
 
 void AMinionsSpawner::SpawnMinions_Implementation()
 {
-	GetWorld()->GetTimerManager().ClearTimer(InitGameTimerHandle);
+	if(InitGameTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(InitGameTimerHandle);
+	}
+
+	if (bGameIsEnd) return;
 	
 	SpawnCount++;
 	
@@ -43,7 +60,7 @@ void AMinionsSpawner::SpawnMinions_Implementation()
 	else
 	{
 		SpawnCount = 0;
-		GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &ThisClass::SpawnMinions, 30.f, false);
+		GetWorld()->GetTimerManager().SetTimer(SpawnTimerHandle, this, &ThisClass::SpawnMinions, 40.f, false);
 	}
 }
 

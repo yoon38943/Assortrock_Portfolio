@@ -91,6 +91,8 @@ void AWMinionsCharacterBase::Tick(float DeltaTime)
 
 void AWMinionsCharacterBase::CheckDistanceToPlayer()
 {
+	FindPlayerPawn();
+	
 	if (bIsDead || !IsValid(PlayerChar) || !IsValid(this)) return;
 
 	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
@@ -118,8 +120,6 @@ void AWMinionsCharacterBase::FindPlayerPC()
 		if (MinionPCTimerManager.IsValid())
 			GetWorldTimerManager().ClearTimer(MinionPCTimerManager);
 	}
-	
-	FindPlayerPawn();
 }
 
 void AWMinionsCharacterBase::FindPlayerPawn()

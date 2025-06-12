@@ -16,13 +16,6 @@ public class WillBeAOS : ModuleRules
         // ���� ��� �߰�
         PublicIncludePaths.Add(ModuleDirectory);
         PublicIncludePaths.Add("WillBeAOS");
-        
-        string SDKPath = Path.Combine(ModuleDirectory, "../../sdk");
-        string SDKPublicIncludePath = Path.Combine(SDKPath, "public");
-        string SDKLibFile = Path.Combine(SDKPath, "redistributable_bin", "win64", "steam_api64.lib");
-
-        PublicIncludePaths.Add(SDKPublicIncludePath);
-        PublicAdditionalLibraries.Add(SDKLibFile);
 
         // Uncomment if you are using Slate UI
         // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

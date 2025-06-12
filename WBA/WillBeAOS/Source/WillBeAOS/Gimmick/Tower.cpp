@@ -59,8 +59,11 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 이것도 컨트롤러 
+	// 플레이어 컨트롤러 찾기
 	FindPlayerPC();
+
+	//찾은 컨트롤러 바탕으로 플레이어 캐릭터와 타워 거리 체크
+	StartCheckDistanceToPlayer();
 }
 
 void ATower::Tick(float DeltaTime)
@@ -113,6 +116,8 @@ void ATower::BeamToTarget(FVector TargetLocation)
 
 void ATower::CheckDistanceToPlayer()
 {
+	FindPlayerPawn();
+	
 	if (!PlayerChar) return;
 
 	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
@@ -153,8 +158,6 @@ void ATower::FindPlayerPC()
 		if (TowerPCTimerManager.IsValid())
 			GetWorldTimerManager().ClearTimer(TowerPCTimerManager);
 	}
-	
-	FindPlayerPawn();
 }
 
 void ATower::FindPlayerPawn()

@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "PlayerInfoStruct.h"
 #include "Engine/GameInstance.h"
-#include "../WStructure.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "WGameInstance.generated.h"
 
@@ -45,6 +44,8 @@ public:
 	void AssignPlayerNickName();
 
 public:
+	TSharedPtr<FOnlineSessionSettings> SessionSettings;
+	
 	IOnlineSessionPtr OnlineSessionInterface;
 
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
