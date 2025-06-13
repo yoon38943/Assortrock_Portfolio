@@ -27,14 +27,35 @@ class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 	class UCombatComponent* CombatComp;
 	
 public:
+	E_TeamID CharacterTeam;
+	
+	// HP Widget 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UWidgetComponent* WidgetComponent;
+	UWidgetComponent* HPInfoBarComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor BlueTeamHPColor;
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor RedTeamHPColor;
+	UPROPERTY(EditAnywhere, Category = "Color")
+	FLinearColor SelfHPColor;
+	
+	FLinearColor HPInfoBarColor;
+
+	UFUNCTION(Server, Reliable)
+	virtual void S_SetHPInfoBarColor();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void SetHPInfoBarColor(FLinearColor BarColor);
+
+	UFUNCTION()
+	virtual void SetHPPercentage(float HPPercent);
 	
 public:
 	AWCharacterBase();
 
 private:
-	//?�력 ?�셋
+	//입력 에셋
 	UPROPERTY(EditAnywhere, Category = Input)
 	class UInputMappingContext* IMC_Asset;
 	UPROPERTY(EditAnywhere, Category = Input)

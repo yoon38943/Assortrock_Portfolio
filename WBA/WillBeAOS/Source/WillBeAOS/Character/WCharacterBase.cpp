@@ -12,12 +12,60 @@
 #include "Kismet/GameplayStatics.h"
 #include "WPlayerController.h"
 #include "WPlayerState.h"
+#include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Game/WGameMode.h"
 #include "Net/UnrealNetwork.h"
+#include "UI/PlayerHPInfoBar.h"
 
 
 class AAOSActor;
+
+void AWCharacterBase::S_SetHPInfoBarColor_Implementation()
+{	
+	if (CharacterTeam == E_TeamID::Blue)
+	{
+		HPInfoBarColor = BlueTeamHPColor; 
+	}
+	else if (CharacterTeam == E_TeamID::Red)
+	{
+		HPInfoBarColor = RedTeamHPColor;
+	}
+	
+	SetHPInfoBarColor(HPInfoBarColor);
+}
+
+void AWCharacterBase::SetHPInfoBarColor_Implementation(FLinearColor BarColor)
+{
+	UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget());
+	if (HPInfoBar)
+	{
+		if (IsLocallyControlled())
+		{
+			HPInfoBarColor = SelfHPColor;
+			
+			HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(HPInfoBarColor);
+
+			HPInfoBar->InvalidateLayoutAndVolatility();
+		}
+		else
+		{
+			HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(BarColor);
+
+			HPInfoBar->InvalidateLayoutAndVolatility();
+		}
+	}
+}
+
+void AWCharacterBase::SetHPPercentage(float HPPercent)
+{
+	if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
+	{
+		HPInfoBar->PlayerHPBar->SetPercent(HPPercent);
+		HPInfoBar->InvalidateLayoutAndVolatility();
+	}
+}
 
 AWCharacterBase::AWCharacterBase()
 {
@@ -40,6 +88,10 @@ AWCharacterBase::AWCharacterBase()
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComp->SetCombatEnable(false);
+
+	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
+	HPInfoBarComponent->SetupAttachment(GetRootComponent());
+	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
 }
 
 
@@ -64,6 +116,11 @@ void AWCharacterBase::BeginPlay()
 		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(0, 0, 100) - StartLocation).Rotator();
     
 		PC->SetControlRotation(LookAtRotation);
+	}
+	
+	if (!HasAuthority() && IsLocallyControlled())
+	{
+		S_SetHPInfoBarColor();
 	}
 }
 

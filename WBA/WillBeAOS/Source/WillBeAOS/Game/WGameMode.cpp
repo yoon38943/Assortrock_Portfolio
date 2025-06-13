@@ -233,6 +233,7 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 					{
 						UE_LOG(LogTemp, Log, TEXT("Player Spawner %s, %d"),*PC->GetName(),PS->PlayerInfo.PlayerTeam);
 
+						RespawnChar->CharacterTeam = PS->PlayerInfo.PlayerTeam;
 
 						// 나중에 고칠 부분 --- 캐릭터 많아지면 힘들어짐, 캐릭터 베이스로 퉁칠 수 있을것
 						AChar_Wraith* RespawnWraith = Cast<AChar_Wraith>(RespawnChar);

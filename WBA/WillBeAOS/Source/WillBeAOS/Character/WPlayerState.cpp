@@ -55,6 +55,26 @@ bool AWPlayerState::S_SetPlayerReady_Validate(bool bReady)
     return true;
 }
 
+void AWPlayerState::OnRep_UpdateHP()
+{
+    if (APawn* Pawn = GetPawn())
+    {
+        if (AWCharacterBase* Char = Cast<AWCharacterBase>(Pawn))
+        {
+            Char->SetHPPercentage(GetHPPercentage());
+        }
+    }
+    else
+    {
+        // 아직 Pawn이 안 붙었으면 조금 뒤에 재시도
+        FTimerHandle Handle;
+        GetWorld()->GetTimerManager().SetTimer(Handle, [this]()
+        {
+            OnRep_UpdateHP();
+        }, 0.1f, false);
+    }
+}
+
 AWPlayerState::AWPlayerState()
 {
     bReplicates = true;
@@ -192,4 +212,5 @@ void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
     DOREPLIFETIME(ThisClass, bIsGameReady);
     DOREPLIFETIME(ThisClass, PlayerInfo);
+    DOREPLIFETIME(ThisClass, HP);
 }

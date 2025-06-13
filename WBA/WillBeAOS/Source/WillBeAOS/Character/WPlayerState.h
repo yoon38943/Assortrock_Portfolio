@@ -22,7 +22,7 @@ public:
 	void S_SetPlayerReady(bool bReady);
 
 	// 유저 정보
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	FPlayerInfoStruct PlayerInfo;
 
 	// 유저 정보 받아오기
@@ -33,8 +33,12 @@ public:
 	class APlayerSpawner* PlayerSpawner;
 	
 protected:
+	UPROPERTY(ReplicatedUsing = OnRep_UpdateHP)
 	float HP;
 	float MaxHP;
+
+	UFUNCTION()
+	void OnRep_UpdateHP();
 	
 public:
     AWPlayerState();
