@@ -33,12 +33,10 @@ public:
 	class APlayerSpawner* PlayerSpawner;
 	
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_UpdateHP)
+	UPROPERTY(Replicated)
 	float HP;
+	UPROPERTY(Replicated)
 	float MaxHP;
-
-	UFUNCTION()
-	void OnRep_UpdateHP();
 	
 public:
     AWPlayerState();

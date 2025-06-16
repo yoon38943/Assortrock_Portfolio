@@ -38,11 +38,23 @@ protected://체력관련
 	void SetHpPercentage(float Health, float MaxHealth);
 	UFUNCTION(Server, Reliable)
 	void S_SetHpPercentage(float Health, float MaxHealth);
+
+	UFUNCTION(Server, Reliable)
+	void S_InitHPPercentage();
+	UFUNCTION(NetMulticast, Reliable)
+	void C_InitHPPercentage(float Health, float MaxHealth);
+	void InitHPPercentage(float Health, float MaxHealth);
+	
 public:
 	UFUNCTION(Server, Reliable)
 	void S_SetHPbarColor();
 	UFUNCTION(NetMulticast, Reliable)
 	void SetHPbarColor(FLinearColor HealthBarColor);
+
+	UFUNCTION(Server, Reliable)
+	void Server_UpdateHPBar();
+	UFUNCTION(Client, Reliable)
+	void Client_UpdateWidget(float HPPercent);
 
 	UFUNCTION(Server, Reliable)
 	void S_SetDamaged();

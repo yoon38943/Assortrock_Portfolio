@@ -23,7 +23,8 @@ ANexus::ANexus()
 	EndingCameraComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EndingCamera"));
 	EndingCameraComponent->SetupAttachment(DefaultSceneRootComponent);
 	
-	bReplicates = true; 
+	bReplicates = true;
+	bAlwaysRelevant = true;
 }
 
 void ANexus::DestroyNexus()

@@ -40,24 +40,69 @@ ATower::ATower()
 	AttackStartPoint = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttackStartPoint"));
 	AttackStartPoint->SetupAttachment(GetRootComponent());
 
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
 	WidgetComponent->SetupAttachment(GetRootComponent());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
 	WidgetComponent->SetIsReplicated(false);
 	WidgetComponent->SetVisibility(false);
-
-	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-
+	
 	// 특정 요소의 오버랩 함수 바인드하기 ( OverlapTrigger의 )
 	OverlapTrigger->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
 	OverlapTrigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
 
+	bAlwaysRelevant = true;
+
 	SetGoldReward(GOLDAMOUNT);
+}
+
+void ATower::InitHPPercentage(float Health, float MaxHealth)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%f, %f"), CombatComp->Health, CombatComp->Max_Health);
+	auto Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+
+	if (Widget != nullptr)
+	{
+		if (MaxHealth != 0)
+			Widget->HealthBar->SetPercent(Health / MaxHealth);
+	}
+}
+
+void ATower::S_InitHPPercentage_Implementation()
+{
+	if (CombatComp->Health != 0)
+	{
+		InitHPPercentage(CombatComp->Health, CombatComp->Max_Health);
+	}
+	else
+	{
+		FTimerHandle HPPercentage;
+		GetWorld()->GetTimerManager().SetTimer(HPPercentage, this, &ThisClass::S_InitHPPercentage, 0.1f, false);
+	}
+}
+
+void ATower::C_InitHPPercentage_Implementation(float Health, float MaxHealth)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%f, %f"), CombatComp->Health, CombatComp->Max_Health);
+	auto Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
+
+	if (Widget != nullptr)
+	{
+		if (MaxHealth != 0)
+			Widget->HealthBar->SetPercent(Health / MaxHealth);
+	}
 }
 
 void ATower::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!HasAuthority())
+	{
+		S_InitHPPercentage();
+		InitHPPercentage(CombatComp->Health, CombatComp->Max_Health);
+	}
 
 	// 플레이어 컨트롤러 찾기
 	FindPlayerPC();
@@ -125,6 +170,7 @@ void ATower::CheckDistanceToPlayer()
 
 	if (WidgetComponent->IsVisible() != bIsVisible)
 	{
+		Server_UpdateHPBar();
 		WidgetComponent->SetVisibility(bIsVisible);
 	}
 }
@@ -174,7 +220,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	if (!HasAuthority()) return 0;
+	if (!HasAuthority()) return false;
 
 	LastHitBy = EventInstigator;
 	
@@ -260,6 +306,20 @@ void ATower::TowerDestroyInClient_Implementation()
 	}
 
 	Destroy();
+}
+
+void ATower::Server_UpdateHPBar_Implementation()
+{
+	float HPPercent = CombatComp->Health / CombatComp->Max_Health;
+	Client_UpdateWidget(HPPercent);
+}
+
+void ATower::Client_UpdateWidget_Implementation(float HPPercent)
+{
+	if (UHealthBar* HPBar = Cast<UHealthBar>(WidgetComponent->GetWidget()))
+	{
+		HPBar->HealthBar->SetPercent(HPPercent);
+	}
 }
 
 void ATower::spawn()

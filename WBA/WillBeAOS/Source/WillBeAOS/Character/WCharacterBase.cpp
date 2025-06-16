@@ -9,61 +9,129 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
+#include "ShaderPrintParameters.h"
 #include "Kismet/GameplayStatics.h"
 #include "WPlayerController.h"
 #include "WPlayerState.h"
 #include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
 #include "Game/WGameMode.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/PlayerHPInfoBar.h"
 
 
-class AAOSActor;
+void AWCharacterBase::SetHPInfoBarColor()
+{
+	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	if (PS && PS->PlayerInfo.PlayerTeam != E_TeamID::Neutral)
+	{
+		UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget());
+		if (HPInfoBar)
+		{
+			if (IsLocallyControlled())
+			{
+				HPInfoBarColor = SelfHPColor;
+			
+				HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(HPInfoBarColor);
 
-void AWCharacterBase::S_SetHPInfoBarColor_Implementation()
-{	
-	if (CharacterTeam == E_TeamID::Blue)
-	{
-		HPInfoBarColor = BlueTeamHPColor; 
+				HPInfoBar->InvalidateLayoutAndVolatility();
+			}
+			else
+			{
+				if (PS->PlayerInfo.PlayerTeam == E_TeamID::Blue)
+				{
+					HPInfoBarColor = BlueTeamHPColor; 
+				}
+				else if (PS->PlayerInfo.PlayerTeam == E_TeamID::Red)
+				{
+					HPInfoBarColor = RedTeamHPColor;
+				}
+			
+				HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(HPInfoBarColor);
+
+				HPInfoBar->InvalidateLayoutAndVolatility();
+			}
+		}
 	}
-	else if (CharacterTeam == E_TeamID::Red)
+	else
 	{
-		HPInfoBarColor = RedTeamHPColor;
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::SetHPInfoBarColor, 0.1f, false);
 	}
-	
-	SetHPInfoBarColor(HPInfoBarColor);
 }
 
-void AWCharacterBase::SetHPInfoBarColor_Implementation(FLinearColor BarColor)
+void AWCharacterBase::SetHPPercentage()
 {
-	UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget());
-	if (HPInfoBar)
+	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	if (PS && PS->GetHP() != 0)
 	{
-		if (IsLocallyControlled())
+		if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
 		{
-			HPInfoBarColor = SelfHPColor;
-			
-			HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(HPInfoBarColor);
-
+			HPInfoBar->PlayerHPBar->SetPercent(PS->GetHPPercentage());
 			HPInfoBar->InvalidateLayoutAndVolatility();
 		}
 		else
 		{
-			HPInfoBar->PlayerHPBar->SetFillColorAndOpacity(BarColor);
-
-			HPInfoBar->InvalidateLayoutAndVolatility();
+			// 위젯이 아직 안 붙었을 경우 딜레이 후 재시도
+			FTimerHandle Handle;
+			GetWorld()->GetTimerManager().SetTimer(Handle, [this]()
+			{
+				SetHPPercentage();
+			}, 0.1f, false);
 		}
+	}
+	else
+	{
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::SetHPPercentage, 0.1f, false);
 	}
 }
 
-void AWCharacterBase::SetHPPercentage(float HPPercent)
+void AWCharacterBase::ShowNickName()
 {
-	if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
+	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	if (PS)
 	{
-		HPInfoBar->PlayerHPBar->SetPercent(HPPercent);
-		HPInfoBar->InvalidateLayoutAndVolatility();
+		if (PS->PlayerInfo.PlayerNickName == "")
+		{
+			FTimerHandle Handle;
+			GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::ShowNickName, 0.1f, false);
+		}
+		else
+		{
+			if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
+			{
+				HPInfoBar->PlayerNickName->SetText(FText::FromString(PS->PlayerInfo.PlayerNickName));
+			}
+		}
+	}
+	else
+	{
+		FTimerHandle Handle;
+		GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::ShowNickName, 0.1f, false);
+	}
+}
+
+void AWCharacterBase::CheckAllPlayerDistance()
+{
+	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	if (PS && !AllActors.IsEmpty())
+	{
+		for (APlayerState* Actor : AllActors)
+		{
+			if (AWCharacterBase* Character = Cast<AWCharacterBase>(Actor->GetPawn()))
+			{
+				float Dist = FVector::Dist(GetActorLocation(), Character->GetActorLocation());
+				bool bIsVisible = Dist <= MaxVisibleDistance;
+				
+				if (Character->HPInfoBarComponent->IsVisible() != bIsVisible)
+				{
+					Character->HPInfoBarComponent->SetVisibility(bIsVisible);
+				}
+			}
+		}
 	}
 }
 
@@ -92,6 +160,9 @@ AWCharacterBase::AWCharacterBase()
 	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
 	HPInfoBarComponent->SetupAttachment(GetRootComponent());
 	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
+	HPInfoBarComponent->SetVisibility(false);
+
+	bAlwaysRelevant = true;
 }
 
 
@@ -118,9 +189,34 @@ void AWCharacterBase::BeginPlay()
 		PC->SetControlRotation(LookAtRotation);
 	}
 	
-	if (!HasAuthority() && IsLocallyControlled())
+	if (!HasAuthority())
 	{
-		S_SetHPInfoBarColor();
+		SetHPInfoBarColor();
+		SetHPPercentage();
+		ShowNickName();
+
+		APlayerController* PCon = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
+		if (PCon && PCon->GetPawn() == this)
+		{
+			for (auto PlayerPawn : GetWorld()->GetGameState()->PlayerArray)
+			{
+				if (PlayerPawn == PCon->GetPlayerState<APlayerState>()) continue;
+				AllActors.Add(PlayerPawn);
+			}
+
+			HPInfoBarComponent->SetVisibility(true);
+			GetWorld()->GetTimerManager().SetTimer(CheckDistanceHandle, this, &ThisClass::CheckAllPlayerDistance, 0.2f, true);
+		}
+	}
+}
+
+void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (CheckDistanceHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceHandle);
 	}
 }
 

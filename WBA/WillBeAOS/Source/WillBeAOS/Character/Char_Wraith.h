@@ -20,6 +20,8 @@ protected:
 	void NM_HitParticle(FVector HitLocation);
 
 public:
+	FName CharacterName = "Wraith";
+	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void WraithAttack(FVector EnemyLocationParam);
 };

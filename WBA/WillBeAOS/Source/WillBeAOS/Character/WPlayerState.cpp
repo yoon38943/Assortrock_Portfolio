@@ -55,34 +55,14 @@ bool AWPlayerState::S_SetPlayerReady_Validate(bool bReady)
     return true;
 }
 
-void AWPlayerState::OnRep_UpdateHP()
-{
-    if (APawn* Pawn = GetPawn())
-    {
-        if (AWCharacterBase* Char = Cast<AWCharacterBase>(Pawn))
-        {
-            Char->SetHPPercentage(GetHPPercentage());
-        }
-    }
-    else
-    {
-        // 아직 Pawn이 안 붙었으면 조금 뒤에 재시도
-        FTimerHandle Handle;
-        GetWorld()->GetTimerManager().SetTimer(Handle, [this]()
-        {
-            OnRep_UpdateHP();
-        }, 0.1f, false);
-    }
-}
-
 AWPlayerState::AWPlayerState()
 {
     bReplicates = true;
     
     // Initialize default values for the player's stats
-    MaxHP = 100;
+    MaxHP = 200;
     HP = MaxHP;
-    CPower = 50;
+    CPower = 20;
     CAdditionalHealth = 0;
     CDefense = 5;
     CSpeed = 600.0f; // Unreal units per second
@@ -111,6 +91,12 @@ void AWPlayerState::SetHP(int32 NewHP)
 void AWPlayerState::NM_SetHP_Implementation(float NewHP)
 {
     HP = NewHP;
+
+    AWCharacterBase* Char = Cast<AWCharacterBase>(GetPawn());
+    if (Char)
+    {
+        Char->SetHPPercentage();
+    }
 }
 
 float AWPlayerState::GetHPPercentage()
@@ -213,4 +199,5 @@ void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(ThisClass, bIsGameReady);
     DOREPLIFETIME(ThisClass, PlayerInfo);
     DOREPLIFETIME(ThisClass, HP);
+    DOREPLIFETIME(ThisClass, MaxHP);
 }

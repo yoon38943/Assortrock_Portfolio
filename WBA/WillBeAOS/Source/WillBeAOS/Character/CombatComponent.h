@@ -71,11 +71,11 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Collision")
 	TArray<AActor*> AlreadyHitActors = {};
-
-	UPROPERTY(Replicated ,BlueprintReadOnly, Category = "Health")
-	float Health;
+	
 	UPROPERTY(EditAnywhere, Category = "Health")
 	float Max_Health = 100;
+	UPROPERTY(Replicated ,BlueprintReadOnly, Category = "Health")
+	float Health = Max_Health;
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	bool IsDead;
 

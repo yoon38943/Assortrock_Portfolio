@@ -34,6 +34,8 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	EnemyDetector->EnemyClass = AActor::StaticClass();
 	EnemyDetector->DetectionRadius = 1000.f;
 	EnemyDetector->OnEnemyDetected.AddDynamic(this, &ThisClass::HandleEnemyDetected);
+
+	bAlwaysRelevant = true;
 	
 	SetGoldReward(KILLGOLD);
 }

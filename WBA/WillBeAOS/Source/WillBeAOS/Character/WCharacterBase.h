@@ -28,6 +28,8 @@ class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 	
 public:
 	E_TeamID CharacterTeam;
+
+	FName CharacterName = "Shinbi";
 	
 	// HP Widget 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -41,15 +43,21 @@ public:
 	FLinearColor SelfHPColor;
 	
 	FLinearColor HPInfoBarColor;
+	
+	virtual void SetHPInfoBarColor();
+	
+	virtual void SetHPPercentage();
 
-	UFUNCTION(Server, Reliable)
-	virtual void S_SetHPInfoBarColor();
+	virtual void ShowNickName();
 
-	UFUNCTION(NetMulticast, Reliable)
-	virtual void SetHPInfoBarColor(FLinearColor BarColor);
+	// 플레이어 거리 계산
+	TArray<APlayerState*> AllActors;
+	
+	FTimerHandle CheckDistanceHandle;
+	
+	void CheckAllPlayerDistance();
 
-	UFUNCTION()
-	virtual void SetHPPercentage(float HPPercent);
+	float MaxVisibleDistance = 3500.f;
 	
 public:
 	AWCharacterBase();
@@ -145,6 +153,7 @@ public:
 
 private:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 public:
 	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Combat")
