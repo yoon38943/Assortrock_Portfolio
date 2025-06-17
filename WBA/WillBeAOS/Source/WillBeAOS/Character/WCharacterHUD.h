@@ -91,17 +91,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Speed;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
-	UTextBlock* Level;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
-	UTextBlock* Exp;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
-	UTextBlock* Max_Exp;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Gold;
 	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "Stat")
 	FText SetGold();
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
-	UTextBlock* AbilityLevel;
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* CurrentHP;
 

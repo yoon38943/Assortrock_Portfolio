@@ -8,6 +8,8 @@
 
 enum class E_TeamID : uint8;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFindSessionFailed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFindSessionSuccess);
 
 UCLASS()
 class WILLBEAOS_API UWGameInstance : public UGameInstance
@@ -71,4 +73,9 @@ protected:
 	const ULocalPlayer* LocalPlayer;
 
 	bool bSessionLeaveBeforeCreateSession = false;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnFindSessionFailed OnFindSessionFailed;
+	UPROPERTY(BlueprintAssignable)
+	FOnFindSessionSuccess OnFindSessionSuccess;
 };

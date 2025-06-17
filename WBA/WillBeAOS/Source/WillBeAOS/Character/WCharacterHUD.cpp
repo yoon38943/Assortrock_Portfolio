@@ -204,18 +204,6 @@ void UWCharacterHUD::SetState()
 		FString SpeedString = FString::Printf(TEXT("스피드: %.1f"), AWPS->CSpeed/600);
 		Speed->SetText(FText::FromString(SpeedString));
 
-		FString CExpString = FString::Printf(TEXT("%d / "), AWPS->CCurrentExp);
-		Exp->SetText(FText::FromString(CExpString));
-
-		FString MExpString = FString::Printf(TEXT("%d"), AWPS->CExperience);
-		Max_Exp->SetText(FText::FromString(MExpString));
-
-		FString LevelString = FString::Printf(TEXT("레벨: %d"), AWPS->CLevel);
-		Level->SetText(FText::FromString(LevelString));
-
-		FString AbLevelString = FString::Printf(TEXT("ALv: %d"), AWPS->CAbLevel);
-		AbilityLevel->SetText(FText::FromString(AbLevelString));
-
 		FString HealthString = FString::Printf(TEXT("%.f / %.f"), AWPS->GetHP(), AWPS->GetMaxHP());
 		CurrentHP->SetText(FText::FromString(HealthString));
 		

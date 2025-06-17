@@ -104,7 +104,7 @@ void UCombatComponent::CollisionTrace()
 	AWCharacterBase* Char = Cast<AWCharacterBase>(GetOwner());
 	if (Char)
 	{
-		HalfSize = FVector(30, 30, Char->GetMesh()->Bounds.BoxExtent.Z);
+		HalfSize = FVector(50, 50, Char->GetMesh()->Bounds.BoxExtent.Z);
 	}
 	AWMinionsCharacterBase* MinionChar = Cast<AWMinionsCharacterBase>(GetOwner());
 	if (MinionChar)

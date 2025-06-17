@@ -144,6 +144,7 @@ void UWGameInstance::OnFindSessionComplete(bool Success)
 	if (!OnlineSessionInterface.IsValid() || !Success)
 	{
 		UE_LOG(LogTemp, Log, TEXT("클라: 세션 찾기 실패"));
+		OnFindSessionFailed.Broadcast();
 		return;
 	}
 	    
@@ -164,10 +165,13 @@ void UWGameInstance::OnFindSessionComplete(bool Success)
 		{
 			UE_LOG(LogTemp, Log, TEXT("찾은 세션 Key값에 대한 Value : %s"), *SessionValue);
 
+			OnFindSessionSuccess.Broadcast();
 			OnlineSessionInterface->JoinSession(0, NAME_GameSession, Result);
+			return;
 		}
 	}
 
+	OnFindSessionFailed.Broadcast();
 	UE_LOG(LogTemp, Log, TEXT("클라: 모든 검색 세션 경유"));
 }
 
@@ -225,7 +229,7 @@ void UWGameInstance::CreateGameSession()
 		
 		SessionSettings = MakeShareable(new FOnlineSessionSettings());
 		SessionSettings->bIsLANMatch = true;
-		SessionSettings->NumPublicConnections = 3;
+		SessionSettings->NumPublicConnections = 2;
 		SessionSettings->bAllowJoinInProgress = true;
 		SessionSettings->bAllowJoinViaPresence = false;
 		SessionSettings->bShouldAdvertise = true;

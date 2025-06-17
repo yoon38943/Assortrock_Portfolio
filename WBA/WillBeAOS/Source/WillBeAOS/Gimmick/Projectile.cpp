@@ -97,7 +97,7 @@ void AProjectile::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedCompone
 	{
 		UGameplayStatics::ApplyDamage(
 			Target,
-			15,
+			40,
 			GetInstigatorController(),
 			this,
 			UDamageType::StaticClass()

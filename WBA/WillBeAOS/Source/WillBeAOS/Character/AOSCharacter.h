@@ -28,6 +28,10 @@ public:
 	// 죽음 변수
 	UPROPERTY(BlueprintReadWrite, Category = "Dead", Replicated)
 	bool bIsDead = false;
+
+	// 공격 록온 변수
+	UPROPERTY(BlueprintReadWrite, Category = "LockOn")
+	bool bIsEnemyLockOn;
 	
 protected:
 	virtual void BeginPlay() override;
