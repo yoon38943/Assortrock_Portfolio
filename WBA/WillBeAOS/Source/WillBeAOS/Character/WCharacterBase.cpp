@@ -9,7 +9,6 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
-#include "ShaderPrintParameters.h"
 #include "Kismet/GameplayStatics.h"
 #include "WPlayerController.h"
 #include "WPlayerState.h"
@@ -18,6 +17,7 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
 #include "Game/WGameMode.h"
+#include "Gimmick/Tower.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/PlayerHPInfoBar.h"
 
@@ -526,6 +526,12 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 		{
 			PS->Server_ApplyDamage(DamageAmount);
 		}
+	}
+
+	AWCharacterBase* AttackChar = Cast<AWCharacterBase>(DamageCauser);
+	if (TowerWithCharacterInside && AttackChar && TowerWithCharacterInside->OverlappingActors.Contains(AttackChar))
+	{
+		TowerWithCharacterInside->OverlappingActors.Swap(0, TowerWithCharacterInside->OverlappingActors.Find(AttackChar));
 	}
 
 	//ServerPlayMontage(HitAnimMontage);

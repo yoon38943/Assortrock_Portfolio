@@ -105,7 +105,7 @@ public://타격 관련
 	FName BoneName;
 	FHitResult OutHit;
 	// 오버랩된 액터들의 배열 ( 공격 대상들 )
-	UPROPERTY(BlueprintReadWrite, Category = SpawnActor)
+	UPROPERTY(BlueprintReadWrite, Category = SpawnActor, Replicated)
 	TArray<AAOSCharacter*> OverlappingActors = {};
 	ETraceTypeQuery TraceChannel;
 	TArray<AActor*> ActorsToIgnore;
@@ -139,7 +139,7 @@ public:
 	void FindPlayerPawn();
 
 	// 타겟 빔
-	void BeamToTarget(FVector TargetLocation);
+	void BeamToTarget(FVector TargetLocation, AAOSCharacter* Target);
 
 	// Projectile
 	float LastTime = 0.0f;

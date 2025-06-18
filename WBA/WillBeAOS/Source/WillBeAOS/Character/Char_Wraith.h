@@ -19,9 +19,7 @@ protected:
 	UFUNCTION(NetMulticast, reliable)
 	void NM_HitParticle(FVector HitLocation);
 
-public:
-	FName CharacterName = "Wraith";
-	
+public:	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void WraithAttack(FVector EnemyLocationParam);
 };

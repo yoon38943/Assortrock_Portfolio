@@ -33,7 +33,7 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	EnemyDetector = CreateDefaultSubobject<UWEnemyDetectorComponent>(TEXT("Perception"));
 	EnemyDetector->EnemyClass = AActor::StaticClass();
 	EnemyDetector->DetectionRadius = 1000.f;
-	EnemyDetector->OnEnemyDetected.AddDynamic(this, &ThisClass::HandleEnemyDetected);
+	//EnemyDetector->OnEnemyDetected.AddDynamic(this, &ThisClass::HandleEnemyDetected);
 
 	bAlwaysRelevant = true;
 	

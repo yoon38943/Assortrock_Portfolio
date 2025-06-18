@@ -13,6 +13,9 @@ class WILLBEAOS_API AAOSCharacter : public ACharacter, public IDestructible
 public:
 	AAOSCharacter();
 
+	UPROPERTY(BlueprintReadWrite)
+	class ATower* TowerWithCharacterInside;
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly)
 	E_TeamID TeamID;
 

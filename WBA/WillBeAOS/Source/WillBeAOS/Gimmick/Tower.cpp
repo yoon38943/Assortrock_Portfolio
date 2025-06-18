@@ -120,7 +120,7 @@ void ATower::Tick(float DeltaTime)
 		TargetOfActors = OverlappingActors[0];
 
 		// 타겟에 빔 조준
-		BeamToTarget(TargetOfActors->GetActorLocation());
+		BeamToTarget(TargetOfActors->GetActorLocation(), TargetOfActors);
 	}
 	
 	if (HasAuthority() && OverlappingActors.IsValidIndex(0))
@@ -149,8 +149,17 @@ void ATower::Tick(float DeltaTime)
 	}
 }
 
-void ATower::BeamToTarget(FVector TargetLocation)
+void ATower::BeamToTarget(FVector TargetLocation, AAOSCharacter* Target)
 {
+	if (Cast<AWCharacterBase>(Target))
+	{
+		NiagaraComponent->SetVariableLinearColor("BeamColor", FLinearColor::Red);
+	}
+	else
+	{
+		NiagaraComponent->SetVariableLinearColor("BeamColor", FLinearColor::Blue);
+	}
+	
 	FVector BeamStart = AttackStartPoint->GetComponentLocation(); // 빔 시작 위치
 	FVector BeamEnd = TargetLocation;         // 빔 끝 위치
 		
@@ -269,18 +278,26 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AAOSCharacter* EnemyChar = Cast<AAOSCharacter>(OtherActor);
-	if ((EnemyChar && EnemyChar->TeamID != TeamID))
+	AAOSCharacter* PlayChar = Cast<AAOSCharacter>(OtherActor);
+	if ((PlayChar && PlayChar->TeamID != TeamID))
 	{
-		OverlappingActors.AddUnique(EnemyChar);
+		// 적군 타겟 배열 등록
+		OverlappingActors.AddUnique(PlayChar);
+	}
+	else if (PlayChar && PlayChar->TeamID == TeamID)
+	{
+		// 아군일 때 로직
+		PlayChar->TowerWithCharacterInside = this;
 	}
 }
 
 void ATower::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	AAOSCharacter* DetectedEnemy = Cast<AAOSCharacter>(OtherActor);
-	if (IsValid(DetectedEnemy))
-		OverlappingActors.Remove(DetectedEnemy);
+	AAOSCharacter* DetectedChar = Cast<AAOSCharacter>(OtherActor);
+	if (DetectedChar && OverlappingActors.Contains(DetectedChar))
+		OverlappingActors.Remove(DetectedChar);
+	else if (DetectedChar && DetectedChar->TeamID == TeamID && DetectedChar->TowerWithCharacterInside == this)
+		DetectedChar->TowerWithCharacterInside = nullptr;
 	
 	// 타깃 배열이 비어있으면 스폰 시간 초기화 및 Niagara 비활성화
 	if (OverlappingActors.IsEmpty())
@@ -403,4 +420,5 @@ void ATower::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     
 	DOREPLIFETIME(ATower, TargetOfActors);
+	DOREPLIFETIME(ATower, OverlappingActors);
 }

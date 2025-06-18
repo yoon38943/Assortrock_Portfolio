@@ -28,8 +28,6 @@ class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 	
 public:
 	E_TeamID CharacterTeam;
-
-	FName CharacterName = "Shinbi";
 	
 	// HP Widget 관련
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -135,9 +133,9 @@ public:
 	void C_BeingDead(AWPlayerController* PC);
 
 
-	//?�리게이???�수
+	// 델리게이트 함수
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = Dead)
-	void NM_BeingDead();//죽을???�리게이?�로 ?�출???�수
+	void NM_BeingDead();//죽을 때 델리게이트로 호출 함수
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void HandleApplyPointDamage(FHitResult LastHit);//?�인???��?지�?줄시 ?�리게이?�로 ?�출???�수
 	UFUNCTION(BlueprintCallable, Category = "Combat")//TakeDamage ?�수 ?�버?�이??
