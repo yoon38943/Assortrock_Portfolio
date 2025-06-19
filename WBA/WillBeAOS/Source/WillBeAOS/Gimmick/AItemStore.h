@@ -5,6 +5,8 @@
 #include "GameFramework/Actor.h"
 #include "AItemStore.generated.h"
 
+enum class E_TeamID : uint8;
+
 UCLASS()
 class WILLBEAOS_API AItemStore : public AActor
 {
@@ -19,6 +21,9 @@ public:
 	UStaticMeshComponent* MeshComponent;
 
 	bool IsShowStore = false;
+
+	UPROPERTY(EditAnywhere)
+	E_TeamID StoreTeam;
 	
 public:	
 	AItemStore();

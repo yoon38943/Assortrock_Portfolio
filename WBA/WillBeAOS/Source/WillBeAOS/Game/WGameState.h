@@ -72,24 +72,14 @@ public:
 public:
 	void SetGameStart();
 public://리스폰 관련
-	UPROPERTY(BlueprintReadWrite)
-	int32 RespawnTime = 5;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	int32 RespawnTime = 8;
+
+	FTimerHandle RespawnTimeHandle;
+	void AddRespawnTime();
 
 public://타워 관련
-	void AddTowerArray(AAOSActor* SpawnedActor);
-	
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Tower")
-	TArray<ATower*> BlueTowerArray = {};
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Tower")
-	TArray<ATower*> RedTowerArray = {};
-	
-	UFUNCTION(BlueprintCallable, Category = "Tower")
-	int32 GetBlueTowerNum();
-	UFUNCTION(BlueprintCallable, Category = "Tower")
-	int32 GetRedTowerNum();
-	
-	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = "Tower")
-	void RemoveTower(ATower* WTower);
+	void AssignNexus(AAOSActor* SpawnedActor);
 
 protected://넥서스
 	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Tower")
@@ -103,4 +93,5 @@ public:
 	
 protected:
 	virtual void BeginPlay();
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 };

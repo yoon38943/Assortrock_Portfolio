@@ -5,6 +5,8 @@
 
 void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocationParam)
 {
+	if(EnemyLocationParam.IsZero()) return;
+	
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add((UEngineTypes::ConvertToObjectType(ECC_Pawn)));
 	ObjectTypes.Add((UEngineTypes::ConvertToObjectType(ECC_WorldStatic)));

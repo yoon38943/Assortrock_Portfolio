@@ -30,57 +30,6 @@ public:
 	TObjectPtr<class UProgressBar>HealthBar;
 	UFUNCTION(BlueprintPure, Category = "Health")
 	float GetHealthBarPercentage();
-
-	//스킬데이터 구조체
-	struct FSkillCooldownData
-	{
-		float SkillCooldown;
-		float CurrentSkillCooldown;
-		UProgressBar* SkillProgress;
-		UTextBlock* SkillTimer;
-	};
-
-	void SetSkillTimer(FSkillCooldownData& SkillData);
-	FText ShowSkillTimer(FSkillCooldownData& SkillData);
-	float ShowSkillProgress(FSkillCooldownData& SkillData);
-
-	FSkillCooldownData SkillLData;
-	FSkillCooldownData SkillRData;
-
-	//평타(LeftClick)쿨타임
-	UPROPERTY(BlueprintReadWrite, Category = "Skill_L")
-	float SkillLCooldown = 0.5f;
-	FTimerHandle CooldownLTimerHandle;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Skill_L")
-	TObjectPtr<class UProgressBar>Skill_LProgress;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Skill_L")
-	UTextBlock* Skill_LTimer;
-	UFUNCTION(BlueprintCallable, Category = "Skill_L")
-	void SetSkillLTimer();
-	UFUNCTION(BlueprintPure, Category = "Skill_L")
-	FText ShowSkillLTimer();
-	UFUNCTION(BlueprintPure, Category = "Skill_L")
-	float ShowSkillLProgress();
-	UFUNCTION(BlueprintCallable, Category = "Skill_L")
-	void UpdateSkillLTimer();
-
-	//스킬R(RightClick)쿨타임
-	UPROPERTY(BlueprintReadWrite, Category = "Skill_L")
-	float SkillRCooldown = 3.0f;
-	FTimerHandle CooldownRTimerHandle;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Skill_R")
-	TObjectPtr<class UProgressBar>Skill_RProgress;
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Skill_R")
-	UTextBlock* Skill_RTimer;
-	UFUNCTION(BlueprintCallable, Category = "Skill_R")
-	void SetSkillRTimer();
-	UFUNCTION(BlueprintPure, Category = "Skill_R")
-	FText ShowSkillRTimer();
-	UFUNCTION(BlueprintPure, Category = "Skill_R")
-	float ShowSkillRProgress();
-	UFUNCTION(BlueprintCallable, Category = "Skill_R")
-	void UpdateSkillRTimer();
-
 	
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Power;

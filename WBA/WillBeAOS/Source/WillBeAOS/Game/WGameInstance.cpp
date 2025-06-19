@@ -231,11 +231,11 @@ void UWGameInstance::CreateGameSession()
 		SessionSettings->bIsLANMatch = true;
 		SessionSettings->NumPublicConnections = 2;
 		SessionSettings->bAllowJoinInProgress = true;
-		SessionSettings->bAllowJoinViaPresence = false;
 		SessionSettings->bShouldAdvertise = true;
-		SessionSettings->bUsesPresence = false;
-		SessionSettings->bUseLobbiesIfAvailable = false;
+		SessionSettings->bUseLobbiesIfAvailable = true;
 		SessionSettings->bIsDedicated = true;
+		SessionSettings->bUsesPresence = false;
+		SessionSettings->bAllowJoinViaPresence = false;
 
 		SessionSettings->Set(FName("AOSPortfolio"), FString("MyAOSGame"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 

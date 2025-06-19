@@ -106,7 +106,7 @@ void AWGameMode::SpawnTower()
 			{
 				SpawnedActor->SetReplicates(true);
 				SpawnedActor->SetTeamID(SpawnPoint->TeamID);
-				WGS->AddTowerArray(SpawnedActor);
+				WGS->AssignNexus(SpawnedActor);
 				AssignTeam(SpawnedActor,static_cast<int32>(SpawnedActor->TeamID));
 				ATower* TowerColor = Cast<ATower>(SpawnedActor);
 				if (TowerColor)

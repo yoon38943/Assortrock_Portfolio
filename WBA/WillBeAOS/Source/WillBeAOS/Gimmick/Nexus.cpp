@@ -64,9 +64,6 @@ void ANexus::NM_DestroyNexus_Implementation()
 void ANexus::BeginPlay()
 {
 	Super::BeginPlay();
-
-	NexusHP = 200;
-	CombatComp->Health = NexusHP;
 }
 
 float ANexus::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

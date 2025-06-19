@@ -129,6 +129,7 @@ void AWCharacterBase::CheckAllPlayerDistance()
 				if (Character->HPInfoBarComponent->IsVisible() != bIsVisible)
 				{
 					Character->HPInfoBarComponent->SetVisibility(bIsVisible);
+					Character->HPInfoBarComponent->SetVisibility(bIsVisible);
 				}
 			}
 		}
@@ -225,6 +226,7 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, CharacterDamage);
+	DOREPLIFETIME(ThisClass, CharacterTeam);
 }
 
 void AWCharacterBase::Tick(float DeltaTime)	
@@ -281,7 +283,7 @@ void AWCharacterBase::Move(const FInputActionValue& Value)
 	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
-		PC->CancelRecall();
+		PC->Server_CancelRecall();
 	}
 	
 	FVector2D MovementVector = Value.Get<FVector2D>();
@@ -299,6 +301,11 @@ void AWCharacterBase::Move(const FInputActionValue& Value)
 	}
 }
 
+void AWCharacterBase::NM_StopPlayMontage_Implementation()
+{
+	StopAnimMontage();
+}
+
 void AWCharacterBase::Attack()
 {
 	if (IsDead == true) return;
@@ -306,7 +313,7 @@ void AWCharacterBase::Attack()
 	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
-		PC->CancelRecall();
+		PC->Server_CancelRecall();
 	}
 	
 	if (!HasAuthority())

@@ -11,8 +11,6 @@ class WILLBEAOS_API ANexus : public AAOSActor
 	
 	GENERATED_BODY()
 
-	int NexusHP;
-
 	UPROPERTY(EditAnywhere, Category = "GameEnd")
 	UParticleSystem* DestroyParticle;
 

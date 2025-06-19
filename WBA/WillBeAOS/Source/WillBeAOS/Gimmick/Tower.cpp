@@ -120,12 +120,12 @@ void ATower::Tick(float DeltaTime)
 		TargetOfActors = OverlappingActors[0];
 
 		// 타겟에 빔 조준
-		BeamToTarget(TargetOfActors->GetActorLocation(), TargetOfActors);
+		if (TargetOfActors)
+			BeamToTarget(TargetOfActors->GetActorLocation(), TargetOfActors);
 	}
 	
 	if (HasAuthority() && OverlappingActors.IsValidIndex(0))
 	{
-
 		TargetOfActors = OverlappingActors[0];
 		
 		// 공격 2초마다 한번씩 스폰
@@ -256,13 +256,6 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 		if ((CombatComp->GetIsDead()))
 		{
-			AWGS = Cast<AWGameState>(GetWorld()->GetGameState());
-
-			if (AWGS != nullptr)
-			{
-				AWGS->RemoveTower(this);
-			}
-
 			AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
@@ -278,6 +271,8 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (!HasAuthority()) return;
+	
 	AAOSCharacter* PlayChar = Cast<AAOSCharacter>(OtherActor);
 	if ((PlayChar && PlayChar->TeamID != TeamID))
 	{

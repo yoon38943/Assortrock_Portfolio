@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Character/WCharacterBase.h"
 #include "Character/WPlayerController.h"
+#include "Character/WPlayerState.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -32,14 +33,38 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	if (!OtherActor) return;
 
-	if(!IsValid(Cast<AWCharacterBase>(OtherActor))) return;
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(OtherActor);
+	if(!PlayerChar || StoreTeam != PlayerChar->CharacterTeam) return;
 	
-	AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
-	APawn* Player = PC->GetPawn();
-
-	if (OtherActor == Player)
+	GetWorld()->GetTimerManager().SetTimer(PlayerChar->HealingTimerHandle, [this, PlayerChar]()
 	{
-		PC->IsOpenedStore = true;
+		if (HasAuthority())
+		{
+			AWPlayerState* PS = Cast<AWPlayerState>(PlayerChar->GetPlayerState());
+			if (PS && PS->GetHP() < PS->GetMaxHP())
+			{
+				float HealAmount = PS->GetHP() + 50;
+				if (HealAmount <= PS->GetMaxHP())
+				{
+					PS->SetHP(HealAmount);
+				}
+				else
+				{
+					PS->SetHP(PS->GetMaxHP());
+				}
+			}
+		}
+	}, 1.f, true);
+
+	if (!HasAuthority())
+	{
+		AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+		APawn* Player = PC->GetPawn();
+
+		if (OtherActor == Player)
+		{
+			PC->IsOpenedStore = true;
+		}
 	}
 }
 
@@ -48,6 +73,14 @@ void AItemStore::NotifyActorEndOverlap(AActor* OtherActor)
 	Super::NotifyActorEndOverlap(OtherActor);
 
 	if (!OtherActor) return;
+
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(OtherActor);
+	if(!PlayerChar || StoreTeam != PlayerChar->CharacterTeam) return;
+
+	if (PlayerChar->HealingTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(PlayerChar->HealingTimerHandle);
+	}
 
 	AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
 	APawn* Player = PC->GetPawn();

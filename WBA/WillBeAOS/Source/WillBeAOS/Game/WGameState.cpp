@@ -13,6 +13,11 @@ void AWGameState::BeginPlay()
 {
     Super::BeginPlay();
 
+    if (HasAuthority())
+    {
+        GetWorld()->GetTimerManager().SetTimer(RespawnTimeHandle, this, &ThisClass::AddRespawnTime, 300.f, true);
+    }
+
     WGameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
     if (WGameMode == nullptr)
     {
@@ -21,6 +26,16 @@ void AWGameState::BeginPlay()
     else
     {
         SetGamePlay(E_GamePlay::GameInit);
+    }
+}
+
+void AWGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    Super::EndPlay(EndPlayReason);
+
+    if (RespawnTimeHandle.IsValid())
+    {
+        GetWorld()->GetTimerManager().ClearTimer(RespawnTimeHandle);
     }
 }
 
@@ -222,21 +237,14 @@ void AWGameState::SetGameStart()
     WGameMode->SpawnMinions();
 }
 
-void AWGameState::AddTowerArray(AAOSActor* SpawnedActor)
+void AWGameState::AddRespawnTime()
 {
-    ATower* WTower = Cast<ATower>(SpawnedActor);
-    if (WTower)
-    {
-        if (WTower->TeamID == E_TeamID::Red)
-        {
-            RedTowerArray.Add(WTower);
-        }
-        else if (WTower->TeamID == E_TeamID::Blue)
-        {
-            BlueTowerArray.Add(WTower);
-        }
-    }
-    else if (ANexus* WNexus = Cast<ANexus>(SpawnedActor))
+    RespawnTime += 5;
+}
+
+void AWGameState::AssignNexus(AAOSActor* SpawnedActor)
+{
+    if (ANexus* WNexus = Cast<ANexus>(SpawnedActor))
     {
         if (WNexus->TeamID == E_TeamID::Red)
         {
@@ -247,16 +255,12 @@ void AWGameState::AddTowerArray(AAOSActor* SpawnedActor)
             BlueNexus = WNexus;
         }
     }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Tower %s not found"), *SpawnedActor->GetName());
-    }
 }
 
 
 float AWGameState::GetBlueNexusHP()
 {
-    if (BlueNexus != nullptr)   
+    if (BlueNexus)   
     {
         return BlueNexus->GetNexusHPPercent();
         
@@ -265,48 +269,18 @@ float AWGameState::GetBlueNexusHP()
 
 float AWGameState::GetRedNexusHP()
 {
-    if (RedNexus != nullptr)   
+    if (RedNexus)   
     {
         return RedNexus->GetNexusHPPercent();
         
     } return 0;
 }
 
-int32 AWGameState::GetBlueTowerNum()
-{
-    return BlueTowerArray.Num();
-}
-
-int32 AWGameState::GetRedTowerNum()
-{
-    return RedTowerArray.Num();
-}
-
-void AWGameState::RemoveTower_Implementation(ATower* WTower)
-{
-    if (WTower)
-    {
-        if (WTower->TeamID == E_TeamID::Red && RedTowerArray.Contains(WTower))
-        {
-            RedTowerArray.Remove(WTower);
-        }
-        else if (WTower->TeamID == E_TeamID::Blue && BlueTowerArray.Contains(WTower))
-        {
-            BlueTowerArray.Remove(WTower);
-        }
-        else
-        {
-            UE_LOG(LogTemp,Warning,TEXT("Tower is not Found or Netural"));
-        }
-    }
-}
-
 void AWGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     
-    DOREPLIFETIME(ThisClass,BlueTowerArray);
-    DOREPLIFETIME(ThisClass,RedTowerArray);
     DOREPLIFETIME(ThisClass,BlueNexus);
     DOREPLIFETIME(ThisClass,RedNexus);
+    DOREPLIFETIME(ThisClass,RespawnTime);
 }

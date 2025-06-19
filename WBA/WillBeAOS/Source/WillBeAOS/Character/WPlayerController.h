@@ -56,15 +56,22 @@ public:	//상점 관련
 	
 public:
 	// ---- 귀환 관련 함수 ----
+	UPROPERTY(Replicated)
 	bool IsRecalling = false;
 	FTimerHandle RecallTimerHandle;
 	UPROPERTY(BlueprintReadWrite)
 	float RecallTime = 8.f;
 
+	UFUNCTION(Server, Reliable)
 	void StartRecall();
+	UFUNCTION(Client, Reliable)
+	void ShowRecallWidget();
+	UFUNCTION(Client, Reliable)
+	void HiddenRecallWidget(bool IsRecallCancel);
+	UFUNCTION(Server, Reliable)
+	void Server_CancelRecall();
 	void CancelRecall();
 	void CompleteRecall();
-	UFUNCTION(Server, Reliable)
 	void RecallToBase();
 
 	UPROPERTY(EditDefaultsOnly, Category = UI)

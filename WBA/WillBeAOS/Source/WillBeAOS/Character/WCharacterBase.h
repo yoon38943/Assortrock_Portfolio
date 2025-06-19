@@ -27,6 +27,7 @@ class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 	class UCombatComponent* CombatComp;
 	
 public:
+	UPROPERTY(Replicated)
 	E_TeamID CharacterTeam;
 	
 	// HP Widget 관련
@@ -41,6 +42,8 @@ public:
 	FLinearColor SelfHPColor;
 	
 	FLinearColor HPInfoBarColor;
+
+	FTimerHandle HealingTimerHandle;
 	
 	virtual void SetHPInfoBarColor();
 	
@@ -108,6 +111,8 @@ public:
 	void ServerPlayMontage(UAnimMontage* Montage);
 	UFUNCTION(NetMulticast, Reliable)
 	void MultiPlayMontage(UAnimMontage* Montage);
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_StopPlayMontage();
 	
 	// ---- Attack 관련 함수 ----
 	void Attack();

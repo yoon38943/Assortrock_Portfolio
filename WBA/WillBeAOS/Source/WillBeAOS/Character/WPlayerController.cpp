@@ -108,21 +108,13 @@ void AWPlayerController::OnRep_Countdown()
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("GameCountdown %d"),CountdownTime));
 }
 
-void AWPlayerController::StartRecall()
+void AWPlayerController::StartRecall_Implementation()
 {
 	if (IsRecalling) return;
 
 	IsRecalling = true;
-	UE_LOG(LogTemp, Warning, TEXT("귀환 시작!"));
 
-	if (!RecallWidget)
-	{
-		RecallWidget = CreateWidget<UUserWidget>(this, RecallWidgetClass);
-		if (RecallWidget)
-		{
-			RecallWidget->AddToViewport();
-		}
-	}
+	ShowRecallWidget();
 
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
 	if (PlayerChar)
@@ -136,26 +128,58 @@ void AWPlayerController::StartRecall()
 	GetWorldTimerManager().SetTimer(RecallTimerHandle, this, &ThisClass::CompleteRecall, RecallTime, false);
 }
 
-void AWPlayerController::CancelRecall()
+void AWPlayerController::ShowRecallWidget_Implementation()
 {
-	if (!IsRecalling) return;
+	UE_LOG(LogTemp, Warning, TEXT("귀환 시작!"));
 
-	IsRecalling = false;
-	GetWorldTimerManager().ClearTimer(RecallTimerHandle);
+	if (!RecallWidget)
+	{
+		RecallWidget = CreateWidget<UUserWidget>(this, RecallWidgetClass);
+		if (RecallWidget)
+		{
+			RecallWidget->AddToViewport();
+		}
+	}
+}
 
+void AWPlayerController::HiddenRecallWidget_Implementation(bool IsRecallCancel)
+{
+	if (IsRecallCancel)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("귀환 취소됨!"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("귀환 성공!"));
+	}
+	
 	if (RecallWidget && RecallWidget->IsInViewport())
 	{
 		RecallWidget->RemoveFromParent();
 		RecallWidget = nullptr;
 	}
+}
+
+void AWPlayerController::Server_CancelRecall_Implementation()
+{
+	CancelRecall();
+}
+
+void AWPlayerController::CancelRecall()
+{
+	if (!IsRecalling) return;
+
+	IsRecalling = false;
+	if (RecallTimerHandle.IsValid())
+		GetWorldTimerManager().ClearTimer(RecallTimerHandle);
+
+	HiddenRecallWidget(true);
 
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
 	if (PlayerChar)
 	{
-		PlayerChar->StopAnimMontage();
+		PlayerChar->NM_StopPlayMontage();
 	}
-	
-	UE_LOG(LogTemp, Warning, TEXT("귀환 취소됨!"));
 }
 
 void AWPlayerController::CompleteRecall()
@@ -163,13 +187,8 @@ void AWPlayerController::CompleteRecall()
 	if (!IsRecalling) return;
 
 	IsRecalling = false;
-	UE_LOG(LogTemp, Warning, TEXT("귀환 성공함"));
-	
-	if (RecallWidget && RecallWidget->IsInViewport())
-	{
-		RecallWidget->RemoveFromParent();
-		RecallWidget = nullptr;
-	}
+
+	HiddenRecallWidget(false);
 	
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
 	if (PlayerChar)
@@ -182,7 +201,7 @@ void AWPlayerController::CompleteRecall()
 	GetWorldTimerManager().ClearTimer(RecallTimerHandle);
 }
 
-void AWPlayerController::RecallToBase_Implementation()
+void AWPlayerController::RecallToBase()
 {
 	if (AWPlayerState* WPlayerState = GetPlayerState<AWPlayerState>())
 	{
@@ -299,4 +318,5 @@ void AWPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, CountdownTime);
+	DOREPLIFETIME(ThisClass, IsRecalling);
 }
