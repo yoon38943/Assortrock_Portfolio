@@ -5,6 +5,7 @@
 #include "Character/WCharacterBase.h"
 #include "Character/WPlayerController.h"
 #include "Character/WPlayerState.h"
+#include "Game/WGameMode.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -25,6 +26,12 @@ AItemStore::AItemStore()
 void AItemStore::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	if (GM)
+	{
+		GM->RespawnOpenStoreDelegate.AddUObject(this, &AItemStore::UpdateStoreOverlap);
+	}
 }
 
 void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
@@ -89,4 +96,10 @@ void AItemStore::NotifyActorEndOverlap(AActor* OtherActor)
 	{
 		PC->IsOpenedStore = false;
 	}
+}
+
+void AItemStore::UpdateStoreOverlap()
+{
+	UpdateOverlaps();
+	UE_LOG(LogTemp, Warning, TEXT("UpdateStoreOverlap"));
 }

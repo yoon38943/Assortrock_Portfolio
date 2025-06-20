@@ -30,6 +30,11 @@ public:
 	TObjectPtr<class UProgressBar>HealthBar;
 	UFUNCTION(BlueprintPure, Category = "Health")
 	float GetHealthBarPercentage();
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget), Category = "GamePoint")
+	UTextBlock* KillPoint;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget), Category = "GamePoint")
+	UTextBlock* DeathPoint;
 	
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* Power;

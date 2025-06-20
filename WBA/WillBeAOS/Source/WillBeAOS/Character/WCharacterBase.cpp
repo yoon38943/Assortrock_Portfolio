@@ -65,7 +65,7 @@ void AWCharacterBase::SetHPInfoBarColor()
 void AWCharacterBase::SetHPPercentage()
 {
 	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
-	if (PS && PS->GetHP() != 0)
+	if (PS)
 	{
 		if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
 		{
@@ -464,6 +464,12 @@ void AWCharacterBase::NM_BeingDead_Implementation()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	PlayAnimMontage(DeadAnimMontage);
+
+	FTimerHandle DeadTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, [this]()
+	{
+		Destroy();
+	}, 1.3f, false);
 }
 
 void AWCharacterBase::C_BeingDead_Implementation(AWPlayerController* PC)
@@ -531,7 +537,7 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 		AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
 		if (PS)
 		{
-			PS->Server_ApplyDamage(DamageAmount);
+			PS->Server_ApplyDamage(DamageAmount, EventInstigator);
 		}
 	}
 

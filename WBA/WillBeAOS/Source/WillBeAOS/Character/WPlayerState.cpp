@@ -61,7 +61,7 @@ AWPlayerState::AWPlayerState()
     
     // Initialize default values for the player's stats
     MaxHP = 200;
-    HP = MaxHP;
+    SetHP(MaxHP);
     CPower = 20;
     CAdditionalHealth = 0;
     CDefense = 5;
@@ -154,7 +154,7 @@ void AWPlayerState::C_SetSpeed_Implementation(float NewSpeed)
     CSpeed = NewSpeed;
 }
 
-void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage)
+void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController* AttackPlayer)
 {
     if (HP > 0)
     {
@@ -167,6 +167,13 @@ void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage)
         
         if (HP <= 0)
         {
+            AddDeathPoint(); // 데스 카운트 +1
+            if (IsValid(AttackPlayer))
+            {
+                if (Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+                    AttackPlayer->GetPlayerState<AWPlayerState>()->AddKillPoint();
+            }
+            
             AWCharacterBase* PlayCharacter = Cast<AWCharacterBase>(GetPawn());
             if (PlayCharacter)
             {
@@ -176,7 +183,7 @@ void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage)
     }
 }
 
-bool AWPlayerState::Server_ApplyDamage_Validate(int32 Damage)
+bool AWPlayerState::Server_ApplyDamage_Validate(int32 Damage, AController* AttackPlayer)
 {
     return Damage >= 0;
 }
@@ -190,6 +197,26 @@ void AWPlayerState::Server_AddGold_Implementation(int Amount)
 void AWPlayerState::C_AddGold_Implementation(int NewGold)
 {
 	CGold = NewGold;
+}
+
+void AWPlayerState::AddDeathPoint_Implementation()
+{
+    PlayerDeathCount++;
+}
+
+void AWPlayerState::AddKillPoint_Implementation()
+{
+    PlayerKillCount++;
+}
+
+int32 AWPlayerState::GetKillPoints()
+{
+    return PlayerKillCount;
+}
+
+int32 AWPlayerState::GetDeathPoints()
+{
+    return PlayerDeathCount;
 }
 
 void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const

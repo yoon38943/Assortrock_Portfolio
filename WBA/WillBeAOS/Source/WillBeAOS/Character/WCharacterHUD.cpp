@@ -45,21 +45,16 @@ void UWCharacterHUD::TryGetPlayerState()
 			auto Message = FString::Printf(TEXT("PlayerState 가져오기 성공: %s"), *AWPS->GetName());
 			GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, Message);
 			GetWorld()->GetTimerManager().ClearTimer(ErrorTimerHandle);
-			UpdateCharacter();  // ✅ UI 업데이트
-			//return;
+			UpdateCharacter();  // UI 업데이트
 		}
 	}
-	
-	/*auto Message = FString::Printf(TEXT("여전히 PlayerState가 NULL. 0.5초 후 재시도."));
-	GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, Message);
-	GetWorld()->GetTimerManager().SetTimer(ErrorTimerHandle, this, &UWCharacterHUD::TryGetPlayerState, 0.5f, false);*/
 }
 
 void UWCharacterHUD::UpdateCharacter()
 {
 	// init 스탯
 	SetState();
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetState, 0.5f, true);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetState, 0.1f, true);
 }
 
 float UWCharacterHUD::GetHealthBarPercentage()
@@ -76,6 +71,14 @@ void UWCharacterHUD::SetState()
 {
 	if (AWPS)
 	{
+		// 킬, 데스 출력
+		FString KillString = FString::Printf(TEXT("K : %d"), AWPS->GetKillPoints());
+		KillPoint->SetText(FText::FromString(KillString));
+		
+		FString DeathString = FString::Printf(TEXT("D : %d"), AWPS->GetDeathPoints());
+		DeathPoint->SetText(FText::FromString(DeathString));
+		
+		// 캐릭터 스탯 출력
 		FString PowerString = FString::Printf(TEXT("공격력: %d"), AWPS->CPower);
 		Power->SetText(FText::FromString(PowerString));
 

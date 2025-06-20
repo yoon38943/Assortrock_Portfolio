@@ -208,7 +208,7 @@ void AWPlayerController::RecallToBase()
 		if (AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetCharacter()))
 		{
 			PlayerChar->SetActorLocation(WPlayerState->PlayerSpawner->GetActorLocation());
-			SetControlRotation(WPlayerState->PlayerSpawner->GetActorRotation());
+			SetControlRotation(FRotationMatrix::MakeFromX(FVector(0, 0, 100) - GetPawn()->GetActorLocation()).Rotator());
 		}
 	}
 }

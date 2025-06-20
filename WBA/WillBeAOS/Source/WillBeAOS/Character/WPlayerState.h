@@ -48,7 +48,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetHP(int32 NewHP);
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_ApplyDamage(int32 Damage);
+	void Server_ApplyDamage(int32 Damage, AController* AttackPlayer);
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_SetHP(float NewHP);
 
@@ -110,6 +110,24 @@ public:
 	void Server_AddGold(int Amount);
 	UFUNCTION(Client, Reliable)
 	void C_AddGold(int NewGold);
+
+protected:
+	// 플레이어 게임 정보
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerKillCount;
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerDeathCount;
+	UPROPERTY(BlueprintReadOnly)
+	float PlayerDamageAmount;
+
+public:
+	// Replicated가 너무 느려서 RPC로 변경
+	UFUNCTION(NetMulticast, Reliable)
+	void AddDeathPoint();
+	UFUNCTION(NetMulticast, Reliable)
+	void AddKillPoint();
+	int32 GetKillPoints();
+	int32 GetDeathPoints();
 	
 public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

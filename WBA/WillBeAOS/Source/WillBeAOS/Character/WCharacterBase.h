@@ -4,7 +4,6 @@
 #include "AOSCharacter.h"
 #include "WDelegateDefine.h"
 #include "WEnumFile.h"
-#include "GameFramework/Character.h"
 #include "WCharacterBase.generated.h"
 
 struct FInputActionValue;
@@ -164,11 +163,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 	
-public:	
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UPROPERTY(BlueprintReadWrite, Category = "Skill")//���� ����
-	bool SkillREnable;
-	
+	bool SkillREnable;	
 };
