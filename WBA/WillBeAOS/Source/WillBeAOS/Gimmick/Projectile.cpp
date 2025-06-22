@@ -11,7 +11,6 @@
 AProjectile::AProjectile()
 {
 	bReplicates = true;
-	SetReplicateMovement(true);
 	PrimaryActorTick.bCanEverTick = true;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
@@ -29,9 +28,7 @@ AProjectile::AProjectile()
 	ProjectileMovement->UpdatedComponent = CollisionComponent;		// 발사체 지정(없으면 무엇을 발사할지 인식 못함)
 	ProjectileMovement->InitialSpeed = 1200.f;
 	ProjectileMovement->bIsHomingProjectile = true;		// 발사체 유도 기능
-	ProjectileMovement->HomingAccelerationMagnitude = 3000.f;	// 발사체 유도 민감도
-	ProjectileMovement->SetIsReplicated(true);
-
+	ProjectileMovement->HomingAccelerationMagnitude = 1200.f;	// 발사체 유도 민감도
 
 	InitialLifeSpan = 5.f;	// 발사체 존재 가능 시간
 }
@@ -45,6 +42,7 @@ void AProjectile::BeginPlay()
 		FVector Direction = (Target->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 		ProjectileMovement->Velocity = Direction * ProjectileMovement->InitialSpeed;
 		ProjectileMovement->Activate();
+		SetHomingTarget();
 	}
 }
 
@@ -71,7 +69,8 @@ void AProjectile::Tick(float DeltaTime)
 	);
 
 	// 새로운 속도 적용
-	ProjectileMovement->Velocity = NewDirection * ProjectileMovement->InitialSpeed;
+	FVector NewVelocity = NewDirection * ProjectileMovement->InitialSpeed;
+	ProjectileMovement->Velocity = NewVelocity;
 
 	if (!ProjectileMovement->Velocity.IsNearlyZero())
 	{
@@ -80,12 +79,20 @@ void AProjectile::Tick(float DeltaTime)
 		SetActorRotation(ReplicatedRotation);
 	}
 
+	NM_UpdateReplicate(ReplicatedVelocity, ReplicatedRotation);
+
 	// 날아가는 와중 타겟이 죽거나 사라졌을 경우
 	if (HasAuthority() && !IsValid(Target) || Target->bIsDead == true)
 	{
 		Target = nullptr;
 		Destroy();
 	}
+}
+
+void AProjectile::NM_UpdateReplicate_Implementation(FVector Velocity, FRotator Rotation)
+{
+	ProjectileMovement->Velocity = Velocity;
+	SetActorRotation(Rotation);
 }
 
 void AProjectile::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -118,32 +125,19 @@ void AProjectile::SetHomingTarget()
 	}
 	
 	Target = Tower->TargetOfActors;
+	if (!Target)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Projectile has no target!"));
+		return;
+	}
+	
 	HomingTargetComponent = Target->GetRootComponent();
 
-	if (!Target || !HomingTargetComponent)
+	if (!HomingTargetComponent)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Homing target invalid!"));
 		return;
 	}
 	
 	ProjectileMovement->HomingTargetComponent = HomingTargetComponent;
-}
-
-void AProjectile::OnRep_ChangeRotation()
-{
-	// 클라이언트에서 회전 동기화
-	SetActorRotation(ReplicatedRotation);
-}
-
-void AProjectile::OnRep_Velocity()
-{
-	ProjectileMovement->Velocity = ReplicatedVelocity;
-}
-
-void AProjectile::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(AProjectile, ReplicatedRotation);
-	DOREPLIFETIME(AProjectile, ReplicatedVelocity);
 }

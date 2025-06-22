@@ -51,13 +51,15 @@ public:
 	virtual void ShowNickName();
 
 	// 플레이어 거리 계산
-	TArray<APlayerState*> AllActors;
-	
-	FTimerHandle CheckDistanceHandle;
-	
-	void CheckAllPlayerDistance();
+	FTimerHandle CheckTimerHandle;
 
-	float MaxVisibleDistance = 3500.f;
+	UPROPERTY(EditAnywhere, Category = "Distance")
+	float VisibleWidgetDistance = 5000.f;
+
+	void SetVisibleWidgetDistance();
+
+	UFUNCTION(Client, Reliable)
+	void SetWidgetVisible(AActor* Actor, bool bIsVisible);
 	
 public:
 	AWCharacterBase();

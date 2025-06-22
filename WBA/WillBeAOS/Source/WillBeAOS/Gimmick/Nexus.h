@@ -25,6 +25,8 @@ public: //채력 관련
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* DefaultSceneRootComponent;
 	UPROPERTY(VisibleAnywhere)

@@ -28,17 +28,12 @@ class WILLBEAOS_API AProjectile : public AActor
 	UPROPERTY()
 	class USceneComponent* HomingTargetComponent;
 
-	UPROPERTY(ReplicatedUsing=OnRep_ChangeRotation)
+	UFUNCTION(NetMulticast, reliable)
+	void NM_UpdateReplicate(FVector Velocity, FRotator Rotation);
+
 	FRotator ReplicatedRotation;
 
-	UFUNCTION()
-	void OnRep_ChangeRotation();
-
-	UPROPERTY(ReplicatedUsing = OnRep_Velocity)
 	FVector ReplicatedVelocity;
-
-	UFUNCTION()
-	void OnRep_Velocity();
 	
 public:	
 	AProjectile();

@@ -90,6 +90,9 @@ protected://넥서스
 public:
 	float GetBlueNexusHP();
 	float GetRedNexusHP();
+
+	// 캐릭터가 거리 계산할 인스턴스 모음
+	TSet<AActor*> ManagedActors;
 	
 protected:
 	virtual void BeginPlay();

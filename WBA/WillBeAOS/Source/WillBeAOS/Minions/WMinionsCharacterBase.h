@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Character/AOSCharacter.h"
-#include "Function/WEnemyDetectorComponent.h"
 #include "WMinionsCharacterBase.generated.h"
 
 #define KILLGOLD 30
@@ -26,6 +25,8 @@ public:
 	UCombatComponent* CombatComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* WidgetComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USphereComponent* PerceptionCollision;
 
 public:
 	AWMinionsCharacterBase();
@@ -42,9 +43,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "UI")
 	float MaxWidgetScale = 1.f;
-
-	FTimerHandle CheckDistanceTimer;
-	void CheckDistanceToPlayer();
 	
 	AWCharacterBase* PlayerChar;
 	AWPlayerController* PlayerController;
@@ -53,6 +51,20 @@ public:
 	void FindPlayerPC();
 	void FindPlayerPawn();
 
+	// 타겟 인식 관련 로직
+	FTimerHandle CheckDistanceTimerHandle;
+
+	float VisibleWidgetDistance = 1200.f;
+
+	TSet<AActor*> CurrentObserveObjects;
+
+	void CheckDistanceToTarget();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void CanAttackToTarget(AActor* WObject);
+	UFUNCTION(BlueprintNativeEvent)
+	void DetachToTarget(AActor* WObject);
+
 public://트랙 관련
 	UPROPERTY(Replicated,EditAnywhere, BlueprintReadOnly, Category = "Track")
 	int32 TrackNum;
@@ -60,16 +72,6 @@ public://트랙 관련
 	UFUNCTION(BlueprintNativeEvent, Category = "Track")
 	void SetTrackPoint();//트랙 정하는 이벤트
 	void SetTrackPoint_Implementation(){}
-
-	// 적 탐지
-	UPROPERTY(BlueprintAssignable, Category="Detection")
-	FOnEnemyDetectedSignature OnEnemyDetected;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Perception")
-	UWEnemyDetectorComponent* EnemyDetector;
-
-	UFUNCTION(BlueprintCallable)
-	void HandleEnemyDetected(AActor* Enemy);
 	
 public:	//골드 관련
 	virtual void SetGoldReward(int32 NewGold){GoldReward = NewGold;}

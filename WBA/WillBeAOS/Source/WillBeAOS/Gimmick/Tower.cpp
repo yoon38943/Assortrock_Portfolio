@@ -98,6 +98,12 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Add(this);
+	}
+
 	if (!HasAuthority())
 	{
 		S_InitHPPercentage();
@@ -106,9 +112,6 @@ void ATower::BeginPlay()
 
 	// 플레이어 컨트롤러 찾기
 	FindPlayerPC();
-
-	//찾은 컨트롤러 바탕으로 플레이어 캐릭터와 타워 거리 체크
-	StartCheckDistanceToPlayer();
 }
 
 void ATower::Tick(float DeltaTime)
@@ -166,36 +169,6 @@ void ATower::BeamToTarget(FVector TargetLocation, AAOSCharacter* Target)
 	NiagaraComponent->SetVectorParameter("MyBeamStart", BeamStart);
 	NiagaraComponent->SetVectorParameter("MyBeamEnd", BeamEnd);
 	NiagaraComponent->SetVisibility(true);
-}
-
-void ATower::CheckDistanceToPlayer()
-{
-	FindPlayerPawn();
-	
-	if (!PlayerChar) return;
-
-	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
-	bool bIsVisible = Distance <= MaxVisibleDistance;
-
-	if (WidgetComponent->IsVisible() != bIsVisible)
-	{
-		Server_UpdateHPBar();
-		WidgetComponent->SetVisibility(bIsVisible);
-	}
-}
-
-void ATower::StartCheckDistanceToPlayer()
-{
-	if (!HasAuthority())
-	{
-		GetWorldTimerManager().SetTimer(
-			CheckDistanceTimer,
-			this,
-			&ATower::CheckDistanceToPlayer,
-			0.3f,
-			true
-			);
-	}
 }
 
 void ATower::FindPlayerPC()
@@ -260,6 +233,12 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 			if (GameMode)
 			{
 				GameMode->OnObjectKilled(this, LastHitBy);
+			}
+
+			AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+			if (GS)
+			{
+				GS->ManagedActors.Remove(this);
 			}
 			
 			TowerDestroyInClient();

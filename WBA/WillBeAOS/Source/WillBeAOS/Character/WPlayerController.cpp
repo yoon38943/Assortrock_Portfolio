@@ -108,6 +108,11 @@ void AWPlayerController::OnRep_Countdown()
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("GameCountdown %d"),CountdownTime));
 }
 
+void AWPlayerController::SetIsOpenStore_Implementation(bool CanOpen)
+{
+	IsOpenedStore = CanOpen;
+}
+
 void AWPlayerController::StartRecall_Implementation()
 {
 	if (IsRecalling) return;

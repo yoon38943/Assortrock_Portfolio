@@ -17,6 +17,8 @@ void AMinionsSpawner::BeginPlay()
 	{
 		GM->OnGameEnd.AddUObject(this, &ThisClass::GameStateIsEnd);
 	}
+
+	StartSpawnMinions();
 }
 
 void AMinionsSpawner::GameStateIsEnd()
@@ -46,7 +48,7 @@ void AMinionsSpawner::SpawnMinions_Implementation()
 	AWMinionsCharacterBase* SpawnMinion = GetWorld()->SpawnActor<AWMinionsCharacterBase>(SpawnMinionsClass, GetActorLocation(), GetActorRotation());
 	if (SpawnMinion)
 	{
-		SpawnMinion->TeamID = TeamID;
+		SpawnMinion->SetTeamID(TeamID);
 		SpawnMinion->TrackNum = TrackNum;
 		SpawnMinion->SetTrackPoint();
 		SpawnMinion->SpawnDefaultController();

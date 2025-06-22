@@ -11,7 +11,6 @@
 #include "../Game/WGameState.h"
 #include "Character/WCharacterBase.h"
 #include "Character/WPlayerController.h"
-#include "Function/WEnemyDetectorComponent.h"
 #include "Game/WGameMode.h"
 #include "Gimmick/Tower.h"
 #include "Net/UnrealNetwork.h"
@@ -29,11 +28,6 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	WidgetComponent->SetupAttachment(GetMesh());
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
 	WidgetComponent->SetVisibility(false);
-
-	EnemyDetector = CreateDefaultSubobject<UWEnemyDetectorComponent>(TEXT("Perception"));
-	EnemyDetector->EnemyClass = AActor::StaticClass();
-	EnemyDetector->DetectionRadius = 1000.f;
-	//EnemyDetector->OnEnemyDetected.AddDynamic(this, &ThisClass::HandleEnemyDetected);
 
 	bAlwaysRelevant = true;
 	
@@ -65,17 +59,23 @@ void AWMinionsCharacterBase::BeginPlay()
 		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
 	}
 
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Add(this);
+	}
+
 	FindPlayerPC();
 
-	if (!HasAuthority())
+	if (HasAuthority())
 	{
-		GetWorldTimerManager().SetTimer(
-			CheckDistanceTimer,
+		GetWorld()->GetTimerManager().SetTimer(
+			CheckDistanceTimerHandle,
 			this,
-			&AWMinionsCharacterBase::CheckDistanceToPlayer,
-			0.3f,
+			&ThisClass::CheckDistanceToTarget,
+			0.2f,
 			true
-			);
+		);
 	}
 }
 
@@ -83,27 +83,15 @@ void AWMinionsCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	GetWorldTimerManager().ClearTimer(CheckDistanceTimer);
+	if (CheckDistanceTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimerHandle);
+	}
 }
 
 void AWMinionsCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-}
-
-void AWMinionsCharacterBase::CheckDistanceToPlayer()
-{
-	FindPlayerPawn();
-	
-	if (bIsDead || !IsValid(PlayerChar) || !IsValid(this)) return;
-
-	float Distance = FVector::Dist(PlayerChar->GetActorLocation(), GetActorLocation());
-	bool bIsVisible = Distance <= MaxVisibleDistance;
-	
-	if (WidgetComponent->IsVisible() != bIsVisible)
-	{
-		WidgetComponent->SetVisibility(bIsVisible);
-	}
 }
 
 void AWMinionsCharacterBase::FindPlayerPC()
@@ -132,6 +120,45 @@ void AWMinionsCharacterBase::FindPlayerPawn()
 	{
 		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
 	}
+}
+
+void AWMinionsCharacterBase::CheckDistanceToTarget()
+{
+	FVector MyLocation = GetActorLocation();
+	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS && GS->ManagedActors.Num() > 0)
+	{
+		for (AActor* Actor : GS->ManagedActors)
+		{
+			if (!IsValid(Actor) || Actor == this) continue;
+
+			float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
+			bool bShouldShow = DistSqr <= VisibleDistanceSqr;
+
+			if (bShouldShow && !CurrentObserveObjects.Contains(Actor))
+			{
+				CurrentObserveObjects.Add(Actor);
+				CanAttackToTarget(Actor);
+			}
+			else if (!bShouldShow && CurrentObserveObjects.Contains(Actor))
+			{
+				CurrentObserveObjects.Remove(Actor);
+				DetachToTarget(Actor);
+			}
+		}
+	}
+}
+
+void AWMinionsCharacterBase::DetachToTarget_Implementation(AActor* WObject)
+{
+	// 블루프린트 내 구현
+}
+
+void AWMinionsCharacterBase::CanAttackToTarget_Implementation(AActor* WObject)
+{
+	// 블루프린트 내 구현
 }
 
 void AWMinionsCharacterBase::S_SetHpPercentage_Implementation(float Health, float MaxHealth)
@@ -207,14 +234,18 @@ void AWMinionsCharacterBase::Dead()
 	{
 		GameMode->OnObjectKilled(this, LastHitBy);
 	}
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Remove(this);
+	}
 	
 	// AI가 죽으면 BT 연결 끊기
 	AWMinionsAIController* MinionController = Cast<AWMinionsAIController>(GetController());
 	MinionController->GetBrainComponent()->StopLogic(TEXT("None"));
 
 	bIsDead = true;
-
-	GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimer);
 
 	FTimerHandle MinionDeadTimer;
 	GetWorld()->GetTimerManager().SetTimer(MinionDeadTimer, [this]()
@@ -240,13 +271,6 @@ void AWMinionsCharacterBase::NM_BeingDead_Implementation()
 		// HP Widget 없애기
 		WidgetComponent->SetVisibility(false);
 	}
-}
-
-void AWMinionsCharacterBase::HandleEnemyDetected(AActor* Enemy)
-{
-	if (!Enemy) return;
-
-	OnEnemyDetected.Broadcast(Enemy);
 }
 
 void AWMinionsCharacterBase::HandleApplyPointDamage(FHitResult LastHit)

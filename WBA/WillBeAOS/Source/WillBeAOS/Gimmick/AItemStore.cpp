@@ -26,12 +26,6 @@ AItemStore::AItemStore()
 void AItemStore::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
-	if (GM)
-	{
-		GM->RespawnOpenStoreDelegate.AddUObject(this, &AItemStore::UpdateStoreOverlap);
-	}
 }
 
 void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
@@ -89,17 +83,15 @@ void AItemStore::NotifyActorEndOverlap(AActor* OtherActor)
 		GetWorld()->GetTimerManager().ClearTimer(PlayerChar->HealingTimerHandle);
 	}
 
-	AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
-	APawn* Player = PC->GetPawn();
-
-	if (OtherActor == Player)
+	if (!HasAuthority())
 	{
-		PC->IsOpenedStore = false;
-	}
-}
+		UE_LOG(LogTemp, Warning, TEXT("오버랩 종료"));
+		AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+		APawn* Player = PC->GetPawn();
 
-void AItemStore::UpdateStoreOverlap()
-{
-	UpdateOverlaps();
-	UE_LOG(LogTemp, Warning, TEXT("UpdateStoreOverlap"));
+		if (OtherActor == Player)
+		{
+			PC->IsOpenedStore = false;
+		}
+	}
 }

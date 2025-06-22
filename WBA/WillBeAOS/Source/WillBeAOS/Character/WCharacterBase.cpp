@@ -18,6 +18,7 @@
 #include "Components/WidgetComponent.h"
 #include "Game/WGameMode.h"
 #include "Gimmick/Tower.h"
+#include "Minions/WMinionsCharacterBase.h"
 #include "Net/UnrealNetwork.h"
 #include "UI/PlayerHPInfoBar.h"
 
@@ -114,24 +115,47 @@ void AWCharacterBase::ShowNickName()
 	}
 }
 
-void AWCharacterBase::CheckAllPlayerDistance()
+void AWCharacterBase::SetVisibleWidgetDistance()
 {
-	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
-	if (PS && !AllActors.IsEmpty())
+	FVector MyLocation = GetActorLocation();
+	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
 	{
-		for (APlayerState* Actor : AllActors)
+		for (AActor* Actor : GS->ManagedActors)
 		{
-			if (AWCharacterBase* Character = Cast<AWCharacterBase>(Actor->GetPawn()))
-			{
-				float Dist = FVector::Dist(GetActorLocation(), Character->GetActorLocation());
-				bool bIsVisible = Dist <= MaxVisibleDistance;
-				
-				if (Character->HPInfoBarComponent->IsVisible() != bIsVisible)
-				{
-					Character->HPInfoBarComponent->SetVisibility(bIsVisible);
-					Character->HPInfoBarComponent->SetVisibility(bIsVisible);
-				}
-			}
+			if (!IsValid(Actor) || Actor == this) continue;
+
+			float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
+			bool bShouldShow = DistSqr <= VisibleDistanceSqr;
+
+			SetWidgetVisible(Actor, bShouldShow);
+		}
+	}
+}
+
+void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVisible)
+{
+	if (AWCharacterBase* Character = Cast<AWCharacterBase>(Actor))
+	{
+		if (Character->HPInfoBarComponent && Character->HPInfoBarComponent->IsVisible() != bIsVisible)
+		{
+			Character->HPInfoBarComponent->SetVisibility(bIsVisible);
+		}
+	}
+	else if (AWMinionsCharacterBase* Minion = Cast<AWMinionsCharacterBase>(Actor))
+	{
+		if (Minion->WidgetComponent && Minion->WidgetComponent->IsVisible() != bIsVisible)
+		{
+			Minion->WidgetComponent->SetVisibility(bIsVisible);
+		}
+	}
+	else if (ATower* Tower = Cast<ATower>(Actor))
+	{
+		if (Tower->WidgetComponent && Tower->WidgetComponent->IsVisible() != bIsVisible)
+		{
+			Tower->WidgetComponent->SetVisibility(bIsVisible);
 		}
 	}
 }
@@ -189,25 +213,28 @@ void AWCharacterBase::BeginPlay()
     
 		PC->SetControlRotation(LookAtRotation);
 	}
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Add(this);
+	}
 	
 	if (!HasAuthority())
 	{
 		SetHPInfoBarColor();
 		SetHPPercentage();
 		ShowNickName();
-
-		APlayerController* PCon = Cast<APlayerController>(GetWorld()->GetFirstPlayerController());
-		if (PCon && PCon->GetPawn() == this)
-		{
-			for (auto PlayerPawn : GetWorld()->GetGameState()->PlayerArray)
-			{
-				if (PlayerPawn == PCon->GetPlayerState<APlayerState>()) continue;
-				AllActors.Add(PlayerPawn);
-			}
-
-			HPInfoBarComponent->SetVisibility(true);
-			GetWorld()->GetTimerManager().SetTimer(CheckDistanceHandle, this, &ThisClass::CheckAllPlayerDistance, 0.2f, true);
-		}
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			CheckTimerHandle,
+			this,
+			&ThisClass::SetVisibleWidgetDistance,
+			0.2f,
+			true
+		);
 	}
 }
 
@@ -215,9 +242,9 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	if (CheckDistanceHandle.IsValid())
+	if (CheckTimerHandle.IsValid())
 	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceHandle);
+		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
 	}
 }
 
@@ -446,6 +473,8 @@ void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* 
 	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
 	if (PC && GameState && GameMode && HasAuthority())
 	{
+		GameState->ManagedActors.Remove(Player);
+		
 		FTimerHandle RespawnTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle,
 			[Player, PC, GameMode]()

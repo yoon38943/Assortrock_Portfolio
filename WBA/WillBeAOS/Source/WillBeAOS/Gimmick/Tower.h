@@ -126,11 +126,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	float MaxWidgetScale = 1.f;
 
-	FTimerHandle CheckDistanceTimer;
-	void CheckDistanceToPlayer();
-
-	void StartCheckDistanceToPlayer();
-
 	AWCharacterBase* PlayerChar;
 	AWPlayerController* PlayerController;
 
@@ -142,6 +137,8 @@ public:
 	void BeamToTarget(FVector TargetLocation, AAOSCharacter* Target);
 
 	// Projectile
+	bool bIsSpawnedProjectile;
+	void SpawnProjectile();
 	float LastTime = 0.0f;
 
 public:

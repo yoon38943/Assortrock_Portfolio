@@ -3,6 +3,7 @@
 #include "Components/BoxComponent.h"
 #include "../Character/CombatComponent.h"
 #include "Game/WGameMode.h"
+#include "Game/WGameState.h"
 #include "Kismet/GameplayStatics.h"
 
 ANexus::ANexus()
@@ -64,6 +65,23 @@ void ANexus::NM_DestroyNexus_Implementation()
 void ANexus::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Add(this);
+	}
+}
+
+void ANexus::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	if (GS)
+	{
+		GS->ManagedActors.Remove(this);
+	}
 }
 
 float ANexus::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

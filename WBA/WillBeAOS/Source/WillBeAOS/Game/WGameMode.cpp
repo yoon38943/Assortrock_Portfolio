@@ -265,6 +265,8 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 			{
 				AWCharacterBase* RespawnChar = GetWorld()->SpawnActor<AWCharacterBase>(PS->PlayerInfo.SelectedCharacter, PS->PlayerSpawner->GetActorLocation(), PS->PlayerSpawner->GetActorRotation());
 
+				RespawnChar->CharacterTeam = PS->PlayerInfo.PlayerTeam;
+
 				PC->OnPossess(RespawnChar);
 					
 				PS->SetHP(PS->GetMaxHP());
