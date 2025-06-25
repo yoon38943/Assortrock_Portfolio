@@ -1,6 +1,16 @@
 #pragma once
 
 UENUM(BlueprintType)
+enum class EGamePhase : uint8
+{
+	StartGameWaiting,
+	CharacterSelect,
+	LoadingPhase,
+	InGame,
+	GameEnd
+};
+
+UENUM(BlueprintType)
 enum class E_TeamID : uint8
 {
 	Neutral		UMETA(DisplayName = "Neutral"),

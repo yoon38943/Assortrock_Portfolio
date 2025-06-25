@@ -179,6 +179,8 @@ void AWMinionsCharacterBase::SetHpPercentage_Implementation(float Health, float 
 
 void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
 {
+	if (bIsDead) return;
+	
 	static FLinearColor HealthBarColor;
 	switch (TeamID)
 	{
@@ -197,7 +199,7 @@ void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
 }
 
 void AWMinionsCharacterBase::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
-{
+{	
 	if (!WidgetComponent || !WidgetComponent->GetWidget()) {
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
 		{

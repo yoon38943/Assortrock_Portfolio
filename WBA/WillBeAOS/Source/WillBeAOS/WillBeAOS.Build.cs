@@ -2,6 +2,7 @@
 
 using System.IO;
 using UnrealBuildTool;
+using System.Collections.Generic;
 
 public class WillBeAOS : ModuleRules
 {

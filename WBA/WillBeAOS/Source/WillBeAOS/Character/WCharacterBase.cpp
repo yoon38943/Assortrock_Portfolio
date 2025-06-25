@@ -222,6 +222,8 @@ void AWCharacterBase::BeginPlay()
 	
 	if (!HasAuthority())
 	{
+		if (IsLocallyControlled())
+			HPInfoBarComponent->SetVisibility(true);
 		SetHPInfoBarColor();
 		SetHPPercentage();
 		ShowNickName();
@@ -473,6 +475,10 @@ void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* 
 	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
 	if (PC && GameState && GameMode && HasAuthority())
 	{
+		PC->S_SetCurrentRespawnTime();
+
+		PC->S_CountRespawnTime();
+		
 		GameState->ManagedActors.Remove(Player);
 		
 		FTimerHandle RespawnTimerHandle;
@@ -481,6 +487,8 @@ void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* 
 			{
 				GameMode->RespawnPlayer(Player, PC);
 			}, GameState->RespawnTime, false);
+
+		PC->PossessToSpectatorCamera(FollowCamera->GetComponentLocation(), FollowCamera->GetComponentRotation());
 	}
 	
 	NM_BeingDead();

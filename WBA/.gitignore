@@ -76,6 +76,7 @@ DerivedDataCache/*
 # Git에서 무시할 폴더
 Content/
 패키징/
+테스트패키징/
 
 # 배치 파일 무시
 ServerBuildStart.bat

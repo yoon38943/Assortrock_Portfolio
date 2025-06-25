@@ -138,7 +138,6 @@ public:
 	UFUNCTION(Client, Reliable)
 	void C_BeingDead(AWPlayerController* PC);
 
-
 	// 델리게이트 함수
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = Dead)
 	void NM_BeingDead();//죽을 때 델리게이트로 호출 함수

@@ -12,6 +12,8 @@ class ATower;
 class ANexus;
 class AAOSActor;
 
+DECLARE_DELEGATE_TwoParams(FDelegateShowKillState, int32, int32);
+
 UCLASS()
 class WILLBEAOS_API AWGameState : public AGameState
 {
@@ -42,7 +44,7 @@ public://GameInit 단계
 	
 	//접속한 플레이어 컨트롤러
 	UPROPERTY(EditAnywhere)
-	TArray<class AWPlayerController*> PlayerControllers;
+	TArray<AWPlayerController*> PlayerControllers;
 	
 	void CheckPlayerIsReady();
 	UFUNCTION(BlueprintCallable)
@@ -93,6 +95,16 @@ public:
 
 	// 캐릭터가 거리 계산할 인스턴스 모음
 	TSet<AActor*> ManagedActors;
+
+	// 팀별 킬 점수
+	FDelegateShowKillState DelegateShowKillState;
+	int32 BlueTeamTotalKillPoints;
+	int32 RedTeamTotalKillPoints;
+
+	UFUNCTION(NetMulticast, reliable)
+	void NM_ReplicateTotalKillPoints(int32 Blue, int32 Red);
+
+	void CheckKilledTeam(E_TeamID KillTeam);
 	
 protected:
 	virtual void BeginPlay();

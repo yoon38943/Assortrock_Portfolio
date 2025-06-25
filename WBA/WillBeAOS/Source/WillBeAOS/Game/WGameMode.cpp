@@ -267,6 +267,8 @@ void AWGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 
 				RespawnChar->CharacterTeam = PS->PlayerInfo.PlayerTeam;
 
+				PC->GetPawn()->Destroy();
+				
 				PC->OnPossess(RespawnChar);
 					
 				PS->SetHP(PS->GetMaxHP());

@@ -9,6 +9,28 @@
 
 class UWGameInstance;
 
+void AWGameState::NM_ReplicateTotalKillPoints_Implementation(int32 Blue, int32 Red)
+{
+    BlueTeamTotalKillPoints = Blue;
+    RedTeamTotalKillPoints = Red;
+
+    DelegateShowKillState.ExecuteIfBound(BlueTeamTotalKillPoints, RedTeamTotalKillPoints);
+}
+
+void AWGameState::CheckKilledTeam(E_TeamID KillTeam)
+{
+    if (KillTeam == E_TeamID::Blue)
+    {
+        BlueTeamTotalKillPoints++;
+    }
+    else if (KillTeam == E_TeamID::Red)
+    {
+        RedTeamTotalKillPoints++;
+    }
+
+    NM_ReplicateTotalKillPoints(BlueTeamTotalKillPoints, RedTeamTotalKillPoints);
+}
+
 void AWGameState::BeginPlay()
 {
     Super::BeginPlay();
@@ -212,7 +234,7 @@ void AWGameState::RemovePlayer(AWPlayerController* WPlayerController)
 void AWGameState::ServerCountdown()
 {
     WGameMode->SetGSPlayerControllers();
-    WGameMode->StartCountdown(6);
+    WGameMode->StartCountdown(11);
 }
 
 void AWGameState::SetCountdownTime(int32 NewCount)

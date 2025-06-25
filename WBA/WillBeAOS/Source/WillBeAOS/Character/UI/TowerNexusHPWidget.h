@@ -33,4 +33,12 @@ public:
 	UTextBlock* GameTimer;
 	UFUNCTION(Blueprintpure, meta = (BindWidget), Category = "GameTimer")
 	FText UpdateGameTimer();
+
+	// 팀별 전투 상황
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* BlueTeamKillPoints;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* RedTeamKillPoints;
+
+	void UpdateTeamKillPoints(int32 Blue, int32 Red);
 };

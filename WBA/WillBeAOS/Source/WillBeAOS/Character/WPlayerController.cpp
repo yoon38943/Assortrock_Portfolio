@@ -105,7 +105,7 @@ void AWPlayerController::OnGameStateChanged(E_GamePlay CurrentGameState)
 
 void AWPlayerController::OnRep_Countdown()
 {	
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("GameCountdown %d"),CountdownTime));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("GameCountdown %d"),CountdownTime));
 }
 
 void AWPlayerController::SetIsOpenStore_Implementation(bool CanOpen)
@@ -218,6 +218,15 @@ void AWPlayerController::RecallToBase()
 	}
 }
 
+void AWPlayerController::S_SetCurrentRespawnTime_Implementation()
+{
+	if (AWGameState* GameState = Cast<AWGameState>(GetWorld()->GetGameState()))
+	{
+		CurrentRespawnTime = GameState->RespawnTime;
+		C_ReplicateCurrentRespawnTime(CurrentRespawnTime);
+	}
+}
+
 void AWPlayerController::GameEnded_Implementation(E_TeamID LoseTeam)
 {
 	if (!IsLocalController()) return;
@@ -279,23 +288,19 @@ void AWPlayerController::ShowRespawnWidget()
 			RespawnScreen->AddToViewport(1); // ZOrder 조정
 		}
 	}
+}
 
-	AWGameState* GameState = Cast<AWGameState>(GetWorld()->GetGameState());
-	CurrentRespawnTime = GameState->RespawnTime;
-	
+void AWPlayerController::S_CountRespawnTime_Implementation()
+{
 	GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &ThisClass::UpdateRespawnWidget, 1.f, true);
 }
 
 void AWPlayerController::UpdateRespawnWidget()
 {
-	if (!IsLocalController())
-	{
-		return;
-	}
-	
 	if (CurrentRespawnTime > 1)
 	{
 		CurrentRespawnTime--;
+		C_ReplicateCurrentRespawnTime(CurrentRespawnTime);
 	}
 	else
 	{
@@ -304,12 +309,28 @@ void AWPlayerController::UpdateRespawnWidget()
 	}
 }
 
-void AWPlayerController::HideRespawnWidget()
+void AWPlayerController::C_ReplicateCurrentRespawnTime_Implementation(int32 RespawnTime)
+{
+	CurrentRespawnTime = RespawnTime;
+}
+
+void AWPlayerController::HideRespawnWidget_Implementation()
 {
 	if (RespawnScreen != nullptr)
 	{
 		RespawnScreen->RemoveFromParent();
 		RespawnScreen = nullptr;
+	}
+}
+
+void AWPlayerController::PossessToSpectatorCamera(FVector CameraLocation, FRotator CameraRotation)
+{
+	FActorSpawnParameters SpawnParams;
+	APawn* DeadCamera = GetWorld()->SpawnActor<APawn>(SpectorCamera, CameraLocation, CameraRotation, SpawnParams);
+
+	if (DeadCamera)
+	{
+		Possess(DeadCamera);
 	}
 }
 

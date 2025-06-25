@@ -11,5 +11,12 @@ public class WillBeAOSTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
 		ExtraModuleNames.Add("WillBeAOS");
+		
+		/*if (Configuration == UnrealTargetConfiguration.Shipping)
+		{
+			BuildEnvironment = TargetBuildEnvironment.Unique;
+			bUseChecksInShipping = true;
+			bUseLoggingInShipping = true;
+		}*/
 	}
 }

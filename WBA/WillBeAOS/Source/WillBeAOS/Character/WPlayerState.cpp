@@ -155,23 +155,46 @@ void AWPlayerState::C_SetSpeed_Implementation(float NewSpeed)
 }
 
 void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController* AttackPlayer)
-{
+{    
     if (HP > 0)
     {
         const float Reduction = CDefense / (CDefense + 100.f);
         const int32 FinalDamage = StaticCast<int32>(Damage * (1.f - Reduction));
         if (HP > FinalDamage)
+        {
+            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer))
+            {
+                AWPlayerState* AttackPS = AttackPlayer->GetPlayerState<AWPlayerState>();
+                AttackPS->PlayerDamageAmount += FinalDamage;
+            }
+            
             NM_SetHP(HP -= FinalDamage);
+        }
         else
+        {
+            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer))
+            {
+                AWPlayerState* AttackPS = AttackPlayer->GetPlayerState<AWPlayerState>();
+                AttackPS->PlayerDamageAmount += HP;
+            }
+            
             NM_SetHP(0);
+        }
         
         if (HP <= 0)
         {
             AddDeathPoint(); // 데스 카운트 +1
             if (IsValid(AttackPlayer))
             {
-                if (Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+                if (AWCharacterBase* AttackChar = Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+                {
                     AttackPlayer->GetPlayerState<AWPlayerState>()->AddKillPoint();
+
+                    if (AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState()))
+                    {
+                        GS->CheckKilledTeam(AttackChar->CharacterTeam);
+                    }
+                }                    
             }
             
             AWCharacterBase* PlayCharacter = Cast<AWCharacterBase>(GetPawn());

@@ -86,14 +86,28 @@ public:
 public://리스폰
 	UPROPERTY(BlueprintReadWrite)
 	int32 CurrentRespawnTime;
+	UFUNCTION(Server, Reliable)
+	void S_SetCurrentRespawnTime();
 	FTimerHandle RestartTimer;
 	FTimerHandle RespawnTimerHandle;
+
+	UPROPERTY(EditAnywhere, Category = "DeadCamera")
+	TSubclassOf<APawn> SpectorCamera;
+	
 public://리스폰 함수(PlayerController->GameHasEnded())
 	UFUNCTION(NetMulticast, Reliable)
 	void GameEnded(E_TeamID LoseTeam);
 	void ShowRespawnWidget();
+	UFUNCTION(Server, Reliable)
+	void S_CountRespawnTime();
 	void UpdateRespawnWidget();
+	UFUNCTION(Client, Reliable)
+	void C_ReplicateCurrentRespawnTime(int32 RespawnTime);
+	UFUNCTION(Client, Reliable)
 	void HideRespawnWidget();
+
+	// Spectator Camera 전환
+	void PossessToSpectatorCamera(FVector CameraLocation, FRotator CameraRotation);
 	
 	void OnGameStateChanged(E_GamePlay CurrentGameState);
 	

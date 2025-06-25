@@ -229,7 +229,7 @@ void UWGameInstance::CreateGameSession()
 		
 		SessionSettings = MakeShareable(new FOnlineSessionSettings());
 		SessionSettings->bIsLANMatch = true;
-		SessionSettings->NumPublicConnections = 1;
+		SessionSettings->NumPublicConnections = 2;
 		SessionSettings->bAllowJoinInProgress = true;
 		SessionSettings->bShouldAdvertise = true;
 		SessionSettings->bUseLobbiesIfAvailable = true;
