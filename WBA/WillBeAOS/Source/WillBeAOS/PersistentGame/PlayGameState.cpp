@@ -4,6 +4,7 @@
 #include "GamePlayerState.h"
 #include "PlayGameMode.h"
 #include "Game/WGameInstance.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -25,16 +26,21 @@ void APlayGameState::SetGamePhase(EGamePhase NewGamePhase)
 	}
 }
 
-void APlayGameState::OnRep_ChangeGamePhase(EGamePhase NewGamePhase)
+void APlayGameState::OnRep_ChangeGamePhase()
 {
-	if (!HasAuthority() && CurrentGamePhase != NewGamePhase)
+	if (!HasAuthority())
 	{
-		CurrentGamePhase = NewGamePhase;
-
 		switch (CurrentGamePhase)
 		{
 		case EGamePhase::CharacterSelect:
-			Client_EnterCharacterSelectPhase();
+			{
+				FTimerHandle TimerHandle;
+				GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::Client_EnterCharacterSelectPhase, 0.05f, false);
+				break;
+			}
+		case EGamePhase::InGame:
+			Client_EnterInGamePhase();
+			break;
 		}
 	}
 }
@@ -65,6 +71,21 @@ void APlayGameState::EnterCharacterSelectPhase()
 	}
 }
 
+void APlayGameState::Client_EnterCharacterSelectPhase()
+{
+	AGamePlayerController* PC = Cast<AGamePlayerController>(UGameplayStatics::GetPlayerController(this, 0));
+	if (PC)
+	{
+		PC->StartCharacterSelectPhase();
+
+		AGamePlayerState* PS = PC->GetPlayerState<AGamePlayerState>();
+		if (PS)
+		{
+			PS->StartCharacterSelectPhase();
+		}
+	}
+}
+
 void APlayGameState::EnterLoadingPhase()
 {
 	// 맵 전환 로딩창 띄우기
@@ -76,13 +97,14 @@ void APlayGameState::EnterLoadingPhase()
 			PC->ToInGameLoading();
 		}
 	}
-
-	// 캐릭터 선택 레벨 Unload 진행
-
-	// 인게임 레벨 Load 진행 ( 성공하면 로딩창 닫기 )
 }
 
-void APlayGameState::Client_EnterCharacterSelectPhase()
+void APlayGameState::EnterInGamePhase()
+{
+	// 타워 소환 등등
+}
+
+void APlayGameState::Client_EnterInGamePhase()
 {
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
@@ -135,8 +157,7 @@ void APlayGameState::CheckPlayerIsReady(AGamePlayerController* PC)
 	}
 }
 
-void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar,
-	E_TeamID& Team)
+void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar, E_TeamID& Team)
 {
 	if (Team == E_TeamID::Blue)
 	{
@@ -239,4 +260,5 @@ void APlayGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(APlayGameState, BlueTeamPlayersNum);
 	DOREPLIFETIME(APlayGameState, RedTeamPlayersNum);
 	DOREPLIFETIME(APlayGameState, SelectCountdown);
+	DOREPLIFETIME(APlayGameState, CurrentGamePhase);
 }

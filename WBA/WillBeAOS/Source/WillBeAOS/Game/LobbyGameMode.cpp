@@ -96,7 +96,7 @@ void ALobbyGameMode::StartSelectCharacterMap()
 		UE_LOG(LogTemp, Log, TEXT("GetWorld() 성공, ServerTravel 시도"));
 		
 		IsServerTraveling = true;
-		World->ServerTravel("/Game/Portfolio/Menu/L_SelectCharacter?listen", true);
+		World->ServerTravel("/Game/Portfolio/Menu/PersistentLevel?listen", true);
 	}
 	else
 	{

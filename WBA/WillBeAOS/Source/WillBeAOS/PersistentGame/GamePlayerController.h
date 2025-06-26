@@ -9,6 +9,8 @@ class WILLBEAOS_API AGamePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+
+	
 	// ---------------------------------------------
 	// 플레이 캐릭터 선택 게임 스테이트
 	// ---------------------------------------------
@@ -38,7 +40,18 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> ToInGameLoadingWidgetClass;
 
+	UUserWidget* LoadingWidget;
+
 	UFUNCTION(Client, Reliable)
 	void ToInGameLoading();
+
+
 	
+	// ---------------------------------------------
+	// 플레이 캐릭터 선택 게임 스테이트
+	// ---------------------------------------------
+public:
+	void CheckLoadedAllStreamingLevels();
+	
+	void StartInGamePhase();
 };

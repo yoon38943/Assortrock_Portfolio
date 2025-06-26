@@ -17,18 +17,24 @@ class WILLBEAOS_API APlayGameState : public AGameState
 
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_ChangeGamePhase)
-	EGamePhase CurrentGamePhase;
+	EGamePhase CurrentGamePhase = EGamePhase::StartGameWaiting;
 
-	void SetGamePhase(EGamePhase NewGamePhase);
+	virtual void SetGamePhase(EGamePhase NewGamePhase);
 
 	UFUNCTION()
-	void OnRep_ChangeGamePhase(EGamePhase NewGamePhase);
+	void OnRep_ChangeGamePhase();
 
 	void EnterCharacterSelectPhase();
 
+	void Client_EnterCharacterSelectPhase();
+
 	void EnterLoadingPhase();
 
-	void Client_EnterCharacterSelectPhase();
+	void EnterInGamePhase();
+
+	void Client_EnterInGamePhase();
+
+
 	
 	// ---------------------------------------------
 	// 플레이 캐릭터 선택 게임 스테이트
