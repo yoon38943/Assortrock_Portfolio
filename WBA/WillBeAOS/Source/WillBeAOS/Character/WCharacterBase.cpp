@@ -10,22 +10,23 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "WPlayerController.h"
-#include "WPlayerState.h"
 #include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
-#include "Game/WGameMode.h"
 #include "Gimmick/Tower.h"
 #include "Minions/WMinionsCharacterBase.h"
 #include "Net/UnrealNetwork.h"
+#include "PersistentGame/GamePlayerController.h"
+#include "PersistentGame/GamePlayerState.h"
+#include "PersistentGame/PlayGameMode.h"
+#include "PersistentGame/PlayGameState.h"
 #include "UI/PlayerHPInfoBar.h"
 
 
 void AWCharacterBase::SetHPInfoBarColor()
 {
-	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS && PS->PlayerInfo.PlayerTeam != E_TeamID::Neutral)
 	{
 		UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget());
@@ -65,7 +66,7 @@ void AWCharacterBase::SetHPInfoBarColor()
 
 void AWCharacterBase::SetHPPercentage()
 {
-	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
 		if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
@@ -92,7 +93,7 @@ void AWCharacterBase::SetHPPercentage()
 
 void AWCharacterBase::ShowNickName()
 {
-	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
 		if (PS->PlayerInfo.PlayerNickName == "")
@@ -120,7 +121,7 @@ void AWCharacterBase::SetVisibleWidgetDistance()
 	FVector MyLocation = GetActorLocation();
 	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		for (AActor* Actor : GS->ManagedActors)
@@ -197,14 +198,14 @@ void AWCharacterBase::BeginPlay()
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
-	AWGameMode* GM = Cast<AWGameMode>(UGameplayStatics::GetGameMode(this));
+	APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GM)
 	{
 		// 게임 종료 델리게이트 바인딩 ( 서버에서만 일어남 )
 		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
 	}
 
-	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC)
 	{
 		FVector StartLocation = GetActorLocation();  // 현재 위치
@@ -214,7 +215,7 @@ void AWCharacterBase::BeginPlay()
 		PC->SetControlRotation(LookAtRotation);
 	}
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Add(this);
@@ -262,7 +263,7 @@ void AWCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
@@ -309,7 +310,7 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
-	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
 		PC->Server_CancelRecall();
@@ -339,7 +340,7 @@ void AWCharacterBase::Attack()
 {
 	if (IsDead == true) return;
 	
-	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
 		PC->Server_CancelRecall();
@@ -423,7 +424,7 @@ void AWCharacterBase::UpdateAcceleration()
 
 void AWCharacterBase::CallRecall()
 {
-	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC)
 	{
 		PC->StartRecall();
@@ -460,19 +461,19 @@ void AWCharacterBase::BeingDead()
 	auto Message = FString::Printf(TEXT("Dead"));
 	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, Message);
 
-	AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	
 	C_BeingDead(PC);	// 클라에서 실행하는 것
 	S_BeingDead(PC, this);	// 서버에서 실행하는 것
 }
 
-void AWCharacterBase::S_BeingDead_Implementation(AWPlayerController* PC, APawn* Player)
+void AWCharacterBase::S_BeingDead_Implementation(AGamePlayerController* PC, APawn* Player)
 {
 	bIsDead = true;
 	
 	//캐릭터 리스폰
-	AWGameState* GameState = Cast<AWGameState>(GetWorld()->GetGameState());
-	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	APlayGameState* GameState = Cast<APlayGameState>(GetWorld()->GetGameState());
+	APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 	if (PC && GameState && GameMode && HasAuthority())
 	{
 		PC->S_SetCurrentRespawnTime();
@@ -509,7 +510,7 @@ void AWCharacterBase::NM_BeingDead_Implementation()
 	}, 1.3f, false);
 }
 
-void AWCharacterBase::C_BeingDead_Implementation(AWPlayerController* PC)
+void AWCharacterBase::C_BeingDead_Implementation(AGamePlayerController* PC)
 {
 	// 클라에서 리스폰 위젯 출력
 	if (PC != nullptr)
@@ -542,10 +543,10 @@ void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 
 		NM_SpawnHitEffect(LastHit.Location);
 		
-		AWPlayerController* PC = Cast<AWPlayerController>(GetController());
+		AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 		if (PC)
 		{
-			AWPlayerState* PState = PC->GetPlayerState<AWPlayerState>();
+			AGamePlayerState* PState = PC->GetPlayerState<AGamePlayerState>();
 			if (PState)
 			{
 				CharacterDamage = PState->CPower;
@@ -571,7 +572,7 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 	if (HasAuthority())
 	{
-		AWPlayerState* PS = Cast<AWPlayerState>(GetPlayerState());
+		AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 		if (PS)
 		{
 			PS->Server_ApplyDamage(DamageAmount, EventInstigator);

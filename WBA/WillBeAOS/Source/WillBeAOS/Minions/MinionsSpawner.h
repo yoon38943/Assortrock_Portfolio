@@ -35,7 +35,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	class AWGameMode* GM;
+	class APlayGameMode* GM;
 
 	bool bGameIsEnd = false;
 

@@ -10,11 +10,11 @@
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h"
 #include "../Minions/HealthBar.h"
-#include "../Game/WGameState.h"
-#include "Character/WPlayerController.h"
-#include "Game/WGameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "PersistentGame/GamePlayerController.h"
+#include "PersistentGame/PlayGameMode.h"
+#include "PersistentGame/PlayGameState.h"
 
 ATower::ATower()
 {
@@ -98,7 +98,7 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Add(this);
@@ -175,7 +175,7 @@ void ATower::FindPlayerPC()
 {
 	if (HasAuthority()) return;
 	
-	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+	PlayerController = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 	FTimerHandle TowerPCTimerManager;
 	if (!PlayerController)
 	{
@@ -220,7 +220,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 			
 			IsParticleSpawned = true;
 
-			AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+			APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
 				GameMode->OnObjectKilled(this, LastHitBy);
@@ -229,13 +229,13 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 		if ((CombatComp->GetIsDead()))
 		{
-			AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+			APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 			if (GameMode)
 			{
 				GameMode->OnObjectKilled(this, LastHitBy);
 			}
 
-			AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+			APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 			if (GS)
 			{
 				GS->ManagedActors.Remove(this);

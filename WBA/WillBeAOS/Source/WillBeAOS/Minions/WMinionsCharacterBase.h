@@ -6,7 +6,7 @@
 
 #define KILLGOLD 30
 
-class AWPlayerController;
+class AGamePlayerController;
 class AWCharacterBase;
 class UAnimMontage;
 class UCombatComponent;
@@ -45,7 +45,7 @@ public:
 	float MaxWidgetScale = 1.f;
 	
 	AWCharacterBase* PlayerChar;
-	AWPlayerController* PlayerController;
+	AGamePlayerController* PlayerController;
 
 	UFUNCTION()
 	void FindPlayerPC();

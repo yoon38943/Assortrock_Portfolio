@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Character/AOSCharacter.h"
-#include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
 #include "Projectile.generated.h"
+
+class USphereComponent;
 
 UCLASS()
 class WILLBEAOS_API AProjectile : public AActor

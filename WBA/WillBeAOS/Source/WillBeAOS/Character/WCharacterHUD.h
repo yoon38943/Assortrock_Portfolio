@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "PersistentGame/PlayGameState.h"
 #include "WCharacterHUD.generated.h"
 
 class UTextBlock;
@@ -19,9 +20,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Character")
 	class AWCharacterBase* AWC;//캐릭터 받아오는 함수
 	UPROPERTY(BlueprintReadOnly, Category = "GameState")
-	class AWGameState* AWGS;//게임스테이트
+	APlayGameState* AWGS;//게임스테이트
 	UPROPERTY(BlueprintReadOnly, Category = "PlayerState")
-	class AWPlayerState* AWPS;
+	AGamePlayerState* AWPS;
 
 	UFUNCTION(BlueprintCallable, Category = "Initialize")
 	void UpdateCharacter();

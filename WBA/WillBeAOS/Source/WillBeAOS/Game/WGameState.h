@@ -7,6 +7,7 @@
 #include "GameFramework/GameState.h"
 #include "WGameState.generated.h"
 
+class AWPlayerController;
 class AWPlayerState;
 class ATower;
 class ANexus;

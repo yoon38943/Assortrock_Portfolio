@@ -131,12 +131,12 @@ public:
 
 	// ---- Dead 관련 함수 -----
 	UFUNCTION(Server, Reliable)
-	void S_BeingDead(class AWPlayerController* PC, APawn* Player);
+	void S_BeingDead(class AGamePlayerController* PC, APawn* Player);
 	// 일반 죽는 함수(죽는 클라이언트 본인만 실행되도록)
 	void BeingDead();
 	// 클라이언트
 	UFUNCTION(Client, Reliable)
-	void C_BeingDead(AWPlayerController* PC);
+	void C_BeingDead(AGamePlayerController* PC);
 
 	// 델리게이트 함수
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = Dead)

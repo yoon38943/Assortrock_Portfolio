@@ -8,12 +8,12 @@
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h"
 #include "HealthBar.h"
-#include "../Game/WGameState.h"
 #include "Character/WCharacterBase.h"
-#include "Character/WPlayerController.h"
-#include "Game/WGameMode.h"
 #include "Gimmick/Tower.h"
 #include "Net/UnrealNetwork.h"
+#include "PersistentGame/GamePlayerController.h"
+#include "PersistentGame/PlayGameMode.h"
+#include "PersistentGame/PlayGameState.h"
 
 
 AWMinionsCharacterBase::AWMinionsCharacterBase()
@@ -53,13 +53,13 @@ void AWMinionsCharacterBase::BeginPlay()
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComponent->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
-	AWGameMode* GM = Cast<AWGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	if (GM)
 	{
 		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
 	}
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Add(this);
@@ -98,7 +98,7 @@ void AWMinionsCharacterBase::FindPlayerPC()
 {
 	if (HasAuthority()) return;
 	
-	PlayerController = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+	PlayerController = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 	FTimerHandle MinionPCTimerManager;
 	if (!PlayerController)
 	{
@@ -127,7 +127,7 @@ void AWMinionsCharacterBase::CheckDistanceToTarget()
 	FVector MyLocation = GetActorLocation();
 	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS && GS->ManagedActors.Num() > 0)
 	{
 		for (AActor* Actor : GS->ManagedActors)
@@ -231,13 +231,13 @@ void AWMinionsCharacterBase::Dead()
 {
 	if (!HasAuthority()) return;
 	
-	AWGameMode* GameMode = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 	if (GameMode)
 	{
 		GameMode->OnObjectKilled(this, LastHitBy);
 	}
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Remove(this);

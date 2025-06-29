@@ -1,13 +1,8 @@
 #include "Gimmick/AItemStore.h"
 
-#include "NavigationSystemTypes.h"
-#include "Blueprint/UserWidget.h"
 #include "Character/WCharacterBase.h"
-#include "Character/WPlayerController.h"
-#include "Character/WPlayerState.h"
-#include "Game/WGameMode.h"
-#include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
+#include "PersistentGame/GamePlayerController.h"
+#include "PersistentGame/GamePlayerState.h"
 
 AItemStore::AItemStore()
 {
@@ -41,7 +36,7 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 	{
 		if (HasAuthority())
 		{
-			AWPlayerState* PS = Cast<AWPlayerState>(PlayerChar->GetPlayerState());
+			AGamePlayerState* PS = Cast<AGamePlayerState>(PlayerChar->GetPlayerState());
 			if (PS && PS->GetHP() < PS->GetMaxHP())
 			{
 				float HealAmount = PS->GetHP() + 50;
@@ -59,7 +54,7 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 
 	if (!HasAuthority())
 	{
-		AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+		AGamePlayerController* PC = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 		APawn* Player = PC->GetPawn();
 
 		if (OtherActor == Player)
@@ -86,7 +81,7 @@ void AItemStore::NotifyActorEndOverlap(AActor* OtherActor)
 	if (!HasAuthority())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("오버랩 종료"));
-		AWPlayerController* PC = Cast<AWPlayerController>(GetWorld()->GetFirstPlayerController());
+		AGamePlayerController* PC = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 		APawn* Player = PC->GetPawn();
 
 		if (OtherActor == Player)

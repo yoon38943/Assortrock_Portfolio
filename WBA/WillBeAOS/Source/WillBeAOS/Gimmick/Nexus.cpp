@@ -2,9 +2,9 @@
 #include "Components/SceneComponent.h"
 #include "Components/BoxComponent.h"
 #include "../Character/CombatComponent.h"
-#include "Game/WGameMode.h"
-#include "Game/WGameState.h"
 #include "Kismet/GameplayStatics.h"
+#include "PersistentGame/PlayGameMode.h"
+#include "PersistentGame/PlayGameState.h"
 
 ANexus::ANexus()
 {
@@ -66,7 +66,7 @@ void ANexus::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Add(this);
@@ -77,7 +77,7 @@ void ANexus::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	AWGameState* GS = Cast<AWGameState>(GetWorld()->GetGameState());
+	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
 		GS->ManagedActors.Remove(this);
@@ -98,7 +98,7 @@ float ANexus::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 			if (CombatComp->GetIsDead())
 			{
-				AWGameMode* GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+				APlayGameMode* GM = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 				if (GM)
 				{
 					GM->OnNexusDestroyed(TeamID);

@@ -4,7 +4,6 @@
 #include "Character/AOSActor.h"
 #include "Character/WCharacterBase.h"
 #include "GameFramework/Actor.h"
-#include "Minions/HealthBar.h"
 #include "Tower.generated.h"
 
 class USceneComponent;
@@ -30,7 +29,7 @@ public:
 	ATower();
 	
 	UPROPERTY(BlueprintReadWrite, Category = "GameState")
-	class AWGameState* AWGS;
+	class APlayGameState* AWGS;
 	
 protected://체력관련
 	
@@ -127,7 +126,7 @@ public:
 	float MaxWidgetScale = 1.f;
 
 	AWCharacterBase* PlayerChar;
-	AWPlayerController* PlayerController;
+	AGamePlayerController* PlayerController;
 
 	UFUNCTION()
 	void FindPlayerPC();

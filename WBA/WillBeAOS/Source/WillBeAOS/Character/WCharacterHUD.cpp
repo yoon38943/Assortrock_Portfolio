@@ -1,21 +1,18 @@
 #include "WCharacterHUD.h"
-#include "WCharacterBase.h"
-#include "WPlayerState.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "../Game/WGameState.h"
+#include "PersistentGame/GamePlayerState.h"
 
 
 void UWCharacterHUD::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	AWGS = GetWorld()->GetGameState<AWGameState>();
+	AWGS = GetWorld()->GetGameState<APlayGameState>();
 	
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
-		AWPS = PlayerController->GetPlayerState<AWPlayerState>();
+		AWPS = PlayerController->GetPlayerState<AGamePlayerState>();
 
 		if (AWPS)
 		{
@@ -38,7 +35,7 @@ void UWCharacterHUD::TryGetPlayerState()
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
-		AWPS = PlayerController->GetPlayerState<AWPlayerState>();
+		AWPS = PlayerController->GetPlayerState<AGamePlayerState>();
 
 		if (AWPS)
 		{

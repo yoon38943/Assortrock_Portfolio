@@ -1,6 +1,6 @@
 #include "Minions/MinionsSpawner.h"
 #include "WMinionsCharacterBase.h"
-#include "Game/WGameMode.h"
+#include "PersistentGame/PlayGameMode.h"
 
 AMinionsSpawner::AMinionsSpawner()
 {
@@ -12,7 +12,7 @@ void AMinionsSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GM = Cast<AWGameMode>(GetWorld()->GetAuthGameMode());
+	GM = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 	if (GM)
 	{
 		GM->OnGameEnd.AddUObject(this, &ThisClass::GameStateIsEnd);
