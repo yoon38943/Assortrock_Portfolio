@@ -118,4 +118,3 @@ float ANexus::GetNexusHPPercent()
 {
 	return CombatComp->Health/CombatComp->Max_Health;
 }
-

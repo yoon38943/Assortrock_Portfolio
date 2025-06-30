@@ -19,8 +19,6 @@ void AGamePlayerController::StartCharacterSelectPhase()
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
-
-	
 }
 
 void AGamePlayerController::Server_ControllerIsReady_Implementation()
@@ -62,6 +60,12 @@ void AGamePlayerController::BackToLobby_Implementation()
 
 void AGamePlayerController::ToInGameLoading_Implementation()
 {
+	if (SelectCharacterWidget && SelectCharacterWidget->IsInViewport())
+	{
+		SelectCharacterWidget->RemoveFromParent();
+		SelectCharacterWidget = nullptr;
+	}
+	
 	LoadingWidget = CreateWidget<UUserWidget>(this, ToInGameLoadingWidgetClass);
 	if (LoadingWidget)
 	{
@@ -105,16 +109,14 @@ void AGamePlayerController::StartInGamePhase()
 	if (LoadingWidget && LoadingWidget->IsInViewport())
 	{
 		LoadingWidget->RemoveFromParent();
+		LoadingWidget = nullptr;
 	}
 
 	// 다시 마우스 안보이도록
 	bShowMouseCursor = false;
 	bEnableClickEvents = false;
 	bEnableMouseOverEvents = false;
-
-	// 클라 준비 됐다고 신호 보내기
-
-
+	
 	// 캐릭터 소환되면 인게임 위젯 붙이기
 	UWidgetBlueprintLibrary::SetInputMode_GameOnly(this);
 
@@ -137,6 +139,7 @@ void AGamePlayerController::StartInGamePhase()
 				PlayerHUD->AddToViewport();
 		}
 
+		// 플레이어 준비 됐다고 신호 보내기
 		Server_SetPlayerReady();
 	}
 }

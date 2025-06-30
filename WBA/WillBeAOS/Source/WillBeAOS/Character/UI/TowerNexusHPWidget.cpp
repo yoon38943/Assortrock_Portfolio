@@ -1,15 +1,15 @@
 #include "Character/UI/TowerNexusHPWidget.h"
-#include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
-#include "Game/WGameState.h"
+#include "PersistentGame/PlayGameState.h"
 
 void UTowerNexusHPWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	AWGS = GetWorld()->GetGameState<AWGameState>();
+	AWGS = GetWorld()->GetGameState<APlayGameState>();
 	if (AWGS)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("AWGS was created"));
 		UpdateTeamKillPoints(AWGS->BlueTeamTotalKillPoints, AWGS->RedTeamTotalKillPoints);
 		AWGS->DelegateShowKillState.BindUObject(this, &ThisClass::UpdateTeamKillPoints);
 	}
@@ -35,7 +35,7 @@ float UTowerNexusHPWidget::SetRedTeamNexusHealth()
 
 FText UTowerNexusHPWidget::UpdateGameTimer()
 {
-	float CurrentGameTime = AWGS->GetServerWorldTimeSeconds();
+ 	float CurrentGameTime = AWGS->GetServerWorldTimeSeconds();
 	float OneGametime = 45 * 60;
 	float RestGameTime = OneGametime - CurrentGameTime;
 

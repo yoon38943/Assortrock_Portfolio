@@ -287,4 +287,6 @@ void AGamePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(AGamePlayerState, PlayerInfo);
 	DOREPLIFETIME(AGamePlayerState, InGamePlayerInfo);
+	DOREPLIFETIME(AGamePlayerState, HP);
+	DOREPLIFETIME(AGamePlayerState, MaxHP);
 }

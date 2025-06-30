@@ -89,6 +89,16 @@ void AWMinionsCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+void AWMinionsCharacterBase::Destroyed()
+{
+	Super::Destroyed();
+
+	if (CheckDistanceTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimerHandle);
+	}
+}
+
 void AWMinionsCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -132,7 +142,7 @@ void AWMinionsCharacterBase::CheckDistanceToTarget()
 	{
 		for (AActor* Actor : GS->ManagedActors)
 		{
-			if (!IsValid(Actor) || Actor == this) continue;
+			if (!Actor || Actor == this) continue;
 
 			float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
 			bool bShouldShow = DistSqr <= VisibleDistanceSqr;

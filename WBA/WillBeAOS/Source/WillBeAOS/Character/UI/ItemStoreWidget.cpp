@@ -1,17 +1,17 @@
 #include "Character/UI/ItemStoreWidget.h"
 
-#include "Character/WPlayerController.h"
-#include "Character/WPlayerState.h"
 #include "Components/TextBlock.h"
+#include "PersistentGame/GamePlayerController.h"
+#include "PersistentGame/GamePlayerState.h"
 
 void UItemStoreWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	PC = Cast<AWPlayerController>(GetOwningPlayer());
+	PC = Cast<AGamePlayerController>(GetOwningPlayer());
 	if (PC)
 	{
-		PS = Cast<AWPlayerState>(PC->PlayerState);
+		PS = Cast<AGamePlayerState>(PC->PlayerState);
 	}
 
 	G_Attack = PS->Gold_Attack;

@@ -105,7 +105,6 @@ void APlayGameState::EnterLoadingPhase()
 
 void APlayGameState::EnterInGamePhase()
 {
-	// 타워 소환 등등
 	if (HasAuthority())
 	{
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimeHandle, this, &ThisClass::AddRespawnTime, 300.f, true);
@@ -127,12 +126,12 @@ void APlayGameState::Client_EnterInGamePhase()
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 	if (PC)
 	{
-		PC->StartCharacterSelectPhase();
+		PC->StartInGamePhase();
 
 		AGamePlayerState* PS = PC->GetPlayerState<AGamePlayerState>();
 		if (PS)
 		{
-			PS->StartCharacterSelectPhase();
+			PS->StartInGamePhase();
 		}
 	}
 }
@@ -481,11 +480,12 @@ void APlayGameState::AssignNexus(AAOSActor* SpawnedActor)
 
 float APlayGameState::GetBlueNexusHP()
 {
-	if (BlueNexus)   
+	if (BlueNexus)
 	{
 		return BlueNexus->GetNexusHPPercent();
-        
-	} return 0;
+	}
+
+	return 0;
 }
 
 float APlayGameState::GetRedNexusHP()
@@ -493,8 +493,9 @@ float APlayGameState::GetRedNexusHP()
 	if (RedNexus)   
 	{
 		return RedNexus->GetNexusHPPercent();
-        
-	} return 0;
+	}
+
+	return 0;
 }
 
 void APlayGameState::NM_ReplicateTotalKillPoints_Implementation(int32 Blue, int32 Red)
@@ -539,4 +540,6 @@ void APlayGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(APlayGameState, RedTeamPlayersNum);
 	DOREPLIFETIME(APlayGameState, SelectCountdown);
 	DOREPLIFETIME(APlayGameState, CurrentGamePhase);
+	DOREPLIFETIME(APlayGameState, RedNexus);
+	DOREPLIFETIME(APlayGameState, BlueNexus);
 }

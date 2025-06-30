@@ -2,10 +2,10 @@
 
 #include "GamePlayerController.h"
 #include "GamePlayerState.h"
+#include "NavigationSystem.h"
 #include "PlayGameState.h"
 #include "Character/AOSActor.h"
 #include "Character/AOSCharacter.h"
-#include "Character/Char_Wraith.h"
 #include "Character/WCharacterBase.h"
 #include "Gimmick/PlayerSpawner.h"
 #include "Gimmick/SpawnTowerPoint.h"
@@ -56,6 +56,8 @@ void APlayGameMode::StartLoading()
 
 	FName SelectCharLevelName = FName(*CharacterSelectStream.GetAssetName());
 	UGameplayStatics::UnloadStreamLevel(this, SelectCharLevelName, UnloadSelectCharLevelLatentInfo, false);
+
+	StartSequentialLevelStreaming();
 }
 
 void APlayGameMode::StartSequentialLevelStreaming()
@@ -75,6 +77,13 @@ void APlayGameMode::StartSequentialLevelStreaming()
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("모든 스트리밍 레벨 로드 완료!"));
+
+		/*UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+		if (NavSys)
+		{
+			NavSys->Build();
+			UE_LOG(LogTemp, Log, TEXT("내비메쉬 리빌드 완료"));
+		}*/
 
 		StartInGamePhase();
 		if (GS)

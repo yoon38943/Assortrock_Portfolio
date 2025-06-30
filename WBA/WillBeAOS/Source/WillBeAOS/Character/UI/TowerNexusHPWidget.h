@@ -16,7 +16,7 @@ class WILLBEAOS_API UTowerNexusHPWidget : public UUserWidget
 	
 public:
 	UPROPERTY(BlueprintReadOnly, Category = "GameState")
-	class AWGameState* AWGS;//게임스테이트
+	class APlayGameState* AWGS;//게임스테이트
 
 public:	
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Nexus")

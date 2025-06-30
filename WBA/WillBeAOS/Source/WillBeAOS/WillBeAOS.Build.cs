@@ -12,7 +12,7 @@ public class WillBeAOS : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Niagara", "OnlineSubsystem", "OnlineSubsystemSteam" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AIModule" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "AIModule", "NavigationSystem" });
 
         // ���� ��� �߰�
         PublicIncludePaths.Add(ModuleDirectory);

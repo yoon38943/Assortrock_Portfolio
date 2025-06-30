@@ -251,6 +251,16 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
+void AWCharacterBase::Destroyed()
+{
+	Super::Destroyed();
+
+	if (CheckTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
+	}
+}
+
 void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
