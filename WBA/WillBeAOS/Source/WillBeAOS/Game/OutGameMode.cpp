@@ -1,7 +1,6 @@
 #include "OutGameMode.h"
 #include "OutGameState.h"
-#include "WEnumFile.h"
-#include "WGameInstance.h"
+
 
 AOutGameMode::AOutGameMode()
 {	
@@ -10,7 +9,6 @@ AOutGameMode::AOutGameMode()
 
 void AOutGameMode::PostLogin(APlayerController* NewPlayer)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, TEXT("Postlogin is called"));
 	Super::PostLogin(NewPlayer);
 	
 	PlayerReadyStatus.Add(NewPlayer, false);

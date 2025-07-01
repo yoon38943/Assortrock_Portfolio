@@ -26,7 +26,7 @@ void UWGameInstance::Init()
 					if (IdentityInterface.IsValid())
 					{
 						ELoginStatus::Type Status = IdentityInterface->GetLoginStatus(0);
-						UE_LOG(LogTemp, Log, TEXT("서버 Steam 로그인 상태: %d"), (int32)Status);
+						UE_LOG(LogTemp, Log, TEXT("서버 로그인 상태: %d"), (int32)Status);
 					}
 				}
                 
@@ -229,7 +229,7 @@ void UWGameInstance::CreateGameSession()
 		
 		SessionSettings = MakeShareable(new FOnlineSessionSettings());
 		SessionSettings->bIsLANMatch = true;
-		SessionSettings->NumPublicConnections = 2;
+		SessionSettings->NumPublicConnections = 1;
 		SessionSettings->bAllowJoinInProgress = true;
 		SessionSettings->bShouldAdvertise = true;
 		SessionSettings->bUseLobbiesIfAvailable = true;

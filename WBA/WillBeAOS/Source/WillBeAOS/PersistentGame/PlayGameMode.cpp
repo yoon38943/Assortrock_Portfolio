@@ -55,7 +55,7 @@ void APlayGameMode::StartLoading()
 	UnloadSelectCharLevelLatentInfo.UUID = __LINE__;
 
 	FName SelectCharLevelName = FName(*CharacterSelectStream.GetAssetName());
-	UGameplayStatics::UnloadStreamLevel(this, SelectCharLevelName, UnloadSelectCharLevelLatentInfo, false);
+	UGameplayStatics::UnloadStreamLevel(this, SelectCharLevelName,UnloadSelectCharLevelLatentInfo, false);
 
 	StartSequentialLevelStreaming();
 }
@@ -77,13 +77,6 @@ void APlayGameMode::StartSequentialLevelStreaming()
 	else
 	{
 		UE_LOG(LogTemp, Log, TEXT("모든 스트리밍 레벨 로드 완료!"));
-
-		/*UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-		if (NavSys)
-		{
-			NavSys->Build();
-			UE_LOG(LogTemp, Log, TEXT("내비메쉬 리빌드 완료"));
-		}*/
 
 		StartInGamePhase();
 		if (GS)
@@ -114,7 +107,7 @@ void APlayGameMode::StartInGamePhase()
 	SetArrayAllPlayerControllers();
 	SpawnTower();
 	GetPlayerSpawners();
-	StartSpawnPlayers();
+	/*StartSpawnPlayers();*/
 }
 
 void APlayGameMode::SpawnTower()

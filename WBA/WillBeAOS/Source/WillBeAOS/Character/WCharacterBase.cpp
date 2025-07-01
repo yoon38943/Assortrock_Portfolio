@@ -251,16 +251,6 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AWCharacterBase::Destroyed()
-{
-	Super::Destroyed();
-
-	if (CheckTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
-	}
-}
-
 void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -522,6 +512,12 @@ void AWCharacterBase::NM_BeingDead_Implementation()
 
 void AWCharacterBase::C_BeingDead_Implementation(AGamePlayerController* PC)
 {
+	// CheckDistance 셋타이머 끄기
+	if (CheckTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
+	}
+	
 	// 클라에서 리스폰 위젯 출력
 	if (PC != nullptr)
 	{

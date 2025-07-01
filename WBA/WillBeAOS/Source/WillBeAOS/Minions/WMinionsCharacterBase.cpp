@@ -89,16 +89,6 @@ void AWMinionsCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AWMinionsCharacterBase::Destroyed()
-{
-	Super::Destroyed();
-
-	if (CheckDistanceTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimerHandle);
-	}
-}
-
 void AWMinionsCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -245,6 +235,12 @@ void AWMinionsCharacterBase::Dead()
 	if (GameMode)
 	{
 		GameMode->OnObjectKilled(this, LastHitBy);
+	}
+
+	// CheckDistance 셋타이머 끄기
+	if (CheckDistanceTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimerHandle);
 	}
 
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
