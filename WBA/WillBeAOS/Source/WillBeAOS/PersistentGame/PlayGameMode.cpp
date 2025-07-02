@@ -107,7 +107,6 @@ void APlayGameMode::StartInGamePhase()
 	SetArrayAllPlayerControllers();
 	SpawnTower();
 	GetPlayerSpawners();
-	/*StartSpawnPlayers();*/
 }
 
 void APlayGameMode::SpawnTower()

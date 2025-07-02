@@ -381,12 +381,10 @@ void AGamePlayerController::OnGameStateChanged(E_GamePlay CurrentGameState)
 	{
 	case E_GamePlay::ReadyCountdown:
 		DisableInput(this);
-		// 카운트다운 끝날때까지 Input 비활성화
 		break;
     
 	case E_GamePlay::Gameplaying:
 		EnableInput(this);
-		// HUD 업데이트
 		break;
     
 	case E_GamePlay::GameEnded:
