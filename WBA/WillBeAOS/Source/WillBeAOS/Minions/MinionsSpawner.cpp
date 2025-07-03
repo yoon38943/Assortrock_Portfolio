@@ -26,10 +26,8 @@ void AMinionsSpawner::GameStateIsEnd()
 
 void AMinionsSpawner::StartSpawnMinions()
 {
-	if (Test)
-	{
-		GetWorld()->GetTimerManager().SetTimer(InitGameTimerHandle, this, &ThisClass::SpawnMinions, 1.f, false);
-	}
+	SpawnMinions();
+	GetWorld()->GetTimerManager().SetTimer(InitGameTimerHandle, this, &ThisClass::SpawnMinions, 1.f, false);
 }
 
 void AMinionsSpawner::SpawnMinions_Implementation()

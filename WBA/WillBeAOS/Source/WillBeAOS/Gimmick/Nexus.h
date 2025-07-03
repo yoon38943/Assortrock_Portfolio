@@ -30,7 +30,11 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* DefaultSceneRootComponent;
 	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* BoxCollisionComponet;
+	class UBoxComponent* BoxCollisionComponet1;
+	UPROPERTY(VisibleAnywhere)
+	class UBoxComponent* BoxCollisionComponet2;
+	UPROPERTY(VisibleAnywhere)
+	class UBoxComponent* BoxCollisionComponet3;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* NexusMeshComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

@@ -14,9 +14,7 @@ class WILLBEAOS_API AMinionsSpawner : public AActor
 	
 public:	
 	AMinionsSpawner();
-	
-	UPROPERTY(EditAnywhere)
-	bool Test = true;
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWMinionsCharacterBase> SpawnMinionsClass;
 

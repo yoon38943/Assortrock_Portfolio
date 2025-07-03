@@ -293,6 +293,7 @@ void APlayGameState::GamePlayStateChanged(E_GamePlay NewState)
 
 	case E_GamePlay::PlayerReady:	//플레이어 컨트롤러 정보를 다 받아와서
 		UE_LOG(LogTemp, Log, TEXT("All Players are ready! Updating PlayerControllers..."));
+		GetWorld()->GetTimerManager().SetTimer(InGameTimerHandle, this, &ThisClass::CountInGameTime, 1.f, true);
 		break;
 
 	case E_GamePlay::ReadyCountdown:
@@ -302,7 +303,6 @@ void APlayGameState::GamePlayStateChanged(E_GamePlay NewState)
 
 	case E_GamePlay::Gameplaying:
 		UE_LOG(LogTemp, Log, TEXT("Game has started!"));
-		//미니언 스폰
 		SetGameStart();
 		break;
 
@@ -432,6 +432,24 @@ void APlayGameState::CheckAllPlayersReady()
 	}
 }
 
+void APlayGameState::CountInGameTime()
+{
+	InGameTime++;
+
+	Multicast_CountInGameTime(InGameTime);
+
+	// 미니언 소환
+	if (InGameTime == 15.f)
+	{
+		PlayGameMode->SpawnMinions();
+	}
+}
+
+void APlayGameState::Multicast_CountInGameTime_Implementation(float Time)
+{
+	InGameTime = Time;
+}
+
 void APlayGameState::ServerCountdown()
 {
 	PlayGameMode->SetGSPlayerControllers();
@@ -453,9 +471,6 @@ void APlayGameState::SetGameStart()
 	{
 		It->OnGameStateChanged(E_GamePlay::Gameplaying);
 	}
-	
-	//미니언 스폰
-	PlayGameMode->SpawnMinions();
 }
 
 void APlayGameState::AddRespawnTime()
@@ -527,6 +542,7 @@ void APlayGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (RespawnTimeHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(RespawnTimeHandle);
+		GetWorld()->GetTimerManager().ClearTimer(InGameTimerHandle);
 	}
 }
 

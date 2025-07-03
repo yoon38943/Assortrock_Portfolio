@@ -142,7 +142,8 @@ void ATower::Tick(float DeltaTime)
 			FVector SpawnLocation = AttackStartPoint->GetComponentLocation();
 			FRotator SpawnRotation = (TargetOfActors->GetActorLocation() - SpawnLocation).Rotation();
 			
-			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>(SpawnActors, SpawnLocation, SpawnRotation, SpawnParams);
+			AProjectile* Projectile = GetWorld()->SpawnActor<AProjectile>
+			(SpawnActors, SpawnLocation, SpawnRotation, SpawnParams);
 
 			if (Projectile)
 			{
@@ -248,7 +249,8 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	return DamageAmount;
 }
 
-void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void ATower::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (!HasAuthority()) return;
 	

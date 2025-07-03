@@ -129,6 +129,16 @@ public: //PlayerReady단계
 	void CheckAllPlayersReady();
 
 public:
+	FTimerHandle InGameTimerHandle;
+	
+	float InGameTime = 0;
+	
+	void CountInGameTime();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_CountInGameTime(float Time);
+
+public:
 	int32 CountdownTime = 0;
 protected:
 	void ServerCountdown();
@@ -137,6 +147,7 @@ public:
 	
 public:
 	void SetGameStart();
+	
 public://리스폰 관련
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	int32 RespawnTime = 8;

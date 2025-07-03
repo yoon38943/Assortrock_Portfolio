@@ -35,11 +35,9 @@ float UTowerNexusHPWidget::SetRedTeamNexusHealth()
 
 FText UTowerNexusHPWidget::UpdateGameTimer()
 {
- 	float CurrentGameTime = AWGS->GetServerWorldTimeSeconds();
-	float OneGametime = 45 * 60;
-	float RestGameTime = OneGametime - CurrentGameTime;
+ 	float CurrentGameTime = AWGS->InGameTime;
 
-	FString TimeString = FString::Printf(TEXT("%d : %02d"), static_cast<int32>(RestGameTime/60) , static_cast<int32>(FMath::Fmod(RestGameTime, 60)));
+	FString TimeString = FString::Printf(TEXT("%d : %02d"), static_cast<int32>(CurrentGameTime/60) , static_cast<int32>(FMath::Fmod(CurrentGameTime, 60)));
 	return FText::FromString(TimeString);
 }
 
