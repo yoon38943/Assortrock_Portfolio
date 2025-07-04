@@ -358,11 +358,10 @@ void AWCharacterBase::Behavior()
 	if (CombatComp != nullptr)
 	{
 		//공격중이 아닐시
-		if ((CombatComp->IsCombatEnable() == false))
+		if (CombatComp->IsCombatEnable() == false)
 		{
 			//공격중 활성화
 			CombatComp->SetCombatEnable(true);
-			DSkillLCooldown.ExecuteIfBound();
 			//콤보 로직
 			if ((CombatComp->GetAttackCount()) < AttackMontages.Num())
 			{

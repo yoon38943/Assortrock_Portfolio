@@ -17,6 +17,7 @@ class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
 
 	GENERATED_BODY()
 
+protected:
 	//컴포넌트
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
 	class USpringArmComponent* CameraBoom;

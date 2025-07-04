@@ -1,5 +1,6 @@
 #include "Char_Wraith.h"
 
+#include "CombatComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -33,16 +34,6 @@ void AChar_Wraith::WraithAttack_Implementation(FVector EnemyLocationParam)
 	{
 		NM_HitParticle(HitResult.Location);
 		HandleApplyPointDamage(HitResult);
-
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,                     // Key: -1이면 새 메시지
-				2.0f,                   // 지속 시간 (초)
-				FColor::Green,          // 글자 색
-				HasAuthority() ? TEXT("Attack on Server!") : TEXT("Attack on Client!")
-			);
-		}
 	}
 }
 
@@ -56,4 +47,43 @@ void AChar_Wraith::NM_HitParticle_Implementation(FVector HitLocation)
 			FVector(0.7f),
 			true
 			);
+}
+
+void AChar_Wraith::Behavior()
+{
+	CombatComp->SetCollisionMesh(GetMesh());
+	if (CombatComp != nullptr)
+	{
+		//공격중이 아닐시
+		if (CombatComp->IsCombatEnable() == false && CanAttack == true)
+		{
+			//공격중 활성화
+			CombatComp->SetCombatEnable(true);
+			//콤보 로직
+			if ((CombatComp->GetAttackCount()) < AttackMontages.Num())
+			{
+				NM_Behavior(CombatComp->GetAttackCount());
+				AttackFire();
+				CanAttack = false;
+				FTimerHandle AttackTimer;
+				GetWorld()->GetTimerManager().SetTimer(AttackTimer,
+					[this]()
+					{
+						CanAttack = true;	
+					},
+					0.77f,
+					false);
+				CombatComp->AddAttackCount(1);
+				if (CombatComp->GetAttackCount() >= AttackMontages.Num())
+				{
+					CombatComp->ResetCombo();
+				}
+			}
+		}
+	}
+}
+
+void AChar_Wraith::AttackFire_Implementation()
+{
+	// 블루프린트 내 구현
 }

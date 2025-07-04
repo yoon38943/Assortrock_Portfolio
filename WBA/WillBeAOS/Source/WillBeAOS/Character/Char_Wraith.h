@@ -19,7 +19,14 @@ protected:
 	UFUNCTION(NetMulticast, reliable)
 	void NM_HitParticle(FVector HitLocation);
 
-public:	
+public:
+	bool CanAttack = true;
+	
+	virtual void Behavior() override;
+
+	UFUNCTION(BlueprintNativeEvent)
+	void AttackFire();
+	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void WraithAttack(FVector EnemyLocationParam);
 };
