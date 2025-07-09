@@ -4,7 +4,7 @@
 #include "Character/AOSCharacter.h"
 #include "WMinionsCharacterBase.generated.h"
 
-#define KILLGOLD 30
+#define MINIONKILLGOLD 30
 
 class AGamePlayerController;
 class AWCharacterBase;

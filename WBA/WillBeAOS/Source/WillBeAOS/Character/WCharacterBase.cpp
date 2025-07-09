@@ -189,6 +189,8 @@ AWCharacterBase::AWCharacterBase()
 	HPInfoBarComponent->SetVisibility(false);
 
 	bAlwaysRelevant = true;
+
+	SetGoldReward(PLAYERKILLGOLD);
 }
 
 
@@ -270,6 +272,36 @@ void AWCharacterBase::Tick(float DeltaTime)
 	}
 
 	UpdateAcceleration();
+
+	if (!HasAuthority())
+	{
+		AActor* AttackTarget = GetTartgetInCenter();
+	
+		if (AttackTarget != CurrentTarget)
+		{
+			if (IsValid(CurrentTarget))
+			{
+				// 이전 타겟의 외곽선 끄기
+				auto EnemyMesh = CurrentTarget->FindComponentByClass<UMeshComponent>();
+				if (IsValid(EnemyMesh))
+				{
+					EnemyMesh->SetRenderCustomDepth(false);
+				}
+			}
+
+			if (IsValid(AttackTarget))
+			{
+				// 외곽선 표시하기
+				auto EnemyMesh = AttackTarget->FindComponentByClass<UMeshComponent>();
+				if (IsValid(EnemyMesh))
+				{
+					EnemyMesh->SetRenderCustomDepth(true);
+				}
+			}
+
+			CurrentTarget = AttackTarget;
+		}
+	}
 }
 
 void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -334,6 +366,76 @@ void AWCharacterBase::Move(const FInputActionValue& Value)
 void AWCharacterBase::NM_StopPlayMontage_Implementation()
 {
 	StopAnimMontage();
+}
+
+AActor* AWCharacterBase::GetTartgetInCenter()
+{
+	FVector WorldLocation, WorldDirection;
+	FVector2D ScreenCenter;
+	int32 ViewportX, ViewportY;
+
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (!PC) return nullptr;
+
+	PC->GetViewportSize(ViewportX, ViewportY);
+	ScreenCenter = FVector2D(ViewportX, ViewportY) * 0.5f;
+
+	PC->DeprojectScreenPositionToWorld(ScreenCenter.X, ScreenCenter.Y, WorldLocation, WorldDirection);
+
+	FVector TraceStart = WorldLocation;
+	FVector TraceEnd = TraceStart + WorldDirection * 2500.0f;
+
+	TArray<FHitResult> Hits;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	FCollisionObjectQueryParams ObjectQuery;
+	ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
+	ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
+
+	GetWorld()->SweepMultiByObjectType(
+		Hits,
+		TraceStart,
+		TraceEnd,
+		FQuat::Identity,
+		ObjectQuery,
+		FCollisionShape::MakeSphere(50.f),
+		QueryParams
+	);
+
+	AActor* BestTarget = nullptr;
+	float BestAngle = FLT_MAX;
+
+	for (auto& Hit : Hits)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (!IsValid(HitActor)) continue;
+
+		AAOSCharacter* IsAOSChar = Cast<AAOSCharacter>(HitActor);
+		if (IsAOSChar)
+		{
+			if (IsAOSChar->TeamID == TeamID) continue;
+		}
+
+		AAOSActor* IsAOSActor = Cast<AAOSActor>(HitActor);
+		if (IsAOSActor)
+		{
+			if (IsAOSActor->TeamID == TeamID) continue;
+		}
+		
+		if (!IsValid(IsAOSChar) && !IsValid(IsAOSActor)) continue;
+
+		FVector ToTarget = (HitActor->GetActorLocation() - TraceStart).GetSafeNormal();
+		float Angle = FMath::Acos(FVector::DotProduct(WorldDirection, ToTarget));
+
+		if (Angle < BestAngle)
+		{
+			BestTarget = HitActor;
+			BestAngle = Angle;
+		}
+	}
+	
+	return BestTarget;
 }
 
 void AWCharacterBase::Attack()
@@ -455,10 +557,6 @@ void AWCharacterBase::NM_SpawnHitEffect_Implementation(FVector HitLocation)
 void AWCharacterBase::BeingDead()
 {
 	IsDead = true;
-	
-	//죽음 메세지 출력
-	auto Message = FString::Printf(TEXT("Dead"));
-	GEngine->AddOnScreenDebugMessage(-1, 1, FColor::Red, Message);
 
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	
@@ -469,10 +567,16 @@ void AWCharacterBase::BeingDead()
 void AWCharacterBase::S_BeingDead_Implementation(AGamePlayerController* PC, APawn* Player)
 {
 	bIsDead = true;
+
+	// 골드
+	APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		GameMode->OnObjectKilled(this, LastHitBy);
+	}
 	
 	//캐릭터 리스폰
 	APlayGameState* GameState = Cast<APlayGameState>(GetWorld()->GetGameState());
-	APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 	if (PC && GameState && GameMode && HasAuthority())
 	{
 		PC->S_SetCurrentRespawnTime();
@@ -533,7 +637,7 @@ void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 {
 	if (HasAuthority())
 	{
-		// ----- 같은팀 캐릭터, 미니언 타격 무효 -----
+		/*// ----- 같은팀 캐릭터, 미니언 타격 무효 -----
 		AAOSCharacter* HitCharacter = Cast<AAOSCharacter>(LastHit.GetActor());
 		if (HitCharacter)
 		{
@@ -544,7 +648,7 @@ void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 		if (HitObject)
 		{
 			if (this->TeamID == HitObject->TeamID) return;
-		}
+		}*/
 
 		NM_SpawnHitEffect(LastHit.Location);
 		
@@ -577,6 +681,8 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 	if (HasAuthority())
 	{
+		LastHitBy = EventInstigator;
+		
 		AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 		if (PS)
 		{
@@ -589,8 +695,7 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 	{
 		TowerWithCharacterInside->OverlappingActors.Swap(0, TowerWithCharacterInside->OverlappingActors.Find(AttackChar));
 	}
-
-	//ServerPlayMontage(HitAnimMontage);
+	
 	return DamageAmount;
 }
 

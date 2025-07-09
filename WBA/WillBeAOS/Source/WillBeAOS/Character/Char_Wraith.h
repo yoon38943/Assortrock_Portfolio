@@ -4,22 +4,30 @@
 #include "Character/WCharacterBase.h"
 #include "Char_Wraith.generated.h"
 
+class APlayGameState;
+
 UCLASS()
 class WILLBEAOS_API AChar_Wraith : public AWCharacterBase
 {
 	GENERATED_BODY()
 
+	APlayGameState* GS;
+
 	UPROPERTY(EditDefaultsOnly, Category = "HitParticle")
 	UParticleSystem* HitParticle;
 
 protected:
-	UPROPERTY(BlueprintReadWrite)
-	FVector EnemyLocation;
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(NetMulticast, reliable)
 	void NM_HitParticle(FVector HitLocation);
 
 public:
+	// 타겟 락온 관련
+	AActor* CheckTargettingInCenter();
+
+	// 공격
 	bool CanAttack = true;
 	
 	virtual void Behavior() override;
@@ -28,5 +36,5 @@ public:
 	void AttackFire();
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void WraithAttack(FVector EnemyLocationParam);
+	void WraithAttack(const FVector& Start, const FVector& End);
 };

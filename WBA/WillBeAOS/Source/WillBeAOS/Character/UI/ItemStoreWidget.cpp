@@ -8,16 +8,19 @@ void UItemStoreWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	PC = Cast<AGamePlayerController>(GetOwningPlayer());
-	if (PC)
-	{
-		PS = Cast<AGamePlayerState>(PC->PlayerState);
-	}
+	GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+	if (!GS) return;
 
-	G_Attack = PS->Gold_Attack;
-	G_Health = PS->Gold_Health;
-	G_Defence = PS->Gold_Defence;
-	G_Speed = PS->Gold_Speed;
+	PC = Cast<AGamePlayerController>(GetOwningPlayer());
+	if (!PC) return;
+
+	PS = Cast<AGamePlayerState>(PC->PlayerState);
+	if (!PS) return;
+
+	G_Attack = GS->Gold_Attack;
+	G_Health = GS->Gold_Health;
+	G_Defence = GS->Gold_Defence;
+	G_Speed = GS->Gold_Speed;
 
 	AttackGold->SetText(FText::FromString(FString::Printf(TEXT("%d Gold"), G_Attack)));
 	HealthGold->SetText(FText::FromString(FString::Printf(TEXT("%d Gold"), G_Health)));

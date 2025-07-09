@@ -114,7 +114,7 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ShowRecallWidget();
 	UFUNCTION(Client, Reliable)
-	void HiddenRecallWidget(bool IsRecallCancel);
+	void HiddenRecallWidget(bool IsRecallCompleted);
 	UFUNCTION(Server, Reliable)
 	void Server_CancelRecall();
 	void CancelRecall();

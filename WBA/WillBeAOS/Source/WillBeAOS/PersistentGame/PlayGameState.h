@@ -168,6 +168,12 @@ public:
 	float GetBlueNexusHP();
 	float GetRedNexusHP();
 
+	// 골드 관련
+	int Gold_Attack = 60;
+	int Gold_Health = 150;
+	int Gold_Defence = 30;
+	int Gold_Speed = 30;
+
 	// 캐릭터가 거리 계산할 인스턴스 모음
 	TSet<AActor*> ManagedActors;
 

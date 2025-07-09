@@ -149,15 +149,15 @@ void AGamePlayerController::BP_StartInGamePhase_Implementation()
 	// 블프 내에서 구현
 }
 
-void AGamePlayerController::HiddenRecallWidget_Implementation(bool IsRecallCancel)
+void AGamePlayerController::HiddenRecallWidget_Implementation(bool IsRecallCompleted)
 {
-	if (IsRecallCancel)
+	if (IsRecallCompleted)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("귀환 취소됨!"));
+		UE_LOG(LogTemp, Warning, TEXT("귀환 성공!"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("귀환 성공!"));
+		UE_LOG(LogTemp, Warning, TEXT("귀환 취소됨!"));
 	}
 	
 	if (RecallWidget && RecallWidget->IsInViewport())
@@ -219,7 +219,7 @@ void AGamePlayerController::CancelRecall()
 	if (RecallTimerHandle.IsValid())
 		GetWorldTimerManager().ClearTimer(RecallTimerHandle);
 
-	HiddenRecallWidget(true);
+	HiddenRecallWidget(false);
 
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
 	if (PlayerChar)
@@ -234,7 +234,7 @@ void AGamePlayerController::CompleteRecall()
 
 	IsRecalling = false;
 
-	HiddenRecallWidget(false);
+	HiddenRecallWidget(true);
 	
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetPawn());
 	if (PlayerChar)

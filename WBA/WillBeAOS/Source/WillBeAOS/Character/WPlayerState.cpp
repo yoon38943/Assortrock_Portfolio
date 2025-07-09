@@ -162,7 +162,7 @@ void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController*
         const int32 FinalDamage = StaticCast<int32>(Damage * (1.f - Reduction));
         if (HP > FinalDamage)
         {
-            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer))
+            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
             {
                 AWPlayerState* AttackPS = AttackPlayer->GetPlayerState<AWPlayerState>();
                 AttackPS->PlayerDamageAmount += FinalDamage;
@@ -172,7 +172,7 @@ void AWPlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController*
         }
         else
         {
-            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer))
+            if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
             {
                 AWPlayerState* AttackPS = AttackPlayer->GetPlayerState<AWPlayerState>();
                 AttackPS->PlayerDamageAmount += HP;

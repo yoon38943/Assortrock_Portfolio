@@ -13,6 +13,7 @@ class WILLBEAOS_API UItemStoreWidget : public UUserWidget
 
 	AGamePlayerController* PC;
 	AGamePlayerState* PS;
+	APlayGameState* GS;
 
 	int32 G_Attack;
 	int32 G_Health;

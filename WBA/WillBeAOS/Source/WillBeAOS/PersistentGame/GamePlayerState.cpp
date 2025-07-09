@@ -143,7 +143,7 @@ void AGamePlayerState::Server_ApplyDamage_Implementation(int32 Damage, AControll
 		}
 		else
 		{
-			if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer))
+			if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
 			{
 				AGamePlayerState* AttackPS = AttackPlayer->GetPlayerState<AGamePlayerState>();
 				AttackPS->PlayerDamageAmount += HP;

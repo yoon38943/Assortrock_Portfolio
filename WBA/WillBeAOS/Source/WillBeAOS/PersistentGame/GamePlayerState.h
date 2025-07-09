@@ -119,11 +119,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Gold")
 	int32 CGold;
 
-	int Gold_Attack = 60;
-	int Gold_Health = 150;
-	int Gold_Defence = 30;
-	int Gold_Speed = 30;
-
 	// 서버에서 골드를 추가하는 함수
 	UFUNCTION(Server, Reliable)
 	void Server_AddGold(int Amount);

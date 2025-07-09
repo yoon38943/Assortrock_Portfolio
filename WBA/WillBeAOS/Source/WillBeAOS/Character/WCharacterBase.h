@@ -6,6 +6,8 @@
 #include "WEnumFile.h"
 #include "WCharacterBase.generated.h"
 
+#define PLAYERKILLGOLD 100
+
 struct FInputActionValue;
 class UInputAction;
 class UAnimMontage;
@@ -115,6 +117,11 @@ public:
 	void MultiPlayMontage(UAnimMontage* Montage);
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_StopPlayMontage();
+
+	// ---- 타겟 관리 함수 ----
+	AActor* GetTartgetInCenter();
+	
+	AActor* CurrentTarget;
 	
 	// ---- Attack 관련 함수 ----
 	void Attack();
@@ -130,6 +137,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_SpawnHitEffect(FVector HitLocation);
 
+	// ---- 골드 관련 ----
+	virtual void SetGoldReward(int32 NewGold) override {GoldReward = NewGold;}
+	
 	// ---- Dead 관련 함수 -----
 	UFUNCTION(Server, Reliable)
 	void S_BeingDead(class AGamePlayerController* PC, APawn* Player);
@@ -155,7 +165,7 @@ public:
 	FDS_SkillLCooldown DSkillRCooldown;
 
 
-private:
+protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	

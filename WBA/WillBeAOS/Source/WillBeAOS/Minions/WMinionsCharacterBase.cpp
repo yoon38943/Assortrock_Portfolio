@@ -31,7 +31,7 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 
 	bAlwaysRelevant = true;
 	
-	SetGoldReward(KILLGOLD);
+	SetGoldReward(MINIONKILLGOLD);
 }
 
 void AWMinionsCharacterBase::HandleGameEnd()
@@ -132,7 +132,7 @@ void AWMinionsCharacterBase::CheckDistanceToTarget()
 	{
 		for (AActor* Actor : GS->ManagedActors)
 		{
-			if (!Actor || Actor == this) continue;
+			if (!IsValid(Actor) || Actor == this) continue;
 
 			float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
 			bool bShouldShow = DistSqr <= VisibleDistanceSqr;
@@ -232,7 +232,8 @@ void AWMinionsCharacterBase::RetrySetHPbarColor(FLinearColor HealthBarColor)
 void AWMinionsCharacterBase::Dead()
 {
 	if (!HasAuthority()) return;
-	
+
+	// 골드
 	APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
 	if (GameMode)
 	{

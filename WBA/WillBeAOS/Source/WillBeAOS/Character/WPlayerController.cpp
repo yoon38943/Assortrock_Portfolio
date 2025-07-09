@@ -14,7 +14,7 @@ void AWPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	UWidgetBlueprintLibrary::SetInputMode_GameOnly(this);
+	/*UWidgetBlueprintLibrary::SetInputMode_GameOnly(this);
 
 	if (IsLocalController() && GameStateClass && UserWidgetClass)
 	{
@@ -36,7 +36,7 @@ void AWPlayerController::BeginPlay()
 		}
 
 		Server_SetPlayerReady();
-	}
+	}*/
 }
 
 void AWPlayerController::Server_SetPlayerReady_Implementation()
