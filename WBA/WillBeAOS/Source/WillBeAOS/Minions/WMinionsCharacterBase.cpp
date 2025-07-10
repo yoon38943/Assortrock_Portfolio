@@ -59,16 +59,16 @@ void AWMinionsCharacterBase::BeginPlay()
 		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
 	}
 
-	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS)
-	{
-		GS->ManagedActors.Add(this);
-	}
-
 	FindPlayerPC();
 
 	if (HasAuthority())
 	{
+		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+		if (GS)
+		{
+			GS->GameManagedActors.AddUnique(this);
+		}
+		
 		GetWorld()->GetTimerManager().SetTimer(
 			CheckDistanceTimerHandle,
 			this,
@@ -76,6 +76,11 @@ void AWMinionsCharacterBase::BeginPlay()
 			0.2f,
 			true
 		);
+	}
+
+	if (!HasAuthority())
+	{
+		StartSetHPbarColor();
 	}
 }
 
@@ -128,9 +133,9 @@ void AWMinionsCharacterBase::CheckDistanceToTarget()
 	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
 
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS && GS->ManagedActors.Num() > 0)
+	if (GS && GS->GameManagedActors.Num() > 0)
 	{
-		for (AActor* Actor : GS->ManagedActors)
+		for (AActor* Actor : GS->GameManagedActors)
 		{
 			if (!IsValid(Actor) || Actor == this) continue;
 
@@ -179,7 +184,7 @@ void AWMinionsCharacterBase::SetHpPercentage_Implementation
 	}
 }
 
-void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
+void AWMinionsCharacterBase::StartSetHPbarColor()
 {
 	if (bIsDead) return;
 	
@@ -200,8 +205,8 @@ void AWMinionsCharacterBase::S_SetHPbarColor_Implementation()
 	SetHPbarColor(HealthBarColor);
 }
 
-void AWMinionsCharacterBase::SetHPbarColor_Implementation(FLinearColor HealthBarColor)
-{	
+void AWMinionsCharacterBase::SetHPbarColor(FLinearColor HealthBarColor)
+{
 	if (!WidgetComponent || !WidgetComponent->GetWidget()) {
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
 		{
@@ -249,7 +254,7 @@ void AWMinionsCharacterBase::Dead()
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
-		GS->ManagedActors.Remove(this);
+		GS->GameManagedActors.Remove(this);
 	}
 	
 	// AI가 죽으면 BT 연결 끊기

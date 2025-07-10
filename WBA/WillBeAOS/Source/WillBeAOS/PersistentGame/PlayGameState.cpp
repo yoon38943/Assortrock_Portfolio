@@ -513,6 +513,18 @@ float APlayGameState::GetRedNexusHP()
 	return 0;
 }
 
+void APlayGameState::OnRep_ManagedActors()
+{
+	CachedActors.Empty();
+	for (AActor* Actor : GameManagedActors)
+	{
+		if (IsValid(Actor))
+		{
+			CachedActors.Add(Actor);
+		}
+	}
+}
+
 void APlayGameState::NM_ReplicateTotalKillPoints_Implementation(int32 Blue, int32 Red)
 {
 	BlueTeamTotalKillPoints = Blue;
@@ -533,6 +545,20 @@ void APlayGameState::CheckKilledTeam(E_TeamID KillTeam)
 	}
 
 	NM_ReplicateTotalKillPoints(BlueTeamTotalKillPoints, RedTeamTotalKillPoints);
+}
+
+void APlayGameState::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (GameManagedActors.Num() > 0)
+	{
+		for (auto& It : GameManagedActors)
+		{
+			if (!IsValid(It) || It->IsPendingKillPending())
+				GameManagedActors.Remove(It);
+		}
+	}
 }
 
 void APlayGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -558,4 +584,5 @@ void APlayGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(APlayGameState, CurrentGamePhase);
 	DOREPLIFETIME(APlayGameState, RedNexus);
 	DOREPLIFETIME(APlayGameState, BlueNexus);
+	DOREPLIFETIME(APlayGameState, GameManagedActors);
 }

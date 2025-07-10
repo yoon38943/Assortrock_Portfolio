@@ -48,7 +48,6 @@ void AMinionsSpawner::SpawnMinions_Implementation()
 		SpawnMinion->TrackNum = TrackNum;
 		SpawnMinion->SetTrackPoint();
 		SpawnMinion->SpawnDefaultController();
-		SpawnMinion->S_SetHPbarColor();
 	}
 
 	if (SpawnCount < 3)

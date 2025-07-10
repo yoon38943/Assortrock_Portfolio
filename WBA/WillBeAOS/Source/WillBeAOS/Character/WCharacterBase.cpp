@@ -124,14 +124,18 @@ void AWCharacterBase::SetVisibleWidgetDistance()
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
-		for (AActor* Actor : GS->ManagedActors)
+		for (TWeakObjectPtr<AActor> WeakActor : GS->CachedActors)
 		{
-			if (!IsValid(Actor) || Actor == this) continue;
+			if (WeakActor.IsValid())
+			{
+				AActor* Actor = WeakActor.Get();
+				if (!IsValid(Actor) || Actor == this) continue;
 
-			float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
-			bool bShouldShow = DistSqr <= VisibleDistanceSqr;
+				float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
+				bool bShouldShow = DistSqr <= VisibleDistanceSqr;
 
-			SetWidgetVisible(Actor, bShouldShow);
+				SetWidgetVisible(Actor, bShouldShow);
+			}
 		}
 	}
 }
@@ -169,8 +173,6 @@ AWCharacterBase::AWCharacterBase()
 	this->bUseControllerRotationRoll = false;
 	this->bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	PrimaryActorTick.bCanEverTick = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera"));
 	CameraBoom->SetupAttachment(GetMesh());
@@ -216,12 +218,6 @@ void AWCharacterBase::BeginPlay()
     
 		PC->SetControlRotation(LookAtRotation);
 	}
-
-	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS)
-	{
-		GS->ManagedActors.Add(this);
-	}
 	
 	if (!HasAuthority())
 	{
@@ -230,9 +226,7 @@ void AWCharacterBase::BeginPlay()
 		SetHPInfoBarColor();
 		SetHPPercentage();
 		ShowNickName();
-	}
-	else
-	{
+
 		GetWorld()->GetTimerManager().SetTimer(
 			CheckTimerHandle,
 			this,
@@ -240,6 +234,14 @@ void AWCharacterBase::BeginPlay()
 			0.2f,
 			true
 		);
+	}
+	else
+	{
+		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+		if (GS)
+		{
+			GS->GameManagedActors.AddUnique(this);
+		}
 	}
 }
 
@@ -399,7 +401,7 @@ AActor* AWCharacterBase::GetTartgetInCenter()
 		TraceEnd,
 		FQuat::Identity,
 		ObjectQuery,
-		FCollisionShape::MakeSphere(50.f),
+		FCollisionShape::MakeSphere(70.f),
 		QueryParams
 	);
 
@@ -583,7 +585,7 @@ void AWCharacterBase::S_BeingDead_Implementation(AGamePlayerController* PC, APaw
 
 		PC->S_CountRespawnTime();
 		
-		GameState->ManagedActors.Remove(Player);
+		GameState->GameManagedActors.Remove(Player);
 		
 		FTimerHandle RespawnTimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle,
@@ -637,19 +639,6 @@ void AWCharacterBase::HandleApplyPointDamage(FHitResult LastHit)
 {
 	if (HasAuthority())
 	{
-		/*// ----- 같은팀 캐릭터, 미니언 타격 무효 -----
-		AAOSCharacter* HitCharacter = Cast<AAOSCharacter>(LastHit.GetActor());
-		if (HitCharacter)
-		{
-			if (this->TeamID == HitCharacter->TeamID) return;
-		}
-		// ----- 같은팀 타워, 넥서스 타격 무효 -----
-		AAOSActor* HitObject = Cast<AAOSActor>(LastHit.GetActor());
-		if (HitObject)
-		{
-			if (this->TeamID == HitObject->TeamID) return;
-		}*/
-
 		NM_SpawnHitEffect(LastHit.Location);
 		
 		AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());

@@ -175,7 +175,13 @@ public:
 	int Gold_Speed = 30;
 
 	// 캐릭터가 거리 계산할 인스턴스 모음
-	TSet<AActor*> ManagedActors;
+	UPROPERTY(ReplicatedUsing = OnRep_ManagedActors)
+	TArray<AActor*> GameManagedActors;
+
+	UFUNCTION()
+	void OnRep_ManagedActors();
+
+	TArray<TWeakObjectPtr<AActor>> CachedActors;	// 클라에서 사용할 !nullptr ManagedActors 모음
 
 	// 팀별 킬 점수
 	FDelegateShowKillState DelegateShowKillState;
@@ -188,5 +194,6 @@ public:
 	void CheckKilledTeam(E_TeamID KillTeam);
 	
 protected:
+	virtual void Tick(float DeltaTime) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 };

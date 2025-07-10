@@ -39,7 +39,7 @@ void AItemStore::NotifyActorBeginOverlap(AActor* OtherActor)
 			AGamePlayerState* PS = Cast<AGamePlayerState>(PlayerChar->GetPlayerState());
 			if (PS && PS->GetHP() < PS->GetMaxHP())
 			{
-				float HealAmount = PS->GetHP() + 50;
+				float HealAmount = PS->GetHP() + (PS->GetMaxHP() / 3);
 				if (HealAmount <= PS->GetMaxHP())
 				{
 					PS->SetHP(HealAmount);

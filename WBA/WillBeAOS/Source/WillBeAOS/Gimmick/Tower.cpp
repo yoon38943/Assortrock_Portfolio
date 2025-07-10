@@ -98,13 +98,15 @@ void ATower::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS)
+	if (HasAuthority())
 	{
-		GS->ManagedActors.Add(this);
+		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+		if (GS)
+		{
+			GS->GameManagedActors.AddUnique(this);
+		}
 	}
-
-	if (!HasAuthority())
+	else
 	{
 		S_InitHPPercentage();
 		InitHPPercentage(CombatComp->Health, CombatComp->Max_Health);
@@ -239,7 +241,7 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 			APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 			if (GS)
 			{
-				GS->ManagedActors.Remove(this);
+				GS->GameManagedActors.Remove(this);
 			}
 			
 			TowerDestroyInClient();

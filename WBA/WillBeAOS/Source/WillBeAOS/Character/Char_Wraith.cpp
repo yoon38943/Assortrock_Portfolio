@@ -7,32 +7,13 @@
 
 void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVector& End)
 {
-	/*FVector WorldLocation, WorldDirection;
-	FVector2D ScreenCenter;
-	int32 ViewportX, ViewportY;
-
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (!PC) return;
-
-	PC->GetViewportSize(ViewportX, ViewportY);
-	ScreenCenter = FVector2D(ViewportX, ViewportY) * 0.5f;
-
-	PC->DeprojectScreenPositionToWorld(ScreenCenter.X, ScreenCenter.Y, WorldLocation, WorldDirection);
-
-	FVector Start = WorldLocation;
-	FVector End = Start + WorldDirection * 1500.0f;*/
-
-	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
-	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-
 	FHitResult HitResult;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
 	if (GS)
 	{
-		for (AActor* Ally : GS->ManagedActors)
+		for (AActor* Ally : GS->GameManagedActors)
 		{
 			if (IsValid(Ally))
 			{
@@ -125,28 +106,32 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 	FVector TraceStart = WorldLocation;
 	FVector TraceEnd = TraceStart + WorldDirection * 1600.0f;
 
-	TArray<FHitResult> Hits;
+	FHitResult HitActor;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
 	if (GS)
 	{
-		for (AActor* Ally : GS->ManagedActors)
+		for (TWeakObjectPtr<AActor> WeakActor : GS->CachedActors)
 		{
-			if (IsValid(Ally))
+			if (WeakActor.IsValid())
 			{
+				AActor* Ally = WeakActor.Get();
+				
+				if (!IsValid(Ally)) continue;
+			
 				// AAOSCharacter 중 아군 채널 제외
-				if (Ally->IsA<AAOSCharacter>())
+				AAOSCharacter* InGameChar = Cast<AAOSCharacter>(Ally);
+				if (InGameChar)
 				{
-					AAOSCharacter* InGameChar = Cast<AAOSCharacter>(Ally);
-					if (IsValid(InGameChar) && InGameChar->TeamID == TeamID)
+					if (InGameChar->TeamID == TeamID)
 						QueryParams.AddIgnoredActor(Ally);
 				}
 
 				// AAOSActor 중 아군 채널 제외
-				if (Ally->IsA<AAOSActor>())
+				AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
+				if (InGameActor)
 				{
-					AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
 					if (IsValid(InGameActor) && InGameActor->TeamID == TeamID)
 						QueryParams.AddIgnoredActor(Ally);
 				}
@@ -158,52 +143,27 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 	ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
 	ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
 
-	GetWorld()->SweepMultiByObjectType(
-		Hits,
+	bool AttackSuccess = GetWorld()->LineTraceSingleByObjectType(
+		HitActor,
 		TraceStart,
 		TraceEnd,
-		FQuat::Identity,
 		ObjectQuery,
-		FCollisionShape::MakeSphere(50.f),
 		QueryParams
 	);
 
-	AActor* BestTarget = nullptr;
-	float BestAngle = FLT_MAX;
-
-	for (auto& Hit : Hits)
+	if (AttackSuccess)
 	{
-		AActor* HitActor = Hit.GetActor();
-		if (!IsValid(HitActor)) continue;
-
-		AAOSCharacter* IsAOSChar = Cast<AAOSCharacter>(HitActor);
-		if (IsAOSChar)
+		if (!Cast<AAOSCharacter>(HitActor.GetActor()) && !Cast<AAOSActor>(HitActor.GetActor()))
 		{
-			if (IsAOSChar->TeamID == TeamID) continue;
-		}
-
-		AAOSActor* IsAOSActor = Cast<AAOSActor>(HitActor);
-		if (IsAOSActor)
-		{
-			if (IsAOSActor->TeamID == TeamID) continue;
+			return nullptr;
 		}
 		
-		if (!IsValid(IsAOSChar) && !IsValid(IsAOSActor))
-		{
-			continue;
-		}
-
-		FVector ToTarget = (HitActor->GetActorLocation() - TraceStart).GetSafeNormal();
-		float Angle = FMath::Acos(FVector::DotProduct(WorldDirection, ToTarget));
-
-		if (Angle < BestAngle)
-		{
-			BestTarget = HitActor;
-			BestAngle = Angle;
-		}
+		return HitActor.GetActor();
 	}
-	
-	return BestTarget;
+	else
+	{
+		return nullptr;
+	}
 }
 
 void AChar_Wraith::Behavior()

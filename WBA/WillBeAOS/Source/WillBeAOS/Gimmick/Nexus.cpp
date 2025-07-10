@@ -70,10 +70,13 @@ void ANexus::BeginPlay()
 {
 	Super::BeginPlay();
 
-	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS)
+	if (HasAuthority())
 	{
-		GS->ManagedActors.Add(this);
+		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+		if (GS)
+		{
+			GS->GameManagedActors.AddUnique(this);
+		}
 	}
 }
 
@@ -84,14 +87,14 @@ void ANexus::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	if (GS)
 	{
-		GS->ManagedActors.Remove(this);
+		GS->GameManagedActors.Remove(this);
 	}
 }
 
 float ANexus::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-		
+
 	if (HasAuthority())
 	{
 		float TakeDamage = DamageAmount;
