@@ -113,7 +113,7 @@ void ATower::BeginPlay()
 	}
 
 	// 플레이어 컨트롤러 찾기
-	FindPlayerPC();
+	/*FindPlayerPC();*/
 }
 
 void ATower::Tick(float DeltaTime)
@@ -174,7 +174,7 @@ void ATower::BeamToTarget(FVector TargetLocation, AAOSCharacter* Target)
 	NiagaraComponent->SetVisibility(true);
 }
 
-void ATower::FindPlayerPC()
+/*void ATower::FindPlayerPC()
 {
 	if (HasAuthority()) return;
 	
@@ -199,7 +199,7 @@ void ATower::FindPlayerPawn()
 	{
 		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
 	}
-}
+}*/
 
 float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {

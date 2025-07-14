@@ -420,7 +420,7 @@ void AGamePlayerController::OnPossess(APawn* InPawn)
 			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
 		}
 
-		// 타워에 캐릭터 재설정 부분
+		/*// 타워에 캐릭터 재설정 부분
 		if (this == GetWorld()->GetFirstPlayerController())
 		{
 			TArray<AActor*> FoundTowers;
@@ -434,7 +434,7 @@ void AGamePlayerController::OnPossess(APawn* InPawn)
 					Tower->FindPlayerPawn();  // 타워의 특정 함수 호출
 				}
 			}
-		}
+		}*/
 	}
 }
 

@@ -125,12 +125,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	float MaxWidgetScale = 1.f;
 
-	AWCharacterBase* PlayerChar;
+	/*AWCharacterBase* PlayerChar;
 	AGamePlayerController* PlayerController;
 
 	UFUNCTION()
 	void FindPlayerPC();
-	void FindPlayerPawn();
+	void FindPlayerPawn();*/
 
 	// 타겟 빔
 	void BeamToTarget(FVector TargetLocation, AAOSCharacter* Target);

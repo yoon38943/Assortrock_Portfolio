@@ -60,3 +60,11 @@ enum class E_GamePlay : uint8
 	Gameplaying,
 	GameEnded
 };
+
+UENUM(BlueprintType)
+enum class E_TurningInPlace : uint8
+{
+	E_TurningLeft UMETA(DisplayName = "TurnLeft"),
+	E_TurningRight UMETA(DisplayName = "TurnRight"),
+	E_NotTurning UMETA(DisplayName = "NotTurning")
+};

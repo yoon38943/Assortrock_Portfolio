@@ -61,7 +61,7 @@ void AWPlayerController::OnPossess(APawn* InPawn)
 			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
 		}
 
-		if (this == GetWorld()->GetFirstPlayerController())
+		/*if (this == GetWorld()->GetFirstPlayerController())
 		{
 			TArray<AActor*> FoundTowers;
 			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATower::StaticClass(), FoundTowers);
@@ -74,7 +74,7 @@ void AWPlayerController::OnPossess(APawn* InPawn)
 					Tower->FindPlayerPawn();  // 타워의 특정 함수 호출
 				}
 			}
-		}
+		}*/
 	}
 }
 

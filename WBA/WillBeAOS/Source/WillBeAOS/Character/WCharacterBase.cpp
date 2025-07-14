@@ -9,12 +9,14 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
+#include "WCharAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
 #include "Gimmick/Tower.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Minions/WMinionsCharacterBase.h"
 #include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerController.h"
@@ -23,6 +25,209 @@
 #include "PersistentGame/PlayGameState.h"
 #include "UI/PlayerHPInfoBar.h"
 
+
+AWCharacterBase::AWCharacterBase()
+{
+	PrimaryActorTick.bCanEverTick = true;
+
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera"));
+	CameraBoom->SetupAttachment(GetMesh());
+
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	CombatComp->SetCombatEnable(false);
+
+	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
+	HPInfoBarComponent->SetupAttachment(GetRootComponent());
+	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
+	HPInfoBarComponent->SetVisibility(false);
+
+	SetReplicateMovement(true);
+	bAlwaysRelevant = true;
+
+	SetGoldReward(PLAYERKILLGOLD);
+}
+
+
+void AWCharacterBase::BeginPlay()
+{
+	Super::BeginPlay();
+	//HandleApplyPointDamage 멀티델리게이트 바인딩
+	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
+
+	APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(this));
+	if (GM)
+	{
+		// 게임 종료 델리게이트 바인딩 ( 서버에서만 일어남 )
+		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
+	}
+
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
+	if (PC)
+	{
+		FVector StartLocation = GetActorLocation();  // 현재 위치
+	
+		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(0, 0, 100) - StartLocation).Rotator();
+    
+		PC->SetControlRotation(LookAtRotation);
+	}
+	
+	if (!HasAuthority())
+	{
+		if (IsLocallyControlled())
+			HPInfoBarComponent->SetVisibility(true);
+		SetHPInfoBarColor();
+		SetHPPercentage();
+		ShowNickName();
+
+		GetWorld()->GetTimerManager().SetTimer(
+			CheckTimerHandle,
+			this,
+			&ThisClass::SetVisibleWidgetDistance,
+			0.2f,
+			true
+		);
+	}
+	else
+	{
+		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
+		if (GS)
+		{
+			GS->GameManagedActors.AddUnique(this);
+		}
+	}
+}
+
+void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (CheckTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
+	}
+}
+
+void AWCharacterBase::Tick(float DeltaTime)	
+{
+	Super::Tick(DeltaTime);
+
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
+	}
+	
+	UpdateAcceleration();
+
+	AimOffset(DeltaTime);
+
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+	bool bIsInAir = GetCharacterMovement()->IsFalling();
+
+	if (Speed == 0.f && !bIsInAir)
+	{
+		FRotator AimRot = GetBaseAimRotation();
+		FRotator ActorRot = GetActorRotation();
+
+		FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(AimRot, ActorRot);
+	
+		Pitch = DeltaRot.Pitch;
+		Yaw = DeltaRot.Yaw;
+
+		if (TurningInPlace == E_TurningInPlace::E_NotTurning)
+		{
+			InterpAOYaw = Yaw;
+		}
+		TurnInPlace(DeltaTime);	
+	}
+
+	if (!HasAuthority())
+	{
+		AActor* AttackTarget = GetTartgetInCenter();
+	
+		if (AttackTarget != CurrentTarget)
+		{
+			if (IsValid(CurrentTarget))
+			{
+				// 이전 타겟의 외곽선 끄기
+				auto EnemyMesh = CurrentTarget->FindComponentByClass<UMeshComponent>();
+				if (IsValid(EnemyMesh))
+				{
+					EnemyMesh->SetRenderCustomDepth(false);
+				}
+			}
+
+			if (IsValid(AttackTarget))
+			{
+				// 외곽선 표시하기
+				auto EnemyMesh = AttackTarget->FindComponentByClass<UMeshComponent>();
+				if (IsValid(EnemyMesh))
+				{
+					EnemyMesh->SetRenderCustomDepth(true);
+				}
+			}
+
+			CurrentTarget = AttackTarget;
+		}
+	}
+}
+
+void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	// IMC 세팅
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+		if (Subsystem)
+		{
+			Subsystem->AddMappingContext(IMC_Asset, 0);
+		}
+	}
+
+	// InputAction 붙이기
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
+		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
+		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
+		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
+		EnhancedInputComponent->BindAction(IA_SkillR, ETriggerEvent::Started, this, &AWCharacterBase::SkillR);
+		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
+	}
+}
+
+void AWCharacterBase::AimOffset(float DeltaTime)
+{
+	
+}
+
+void AWCharacterBase::TurnInPlace(float DeltaTime)
+{
+	if (Yaw > 90.f)
+	{
+		TurningInPlace = E_TurningInPlace::E_TurningRight;
+	}
+	else if (Yaw < -90.f)
+	{
+		TurningInPlace = E_TurningInPlace::E_TurningLeft;
+	}
+	if (TurningInPlace != E_TurningInPlace::E_NotTurning)
+	{
+		InterpAOYaw = FMath::FInterpTo(InterpAOYaw, 0.f, DeltaTime, 5.f);
+		Yaw = InterpAOYaw;
+		if (FMath::Abs(Yaw) < 15.f)
+		{
+			TurningInPlace = E_TurningInPlace::E_NotTurning;
+		}
+	}
+}
 
 void AWCharacterBase::SetHPInfoBarColor()
 {
@@ -165,172 +370,6 @@ void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVis
 	}
 }
 
-AWCharacterBase::AWCharacterBase()
-{
-	PrimaryActorTick.bCanEverTick = true;
-
-	this->bUseControllerRotationPitch = false;
-	this->bUseControllerRotationRoll = false;
-	this->bUseControllerRotationYaw = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera"));
-	CameraBoom->SetupAttachment(GetMesh());
-	CameraBoom->bUsePawnControlRotation = true;
-
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	CameraBoom->bUsePawnControlRotation = true;
-
-	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-	CombatComp->SetCombatEnable(false);
-
-	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
-	HPInfoBarComponent->SetupAttachment(GetRootComponent());
-	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
-	HPInfoBarComponent->SetVisibility(false);
-
-	bAlwaysRelevant = true;
-
-	SetGoldReward(PLAYERKILLGOLD);
-}
-
-
-void AWCharacterBase::BeginPlay()
-{
-	Super::BeginPlay();
-	//HandleApplyPointDamage 멀티델리게이트 바인딩
-	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
-
-	APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(this));
-	if (GM)
-	{
-		// 게임 종료 델리게이트 바인딩 ( 서버에서만 일어남 )
-		GM->OnGameEnd.AddUObject(this, &ThisClass::HandleGameEnd);
-	}
-
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC)
-	{
-		FVector StartLocation = GetActorLocation();  // 현재 위치
-	
-		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(0, 0, 100) - StartLocation).Rotator();
-    
-		PC->SetControlRotation(LookAtRotation);
-	}
-	
-	if (!HasAuthority())
-	{
-		if (IsLocallyControlled())
-			HPInfoBarComponent->SetVisibility(true);
-		SetHPInfoBarColor();
-		SetHPPercentage();
-		ShowNickName();
-
-		GetWorld()->GetTimerManager().SetTimer(
-			CheckTimerHandle,
-			this,
-			&ThisClass::SetVisibleWidgetDistance,
-			0.2f,
-			true
-		);
-	}
-	else
-	{
-		APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-		if (GS)
-		{
-			GS->GameManagedActors.AddUnique(this);
-		}
-	}
-}
-
-void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	if (CheckTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
-	}
-}
-
-void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ThisClass, CharacterDamage);
-	DOREPLIFETIME(ThisClass, CharacterTeam);
-}
-
-void AWCharacterBase::Tick(float DeltaTime)	
-{
-	Super::Tick(DeltaTime);
-
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
-	}
-
-	UpdateAcceleration();
-
-	if (!HasAuthority())
-	{
-		AActor* AttackTarget = GetTartgetInCenter();
-	
-		if (AttackTarget != CurrentTarget)
-		{
-			if (IsValid(CurrentTarget))
-			{
-				// 이전 타겟의 외곽선 끄기
-				auto EnemyMesh = CurrentTarget->FindComponentByClass<UMeshComponent>();
-				if (IsValid(EnemyMesh))
-				{
-					EnemyMesh->SetRenderCustomDepth(false);
-				}
-			}
-
-			if (IsValid(AttackTarget))
-			{
-				// 외곽선 표시하기
-				auto EnemyMesh = AttackTarget->FindComponentByClass<UMeshComponent>();
-				if (IsValid(EnemyMesh))
-				{
-					EnemyMesh->SetRenderCustomDepth(true);
-				}
-			}
-
-			CurrentTarget = AttackTarget;
-		}
-	}
-}
-
-void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	// IMC 세팅
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
-	{
-		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-		if (Subsystem)
-		{
-			Subsystem->AddMappingContext(IMC_Asset, 0);
-		}
-	}
-
-	// InputAction 붙이기
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
-	{
-		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
-		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
-		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
-		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
-		EnhancedInputComponent->BindAction(IA_SkillR, ETriggerEvent::Started, this, &AWCharacterBase::SkillR);
-		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
-	}
-}
-
 void AWCharacterBase::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -344,6 +383,11 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+	}
+	
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
@@ -362,6 +406,18 @@ void AWCharacterBase::Move(const FInputActionValue& Value)
 
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
+	}
+
+	FRotator ControlRot = GetControlRotation();
+	FRotator OnlyYaw = FRotator(0.f, ControlRot.Yaw, 0.f);
+	Server_SetControlRotationYaw(OnlyYaw);
+}
+
+void AWCharacterBase::StopMove(const FInputActionValue& Value)
+{
+	if (GetCharacterMovement())
+	{
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	}
 }
 
@@ -458,6 +514,8 @@ void AWCharacterBase::Attack()
 
 void AWCharacterBase::Behavior()
 {
+	EnterCombat();
+	
 	CombatComp->SetCollisionMesh(GetMesh());
 	if (CombatComp != nullptr)
 	{
@@ -476,6 +534,39 @@ void AWCharacterBase::Behavior()
 					CombatComp->ResetCombo();
 				}
 			}
+		}
+	}
+}
+
+void AWCharacterBase::EnterCombat()
+{
+	IsCombat = true;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		UWCharAnimInstance* Anim = Cast<UWCharAnimInstance>(AnimInstance);
+		if (Anim)
+		{
+			Anim->IsInCombat = true;
+		}
+	}
+	
+	GetWorld()->GetTimerManager().ClearTimer(CombatTimer);
+	GetWorld()->GetTimerManager().SetTimer(CombatTimer, this, &ThisClass::ExitCombat, 15.f, false);
+}
+
+void AWCharacterBase::ExitCombat()
+{
+	IsCombat = false;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		UWCharAnimInstance* Anim = Cast<UWCharAnimInstance>(AnimInstance);
+		if (Anim)
+		{
+			Anim->IsInCombat = false;
 		}
 	}
 }
@@ -523,6 +614,16 @@ void AWCharacterBase::UpdateAcceleration()
 	// 현재 속도에 비례해서 가속도를 조정 (최대 속도가 높을수록 가속도 증가)
 	float NewAcceleration = FMath::Lerp(2048.0f, 5000.0f, CurrentSpeed / MaxSpeed);
 	GetCharacterMovement()->MaxAcceleration = NewAcceleration;
+}
+
+void AWCharacterBase::Server_SetControlRotationYaw_Implementation(FRotator YawRotation)
+{
+	SetActorRotation(YawRotation);	// 서버에서 캐릭터 회전값 동기화
+}
+
+bool AWCharacterBase::Server_SetControlRotationYaw_Validate(FRotator YawRotation)
+{
+	return true;
 }
 
 void AWCharacterBase::CallRecall()
@@ -670,6 +771,8 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 	if (HasAuthority())
 	{
+		EnterCombat();
+		
 		LastHitBy = EventInstigator;
 		
 		AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
@@ -699,4 +802,12 @@ void AWCharacterBase::HandleGameEnd()
 
 		PrimaryActorTick.bCanEverTick = false;
 	}
+}
+
+void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, CharacterDamage);
+	DOREPLIFETIME(ThisClass, CharacterTeam);
 }

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "WEnumFile.h"
 #include "WCharAnimInstance.generated.h"
 
 class AWCharacterBase;
@@ -19,8 +20,19 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	UCharacterMovementComponent* WCharMovementComponent;
 
+	UPROPERTY(BlueprintReadWrite, Category = MoveMent)
+	E_TurningInPlace TurningInPlace;
+
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	bool IsInCombat;
+
 
 protected:
+
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float Pitch;
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float Yaw;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	FVector WCharVelocity;

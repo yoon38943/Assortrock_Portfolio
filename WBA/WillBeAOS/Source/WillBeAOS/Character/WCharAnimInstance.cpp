@@ -2,11 +2,11 @@
 #include "WCharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Net/UnrealNetwork.h"
 
 
 void UWCharAnimInstance::NativeInitializeAnimation()
 {
-	// 캐릭터 레퍼런스 저장
 	WCharBase = Cast<AWCharacterBase>(TryGetPawnOwner());
 	if (WCharBase != nullptr)
 	{
@@ -14,15 +14,22 @@ void UWCharAnimInstance::NativeInitializeAnimation()
 	}
 }
 
-// 애니메이션 업데이트 루프
 void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
+	AWCharacterBase* Character = Cast<AWCharacterBase>(TryGetPawnOwner());
+	if (Character)
+	{
+		Pitch = Character->Pitch;
+		Yaw = Character->Yaw;
 
+		TurningInPlace = Character->TurningInPlace;
+	}
+	
 	if (WCharMovementComponent)
 	{
 		WCharVelocity = WCharMovementComponent->Velocity;
 		WCharSpeed = UKismetMathLibrary::VSizeXY(WCharVelocity);
-
+		
 		if (UKismetMathLibrary::VSizeXY(WCharMovementComponent->GetCurrentAcceleration()) > 0)
 			WIsAccelerating = true;
 		else
@@ -38,4 +45,11 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		WCharInAir = WCharMovementComponent->IsFalling();
 	}
+}
+
+void UWCharAnimInstance::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, IsInCombat);
 }

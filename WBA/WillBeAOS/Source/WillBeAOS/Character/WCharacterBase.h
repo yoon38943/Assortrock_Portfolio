@@ -27,8 +27,23 @@ protected:
 	class UCameraComponent* FollowCamera;
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"));
 	class UCombatComponent* CombatComp;
+
+	void AimOffset(float DeltaTime);
 	
 public:
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float Pitch;
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float Yaw;
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	float InterpAOYaw;
+	
+	E_TurningInPlace TurningInPlace;
+
+	FORCEINLINE E_TurningInPlace GetTurningInPlace() const { return TurningInPlace; }
+
+	void TurnInPlace(float DeltaTime);
+	
 	UPROPERTY(Replicated)
 	E_TeamID CharacterTeam;
 	
@@ -99,9 +114,13 @@ public:
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
+	void StopMove(const FInputActionValue& Value);
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void SkillR(const FInputActionValue& Value);
 	void UpdateAcceleration();
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_SetControlRotationYaw(FRotator YawRotation);
 
 	// ---- 귀환 관련 함수 ----
 	void CallRecall();
@@ -130,6 +149,13 @@ public:
 	void S_Behavior();
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_Behavior(int32 Combo);
+
+	bool IsCombat;
+
+	void EnterCombat();
+	void ExitCombat();
+
+	FTimerHandle CombatTimer;
 
 	// ----- Hit 이벤트 -----
 	UFUNCTION(BlueprintNativeEvent)
