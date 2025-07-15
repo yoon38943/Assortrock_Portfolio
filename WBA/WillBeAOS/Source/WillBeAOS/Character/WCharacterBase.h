@@ -31,10 +31,16 @@ protected:
 	void AimOffset(float DeltaTime);
 	
 public:
+	UPROPERTY(Replicated)
+	FRotator ControllerRotation;
+	UFUNCTION(Server, Reliable)
+	void Server_SetControlRotation(FRotator Rotation);
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float Pitch;
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	UPROPERTY(BlueprintReadOnly, Category = Movement, Replicated)
 	float Yaw;
+	UFUNCTION(Server, Reliable)
+	void Server_SetYaw(float YawValue);
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float InterpAOYaw;
 	
@@ -90,8 +96,6 @@ private:
 	UInputAction* IA_Look;
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Move;
-	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* IA_Jump;
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Behavior;
 	UPROPERTY(EditAnywhere, Category = Input)

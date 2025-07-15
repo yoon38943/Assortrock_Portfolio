@@ -19,10 +19,14 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AWCharacterBase* Character = Cast<AWCharacterBase>(TryGetPawnOwner());
 	if (Character)
 	{
-		Pitch = Character->Pitch;
-		Yaw = Character->Yaw;
-
 		TurningInPlace = Character->TurningInPlace;
+		
+		if (TurningInPlace == E_TurningInPlace::E_NotTurning)
+		{
+			Pitch = Character->Pitch;
+			RawYawDelta = Character->Yaw;
+			Yaw = FMath::FInterpTo(Yaw, RawYawDelta, DeltaSeconds, 10.0f);
+		}
 	}
 	
 	if (WCharMovementComponent)
@@ -42,8 +46,6 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 		else
 			FullBody = false;
-
-		WCharInAir = WCharMovementComponent->IsFalling();
 	}
 }
 

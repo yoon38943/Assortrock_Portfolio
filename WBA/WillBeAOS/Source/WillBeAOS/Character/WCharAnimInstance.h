@@ -33,6 +33,7 @@ protected:
 	float Pitch;
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float Yaw;
+	float RawYawDelta;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	FVector WCharVelocity;
@@ -41,8 +42,6 @@ protected:
 	float WCharSpeed;
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool WIsAccelerating;
-	UPROPERTY(BlueprintReadOnly, Category = Movement)
-	bool WCharInAir;
 	UPROPERTY(BlueprintReadOnly, Category = "FullBody")
 	bool FullBody;
 

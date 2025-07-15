@@ -48,6 +48,9 @@ AWCharacterBase::AWCharacterBase()
 	bAlwaysRelevant = true;
 
 	SetGoldReward(PLAYERKILLGOLD);
+
+	bUseControllerRotationYaw = false;
+	TurningInPlace = E_TurningInPlace::E_NotTurning;
 }
 
 
@@ -124,28 +127,6 @@ void AWCharacterBase::Tick(float DeltaTime)
 
 	AimOffset(DeltaTime);
 
-	FVector Velocity = GetVelocity();
-	Velocity.Z = 0.f;
-	float Speed = Velocity.Size();
-	bool bIsInAir = GetCharacterMovement()->IsFalling();
-
-	if (Speed == 0.f && !bIsInAir)
-	{
-		FRotator AimRot = GetBaseAimRotation();
-		FRotator ActorRot = GetActorRotation();
-
-		FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(AimRot, ActorRot);
-	
-		Pitch = DeltaRot.Pitch;
-		Yaw = DeltaRot.Yaw;
-
-		if (TurningInPlace == E_TurningInPlace::E_NotTurning)
-		{
-			InterpAOYaw = Yaw;
-		}
-		TurnInPlace(DeltaTime);	
-	}
-
 	if (!HasAuthority())
 	{
 		AActor* AttackTarget = GetTartgetInCenter();
@@ -193,8 +174,6 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
-		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Started, this, &ACharacter::Jump);
-		EnhancedInputComponent->BindAction(IA_Jump, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
 		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
@@ -205,7 +184,50 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 void AWCharacterBase::AimOffset(float DeltaTime)
 {
-	
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.f;
+	float Speed = Velocity.Size();
+
+	if (Speed == 0.f)
+	{
+		if (IsLocallyControlled())
+		{
+			FRotator AimRot = GetBaseAimRotation();
+			FRotator ActorRot = GetActorRotation();
+
+			FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(AimRot, ActorRot);
+		
+			Yaw = DeltaRot.Yaw;
+			Server_SetYaw(Yaw);
+		}
+		
+		bUseControllerRotationYaw = false;
+		TurnInPlace(DeltaTime);
+	}
+	if (Speed > 0.f)
+	{
+		bUseControllerRotationYaw = true;
+		Yaw = 0.f;
+		TurningInPlace = E_TurningInPlace::E_NotTurning;
+	}
+
+	Pitch = GetBaseAimRotation().Pitch;
+	if (Pitch > 90.f && !IsLocallyControlled())
+	{
+		FVector2D InRange(270.f, 360.f);
+		FVector2D OutRange(-90.f, 0.f);
+		Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, Pitch);
+	}
+}
+
+void AWCharacterBase::Server_SetControlRotation_Implementation(FRotator Rotation)
+{
+	ControllerRotation = Rotation;
+}
+
+void AWCharacterBase::Server_SetYaw_Implementation(float YawValue)
+{
+	Yaw = YawValue;
 }
 
 void AWCharacterBase::TurnInPlace(float DeltaTime)
@@ -220,11 +242,22 @@ void AWCharacterBase::TurnInPlace(float DeltaTime)
 	}
 	if (TurningInPlace != E_TurningInPlace::E_NotTurning)
 	{
-		InterpAOYaw = FMath::FInterpTo(InterpAOYaw, 0.f, DeltaTime, 5.f);
-		Yaw = InterpAOYaw;
+		FRotator NewRotation = GetActorRotation();
+		if (IsLocallyControlled())
+		{
+			ControllerRotation = GetControlRotation();
+			Server_SetControlRotation(ControllerRotation);
+		}
+		NewRotation.Yaw = ControllerRotation.Yaw;
+		
+		NewRotation = FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, 3.0f);
+
+		SetActorRotation(NewRotation);
+		
 		if (FMath::Abs(Yaw) < 15.f)
 		{
 			TurningInPlace = E_TurningInPlace::E_NotTurning;
+			bUseControllerRotationYaw = false;
 		}
 	}
 }
@@ -383,11 +416,6 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
-	if (GetCharacterMovement())
-	{
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
-	}
-	
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
@@ -810,4 +838,6 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 
 	DOREPLIFETIME(ThisClass, CharacterDamage);
 	DOREPLIFETIME(ThisClass, CharacterTeam);
+	DOREPLIFETIME(ThisClass, Yaw);
+	DOREPLIFETIME(ThisClass, ControllerRotation);
 }
