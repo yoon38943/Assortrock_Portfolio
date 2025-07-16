@@ -31,6 +31,7 @@ protected:
 	void AimOffset(float DeltaTime);
 	
 public:
+	FRotator StartAimRotation;
 	UPROPERTY(Replicated)
 	FRotator ControllerRotation;
 	UFUNCTION(Server, Reliable)
@@ -127,6 +128,8 @@ public:
 	void Server_SetControlRotationYaw(FRotator YawRotation);
 
 	// ---- 귀환 관련 함수 ----
+	bool IsRecalling;
+	
 	void CallRecall();
 
 	UPROPERTY(EditAnywhere, Category = "Recall")
@@ -142,9 +145,9 @@ public:
 	void NM_StopPlayMontage();
 
 	// ---- 타겟 관리 함수 ----
-	AActor* GetTartgetInCenter();
+	TArray<AActor*> AttackTarget;
 	
-	AActor* CurrentTarget;
+	TArray<AActor*> CurrentTarget;
 	
 	// ---- Attack 관련 함수 ----
 	void Attack();

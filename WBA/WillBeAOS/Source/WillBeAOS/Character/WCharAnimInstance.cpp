@@ -3,6 +3,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Net/UnrealNetwork.h"
+#include "PersistentGame/GamePlayerController.h"
 
 
 void UWCharAnimInstance::NativeInitializeAnimation()
@@ -26,6 +27,16 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			Pitch = Character->Pitch;
 			RawYawDelta = Character->Yaw;
 			Yaw = FMath::FInterpTo(Yaw, RawYawDelta, DeltaSeconds, 10.0f);
+		}
+		else if (TurningInPlace != E_TurningInPlace::E_NotTurning)
+		{
+			Yaw = FMath::FInterpTo(Yaw, 0.f, DeltaSeconds, 5.0f);
+		}
+
+		AGamePlayerController* PC = Cast<AGamePlayerController>(Character->GetController());
+		if (PC)
+		{
+			bIsRecalling = PC->IsRecalling;
 		}
 	}
 	

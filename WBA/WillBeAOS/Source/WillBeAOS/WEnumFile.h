@@ -64,7 +64,7 @@ enum class E_GamePlay : uint8
 UENUM(BlueprintType)
 enum class E_TurningInPlace : uint8
 {
+	E_NotTurning UMETA(DisplayName = "NotTurning"),
 	E_TurningLeft UMETA(DisplayName = "TurnLeft"),
-	E_TurningRight UMETA(DisplayName = "TurnRight"),
-	E_NotTurning UMETA(DisplayName = "NotTurning")
+	E_TurningRight UMETA(DisplayName = "TurnRight")
 };

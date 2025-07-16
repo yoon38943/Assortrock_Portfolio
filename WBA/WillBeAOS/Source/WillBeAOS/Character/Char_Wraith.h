@@ -24,6 +24,7 @@ protected:
 	void NM_HitParticle(FVector HitLocation);
 
 public:
+	AActor* LastTarget;
 	// 타겟 락온 관련
 	AActor* CheckTargettingInCenter();
 

@@ -125,31 +125,41 @@ void AWCharacterBase::Tick(float DeltaTime)
 	
 	UpdateAcceleration();
 
-	AimOffset(DeltaTime);
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
+	if (PC)
+	{
+		IsRecalling = PC->IsRecalling;
+	}
 
+	AimOffset(DeltaTime);
+	
 	if (!HasAuthority())
 	{
-		AActor* AttackTarget = GetTartgetInCenter();
-	
 		if (AttackTarget != CurrentTarget)
 		{
-			if (IsValid(CurrentTarget))
+			if (CurrentTarget.Num() > 0)
 			{
 				// 이전 타겟의 외곽선 끄기
-				auto EnemyMesh = CurrentTarget->FindComponentByClass<UMeshComponent>();
-				if (IsValid(EnemyMesh))
+				for (auto& Actor : CurrentTarget)
 				{
-					EnemyMesh->SetRenderCustomDepth(false);
+					auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+					if (IsValid(EnemyMesh))
+					{
+						EnemyMesh->SetRenderCustomDepth(false);
+					}
 				}
 			}
 
-			if (IsValid(AttackTarget))
+			if (AttackTarget.Num() > 0)
 			{
 				// 외곽선 표시하기
-				auto EnemyMesh = AttackTarget->FindComponentByClass<UMeshComponent>();
-				if (IsValid(EnemyMesh))
+				for (auto& Actor : AttackTarget)
 				{
-					EnemyMesh->SetRenderCustomDepth(true);
+					auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+					if (IsValid(EnemyMesh))
+					{
+						EnemyMesh->SetRenderCustomDepth(true);
+					}
 				}
 			}
 
@@ -196,7 +206,7 @@ void AWCharacterBase::AimOffset(float DeltaTime)
 			FRotator ActorRot = GetActorRotation();
 
 			FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(AimRot, ActorRot);
-		
+        
 			Yaw = DeltaRot.Yaw;
 			Server_SetYaw(Yaw);
 		}
@@ -206,6 +216,7 @@ void AWCharacterBase::AimOffset(float DeltaTime)
 	}
 	if (Speed > 0.f)
 	{
+		StartAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		bUseControllerRotationYaw = true;
 		Yaw = 0.f;
 		TurningInPlace = E_TurningInPlace::E_NotTurning;
@@ -232,32 +243,24 @@ void AWCharacterBase::Server_SetYaw_Implementation(float YawValue)
 
 void AWCharacterBase::TurnInPlace(float DeltaTime)
 {
-	if (Yaw > 90.f)
+	if (Yaw > 90.f && !IsRecalling)
 	{
 		TurningInPlace = E_TurningInPlace::E_TurningRight;
 	}
-	else if (Yaw < -90.f)
+	else if (Yaw < -90.f && !IsRecalling)
 	{
 		TurningInPlace = E_TurningInPlace::E_TurningLeft;
 	}
 	if (TurningInPlace != E_TurningInPlace::E_NotTurning)
 	{
-		FRotator NewRotation = GetActorRotation();
-		if (IsLocallyControlled())
-		{
-			ControllerRotation = GetControlRotation();
-			Server_SetControlRotation(ControllerRotation);
-		}
-		NewRotation.Yaw = ControllerRotation.Yaw;
-		
-		NewRotation = FMath::RInterpTo(GetActorRotation(), NewRotation, DeltaTime, 3.0f);
-
-		SetActorRotation(NewRotation);
-		
-		if (FMath::Abs(Yaw) < 15.f)
+		GetCharacterMovement()->RotationRate = FRotator(0.f, 250.f, 0.f);
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+        
+		if (FMath::Abs(Yaw) < 5.f)
 		{
 			TurningInPlace = E_TurningInPlace::E_NotTurning;
-			bUseControllerRotationYaw = false;
+			GetCharacterMovement()->bUseControllerDesiredRotation = false;
+			StartAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		}
 	}
 }
@@ -452,76 +455,6 @@ void AWCharacterBase::StopMove(const FInputActionValue& Value)
 void AWCharacterBase::NM_StopPlayMontage_Implementation()
 {
 	StopAnimMontage();
-}
-
-AActor* AWCharacterBase::GetTartgetInCenter()
-{
-	FVector WorldLocation, WorldDirection;
-	FVector2D ScreenCenter;
-	int32 ViewportX, ViewportY;
-
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (!PC) return nullptr;
-
-	PC->GetViewportSize(ViewportX, ViewportY);
-	ScreenCenter = FVector2D(ViewportX, ViewportY) * 0.5f;
-
-	PC->DeprojectScreenPositionToWorld(ScreenCenter.X, ScreenCenter.Y, WorldLocation, WorldDirection);
-
-	FVector TraceStart = WorldLocation;
-	FVector TraceEnd = TraceStart + WorldDirection * 2500.0f;
-
-	TArray<FHitResult> Hits;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	FCollisionObjectQueryParams ObjectQuery;
-	ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
-	ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
-
-	GetWorld()->SweepMultiByObjectType(
-		Hits,
-		TraceStart,
-		TraceEnd,
-		FQuat::Identity,
-		ObjectQuery,
-		FCollisionShape::MakeSphere(70.f),
-		QueryParams
-	);
-
-	AActor* BestTarget = nullptr;
-	float BestAngle = FLT_MAX;
-
-	for (auto& Hit : Hits)
-	{
-		AActor* HitActor = Hit.GetActor();
-		if (!IsValid(HitActor)) continue;
-
-		AAOSCharacter* IsAOSChar = Cast<AAOSCharacter>(HitActor);
-		if (IsAOSChar)
-		{
-			if (IsAOSChar->TeamID == TeamID) continue;
-		}
-
-		AAOSActor* IsAOSActor = Cast<AAOSActor>(HitActor);
-		if (IsAOSActor)
-		{
-			if (IsAOSActor->TeamID == TeamID) continue;
-		}
-		
-		if (!IsValid(IsAOSChar) && !IsValid(IsAOSActor)) continue;
-
-		FVector ToTarget = (HitActor->GetActorLocation() - TraceStart).GetSafeNormal();
-		float Angle = FMath::Acos(FVector::DotProduct(WorldDirection, ToTarget));
-
-		if (Angle < BestAngle)
-		{
-			BestTarget = HitActor;
-			BestAngle = Angle;
-		}
-	}
-	
-	return BestTarget;
 }
 
 void AWCharacterBase::Attack()
@@ -838,6 +771,6 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 
 	DOREPLIFETIME(ThisClass, CharacterDamage);
 	DOREPLIFETIME(ThisClass, CharacterTeam);
-	DOREPLIFETIME(ThisClass, Yaw);
 	DOREPLIFETIME(ThisClass, ControllerRotation);
+	DOREPLIFETIME(ThisClass, Yaw);
 }

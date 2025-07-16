@@ -35,6 +35,9 @@ protected:
 	float Yaw;
 	float RawYawDelta;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsRecalling;
+
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	FVector WCharVelocity;
 

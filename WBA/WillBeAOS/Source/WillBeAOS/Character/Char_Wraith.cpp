@@ -81,10 +81,14 @@ void AChar_Wraith::Tick(float DeltaTime)
 		if (IsValid(TargetEnemy))
 		{
 			bIsEnemyLockOn = true;
+			LastTarget = TargetEnemy;
+			AttackTarget.AddUnique(LastTarget);
 		}
 		else
 		{
 			bIsEnemyLockOn = false;
+			AttackTarget.Remove(LastTarget);
+			LastTarget = nullptr;
 		}
 	}
 }
