@@ -63,6 +63,7 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+	
 	UPROPERTY(BluePrintReadOnly, Category = "Combat")
 	bool CombatEnable = false;
 	

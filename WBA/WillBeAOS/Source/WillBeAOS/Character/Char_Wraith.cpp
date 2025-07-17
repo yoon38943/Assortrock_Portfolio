@@ -74,7 +74,7 @@ void AChar_Wraith::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!HasAuthority())
+	if (!HasAuthority() && IsLocallyControlled())
 	{
 		AActor* TargetEnemy = CheckTargettingInCenter();
 

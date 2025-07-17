@@ -1,4 +1,6 @@
 #include "CombatComponent.h"
+
+#include "AOSActor.h"
 #include "WCharacterBase.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Minions/WMinionsCharacterBase.h"
@@ -134,6 +136,13 @@ void UCombatComponent::CollisionTrace()
 	{
 		for (const FHitResult& LastHit : OutHits)
 		{
+			AAOSActor* HitObject = Cast<AAOSActor>(LastHit.GetActor());
+			AAOSCharacter* HitChar = Cast<AAOSCharacter>(LastHit.GetActor());
+			if (!HitObject && !HitChar) return;
+			AAOSCharacter* Actor = Cast<AAOSCharacter>(GetOwner());
+			E_TeamID TeamID = Actor->TeamID;
+			if ((HitObject && HitObject->TeamID == TeamID) || (HitChar && HitChar->TeamID == TeamID)) return;
+			
 			AActor* HitActor = LastHit.GetActor();
 			if (HitActor && !AlreadyHitActors.Contains(HitActor))
 			{

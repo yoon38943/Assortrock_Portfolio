@@ -21,7 +21,7 @@ void AChar_Shinbi::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (!HasAuthority())
+	if (!HasAuthority() && IsLocallyControlled())
 	{
 		TArray<AActor*> TargetEnemy = GetTartgetInCenter();
 

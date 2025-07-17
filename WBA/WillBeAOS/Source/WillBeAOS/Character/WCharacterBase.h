@@ -8,6 +8,7 @@
 
 #define PLAYERKILLGOLD 100
 
+class AWolf;
 struct FInputActionValue;
 class UInputAction;
 class UAnimMontage;
@@ -100,7 +101,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Behavior;
 	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* IA_SkillR;
+	UInputAction* IA_SkillQ;
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
@@ -109,24 +110,40 @@ public:
 	bool IsDead = false;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
-	UAnimMontage* DeadAnimMontage;	//죽을???�일 몽�?�?
+	UAnimMontage* DeadAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
-	UAnimMontage* HitAnimMontage;	//?�격???�일 몽�?�?
+	UAnimMontage* HitAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
-	TArray<UAnimMontage*> AttackMontages = {};	//�޺��� ���� �ִԸ�Ÿ�� �迭
+	TArray<UAnimMontage*> AttackMontages = {};
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
-	UAnimMontage* SkillRMontage;//R��ų�� ���� ��Ÿ��
+	TArray<UAnimMontage*> SkillQMontage;
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
-	UFUNCTION(BlueprintCallable, Category = "Combat")
-	void SkillR(const FInputActionValue& Value);
+	UFUNCTION(Category = "Combat")
+	void SkillQ(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable, Category = "Combat")
+	void Server_SkillQ(const FInputActionValue& Value);
+	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
+	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetControlRotationYaw(FRotator YawRotation);
 
+	// 스킬 관련 함수
+	float SkillQCollTime = 7.f;
+	float SkillQRemainingTime;
+	FTimerHandle C_SkillQTimer;
+	FTimerHandle S_SkillQTimer;
+	void SpawnWolfSkill();
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWolf> WolfClass;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Skill")
+	bool SkillQEnable = true;
+	
 	// ---- 귀환 관련 함수 ----
 	bool IsRecalling;
 	
@@ -192,11 +209,6 @@ public:
 
 	//게임 엔딩
 	void HandleGameEnd();
-	
-	//?�리게이???�의
-	FDS_SkillLCooldown DSkillLCooldown;
-	FDS_SkillLCooldown DSkillRCooldown;
-
 
 protected:
 	virtual void BeginPlay() override;
@@ -211,6 +223,4 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	UPROPERTY(BlueprintReadWrite, Category = "Skill")//���� ����
-	bool SkillREnable;	
 };

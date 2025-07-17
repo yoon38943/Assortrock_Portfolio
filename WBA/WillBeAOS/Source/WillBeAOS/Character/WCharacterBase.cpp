@@ -23,6 +23,7 @@
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameMode.h"
 #include "PersistentGame/PlayGameState.h"
+#include "Shinbi/Wolf/Wolf.h"
 #include "UI/PlayerHPInfoBar.h"
 
 
@@ -85,13 +86,16 @@ void AWCharacterBase::BeginPlay()
 		SetHPPercentage();
 		ShowNickName();
 
-		GetWorld()->GetTimerManager().SetTimer(
-			CheckTimerHandle,
-			this,
-			&ThisClass::SetVisibleWidgetDistance,
-			0.2f,
-			true
-		);
+		if (IsLocallyControlled())
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+				CheckTimerHandle,
+				this,
+				&ThisClass::SetVisibleWidgetDistance,
+				0.2f,
+				true
+			);
+		}
 	}
 	else
 	{
@@ -110,6 +114,14 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (CheckTimerHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
+	}
+	if (C_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
+	}
+	if (S_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(S_SkillQTimer);
 	}
 }
 
@@ -187,7 +199,7 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
 		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
-		EnhancedInputComponent->BindAction(IA_SkillR, ETriggerEvent::Started, this, &AWCharacterBase::SkillR);
+		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::SkillQ);
 		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 	}
 }
@@ -542,29 +554,65 @@ void AWCharacterBase::NM_Behavior_Implementation(int32 Combo)
 	ACharacter::PlayAnimMontage(AttackMontages[Combo]);
 }
 
-void AWCharacterBase::SkillR(const FInputActionValue& Value)
+void AWCharacterBase::SkillQ(const FInputActionValue& Value)
 {
-	if (CombatComp != nullptr)
-	{
-		//�������� �ƴҽ�
-		if ((CombatComp->IsCombatEnable() == false))
-		{
-			if (SkillREnable == false) 
-			{
-				//������ Ȱ��ȭ
-				CombatComp->SetCombatEnable(true);
-				//��ųR���
-				SkillREnable = true;
+	SkillQRemainingTime = SkillQCollTime;
 
-				DSkillRCooldown.ExecuteIfBound();
-				//��Ÿ�� ����
-				if ((CombatComp->GetAttackCount()) < AttackMontages.Num())
-				{
-					ACharacter::PlayAnimMontage(SkillRMontage);
-				}
+	Server_SkillQ(Value);
+	
+	GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+	{
+		SkillQRemainingTime -= 0.1;
+		if (SkillQRemainingTime <= 0.0)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
+		}
+	}, 0.1, true);
+}
+
+void AWCharacterBase::Server_SkillQ_Implementation(const FInputActionValue& Value)
+{
+	if (CombatComp)
+	{
+		if (SkillQEnable == true)
+		{
+			SkillQEnable = false;
+			
+			GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
+			{
+				SkillQEnable = true;
+			}, SkillQCollTime, false);
+
+			SpawnWolfSkill();
+			
+			if (SkillQMontage.Num() > 0)
+			{
+				int32 RandomIndex = FMath::RandRange(0, SkillQMontage.Num() - 1);
+				auto RandomMontage = SkillQMontage[RandomIndex];
+
+				NM_SkillPlayMontage(RandomMontage);
 			}
 		}
 	}
+}
+
+void AWCharacterBase::SpawnWolfSkill()
+{
+	FVector SpawnLocation = GetActorLocation() + GetActorRotation().Vector() * 100;
+	SpawnLocation.Z = 0.0f;
+	FRotator SpawnRotation = GetActorRotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+	
+	AWolf* ShinbiWolf = GetWorld()->SpawnActor<AWolf>(WolfClass, SpawnLocation, SpawnRotation, SpawnParams);
+	ShinbiWolf->TeamID = TeamID;
+}
+
+void AWCharacterBase::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
+{
+	PlayAnimMontage(SkillMontage);
 }
 
 void AWCharacterBase::UpdateAcceleration()
