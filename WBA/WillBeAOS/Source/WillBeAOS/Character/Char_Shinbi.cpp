@@ -3,12 +3,14 @@
 #include "AOSActor.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "PersistentGame/PlayGameState.h"
+#include "Shinbi/Wolf/Wolf.h"
 
 
 AChar_Shinbi::AChar_Shinbi()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	SkillQCollTime = 7.f;
 }
 
 void AChar_Shinbi::BeginPlay()
@@ -126,9 +128,64 @@ TArray<AActor*> AChar_Shinbi::GetTartgetInCenter()
 	return AllTarget;
 }
 
-void AChar_Shinbi::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AChar_Shinbi::SkillQ(const FInputActionValue& Value)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	if (SkillQEnable == true)
+	{
+		SkillQEnable = false;
+			
+		GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+		{
+			SkillQEnable = true;
+		}, SkillQCollTime, false);
 
+		OnQSkillUsed.Broadcast(SkillQCollTime);
+
+		Server_SkillQ();
+	}
 }
 
+void AChar_Shinbi::Server_SkillQ()
+{	
+	if (ServerSkillQEnable == true)
+	{
+		ServerSkillQEnable = false;
+
+		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
+		{
+			ServerSkillQEnable = true;
+		}, SkillQCollTime, false);
+		
+		SpawnWolfSkill();
+		
+		if (SkillQMontage.Num() > 0)
+		{
+			int32 RandomIndex = FMath::RandRange(0, SkillQMontage.Num() - 1);
+			auto RandomMontage = SkillQMontage[RandomIndex];
+
+			NM_SkillPlayMontage(RandomMontage);
+		}
+	}
+}
+
+void AChar_Shinbi::NM_SkillPlayMontage(UAnimMontage* SkillMontage)
+{
+	if (!HasAuthority())
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
+	}
+}
+
+void AChar_Shinbi::SpawnWolfSkill()
+{
+	FVector SpawnLocation = GetActorLocation() + GetActorRotation().Vector() * 150;
+	SpawnLocation.Z = 0.0f;
+	FRotator SpawnRotation = GetActorRotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = GetInstigator();
+	
+	AWolf* ShinbiWolf = GetWorld()->SpawnActor<AWolf>(WolfClass, SpawnLocation, SpawnRotation, SpawnParams);
+	ShinbiWolf->TeamID = TeamID;
+}

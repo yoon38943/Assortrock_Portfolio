@@ -52,6 +52,18 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* CurrentHP;
 
+	FTimerHandle ReBindSkillTimerHandle;
+	void ReBindSkill();
+	UFUNCTION()
+	void OnSkillUsed(float SkillCoolTime);
+	UPROPERTY(BlueprintReadWrite, Category = Skill)
+	bool bSkillUsed;
+	UFUNCTION(BlueprintNativeEvent, Category = Skill)
+	void UsedQSkill();
+	UPROPERTY(BlueprintReadOnly, Category = Skill)
+	float QSkillCoolDownTime;
+	FTimerHandle CooldownTimerHandle;
+
 public:
 	void SetState();
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;

@@ -1,6 +1,5 @@
 #include "WCharacterBase.h"
 
-#include "AOSActor.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -9,6 +8,7 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
+#include "WCharacterHUD.h"
 #include "WCharAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/ProgressBar.h"
@@ -23,7 +23,6 @@
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameMode.h"
 #include "PersistentGame/PlayGameState.h"
-#include "Shinbi/Wolf/Wolf.h"
 #include "UI/PlayerHPInfoBar.h"
 
 
@@ -71,6 +70,12 @@ void AWCharacterBase::BeginPlay()
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC)
 	{
+		UWCharacterHUD* HUD = Cast<UWCharacterHUD>(PC->PlayerHUD);
+		if (HUD)
+		{
+			HUD->ReBindSkill();
+		}
+		
 		FVector StartLocation = GetActorLocation();  // 현재 위치
 	
 		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(0, 0, 100) - StartLocation).Rotator();
@@ -397,6 +402,11 @@ void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVis
 {
 	if (AWCharacterBase* Character = Cast<AWCharacterBase>(Actor))
 	{
+		if (Character->bIsDead == true)
+		{
+			bIsVisible = false;
+		}
+		
 		if (Character->HPInfoBarComponent && Character->HPInfoBarComponent->IsVisible() != bIsVisible)
 		{
 			Character->HPInfoBarComponent->SetVisibility(bIsVisible);
@@ -404,6 +414,11 @@ void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVis
 	}
 	else if (AWMinionsCharacterBase* Minion = Cast<AWMinionsCharacterBase>(Actor))
 	{
+		if (Minion->bIsDead == true)
+		{
+			bIsVisible = false;
+		}
+		
 		if (Minion->WidgetComponent && Minion->WidgetComponent->IsVisible() != bIsVisible)
 		{
 			Minion->WidgetComponent->SetVisibility(bIsVisible);
@@ -556,63 +571,17 @@ void AWCharacterBase::NM_Behavior_Implementation(int32 Combo)
 
 void AWCharacterBase::SkillQ(const FInputActionValue& Value)
 {
-	SkillQRemainingTime = SkillQCollTime;
-
-	Server_SkillQ(Value);
-	
-	GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
-	{
-		SkillQRemainingTime -= 0.1;
-		if (SkillQRemainingTime <= 0.0)
-		{
-			GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
-		}
-	}, 0.1, true);
+	// 캐릭마다 정의 (클라)
 }
 
-void AWCharacterBase::Server_SkillQ_Implementation(const FInputActionValue& Value)
+void AWCharacterBase::Server_SkillQ_Implementation()
 {
-	if (CombatComp)
-	{
-		if (SkillQEnable == true)
-		{
-			SkillQEnable = false;
-			
-			GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
-			{
-				SkillQEnable = true;
-			}, SkillQCollTime, false);
-
-			SpawnWolfSkill();
-			
-			if (SkillQMontage.Num() > 0)
-			{
-				int32 RandomIndex = FMath::RandRange(0, SkillQMontage.Num() - 1);
-				auto RandomMontage = SkillQMontage[RandomIndex];
-
-				NM_SkillPlayMontage(RandomMontage);
-			}
-		}
-	}
-}
-
-void AWCharacterBase::SpawnWolfSkill()
-{
-	FVector SpawnLocation = GetActorLocation() + GetActorRotation().Vector() * 100;
-	SpawnLocation.Z = 0.0f;
-	FRotator SpawnRotation = GetActorRotation();
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = this;
-	
-	AWolf* ShinbiWolf = GetWorld()->SpawnActor<AWolf>(WolfClass, SpawnLocation, SpawnRotation, SpawnParams);
-	ShinbiWolf->TeamID = TeamID;
+	// 캐릭마다 정의 (서버)
 }
 
 void AWCharacterBase::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
 {
-	PlayAnimMontage(SkillMontage);
+	// 캐릭마다 정의 (멀티캐스트)
 }
 
 void AWCharacterBase::UpdateAcceleration()

@@ -18,7 +18,14 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	
+	
 	TArray<AActor*> GetTartgetInCenter();
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SkillQ(const FInputActionValue& Value) override;
+	virtual void Server_SkillQ() override;
+	virtual void NM_SkillPlayMontage(UAnimMontage* SkillMontage) override;
+	void SpawnWolfSkill();
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWolf> WolfClass;
 };

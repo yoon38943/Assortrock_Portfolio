@@ -129,6 +129,8 @@ void AWMinionsCharacterBase::FindPlayerPawn()
 
 void AWMinionsCharacterBase::CheckDistanceToTarget()
 {
+	if (bIsDead) return;
+		
 	FVector MyLocation = GetActorLocation();
 	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
 

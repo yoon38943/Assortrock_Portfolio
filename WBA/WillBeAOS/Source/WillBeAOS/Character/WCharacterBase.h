@@ -8,6 +8,8 @@
 
 #define PLAYERKILLGOLD 100
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQSkillUsed, float, SkillCollTime);
+
 class AWolf;
 struct FInputActionValue;
 class UInputAction;
@@ -115,34 +117,32 @@ public:
 	UAnimMontage* HitAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
 	TArray<UAnimMontage*> AttackMontages = {};
-	UPROPERTY(BlueprintReadWrite, Category = Combo)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combo)
 	TArray<UAnimMontage*> SkillQMontage;
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
 	UFUNCTION(Category = "Combat")
-	void SkillQ(const FInputActionValue& Value);
+	virtual void SkillQ(const FInputActionValue& Value);
 	UFUNCTION(Server, Reliable, Category = "Combat")
-	void Server_SkillQ(const FInputActionValue& Value);
+	virtual void Server_SkillQ();
 	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
-	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
+	virtual void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetControlRotationYaw(FRotator YawRotation);
 
 	// 스킬 관련 함수
-	float SkillQCollTime = 7.f;
-	float SkillQRemainingTime;
+	FOnQSkillUsed OnQSkillUsed;
+	float SkillQCollTime;
 	FTimerHandle C_SkillQTimer;
 	FTimerHandle S_SkillQTimer;
-	void SpawnWolfSkill();
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<AWolf> WolfClass;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")
 	bool SkillQEnable = true;
+	bool ServerSkillQEnable = true;
 	
 	// ---- 귀환 관련 함수 ----
 	bool IsRecalling;
