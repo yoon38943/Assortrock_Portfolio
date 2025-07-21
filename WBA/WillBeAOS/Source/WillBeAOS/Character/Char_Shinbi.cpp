@@ -139,14 +139,17 @@ void AChar_Shinbi::SkillQ(const FInputActionValue& Value)
 			SkillQEnable = true;
 		}, SkillQCollTime, false);
 
-		OnQSkillUsed.Broadcast(SkillQCollTime);
+		OnQSkillUsed.Broadcast(this->GetName(), SkillQCollTime);
 
-		Server_SkillQ();
+		if (IsLocallyControlled())
+		{
+			Server_SkillQ();
+		}
 	}
 }
 
-void AChar_Shinbi::Server_SkillQ()
-{	
+void AChar_Shinbi::Server_SkillQ_Implementation()
+{
 	if (ServerSkillQEnable == true)
 	{
 		ServerSkillQEnable = false;
@@ -168,7 +171,7 @@ void AChar_Shinbi::Server_SkillQ()
 	}
 }
 
-void AChar_Shinbi::NM_SkillPlayMontage(UAnimMontage* SkillMontage)
+void AChar_Shinbi::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
 {
 	if (!HasAuthority())
 	{
@@ -178,6 +181,8 @@ void AChar_Shinbi::NM_SkillPlayMontage(UAnimMontage* SkillMontage)
 
 void AChar_Shinbi::SpawnWolfSkill()
 {
+	if (!HasAuthority()) return;
+	
 	FVector SpawnLocation = GetActorLocation() + GetActorRotation().Vector() * 150;
 	SpawnLocation.Z = 0.0f;
 	FRotator SpawnRotation = GetActorRotation();

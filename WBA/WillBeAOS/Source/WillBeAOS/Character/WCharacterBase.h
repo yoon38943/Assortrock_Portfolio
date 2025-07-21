@@ -8,7 +8,7 @@
 
 #define PLAYERKILLGOLD 100
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQSkillUsed, float, SkillCollTime);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQSkillUsed, FString, CharacterName, float, SkillCollTime);
 
 class AWolf;
 struct FInputActionValue;
@@ -125,10 +125,7 @@ public:
 	void StopMove(const FInputActionValue& Value);
 	UFUNCTION(Category = "Combat")
 	virtual void SkillQ(const FInputActionValue& Value);
-	UFUNCTION(Server, Reliable, Category = "Combat")
-	virtual void Server_SkillQ();
-	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
-	virtual void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
+	
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)

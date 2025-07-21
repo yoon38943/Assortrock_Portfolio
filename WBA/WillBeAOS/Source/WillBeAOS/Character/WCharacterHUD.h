@@ -55,7 +55,7 @@ public:
 	FTimerHandle ReBindSkillTimerHandle;
 	void ReBindSkill();
 	UFUNCTION()
-	void OnSkillUsed(float SkillCoolTime);
+	void OnSkillUsed(FString CharacterName, float SkillCoolTime);
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	bool bSkillUsed;
 	UFUNCTION(BlueprintNativeEvent, Category = Skill)

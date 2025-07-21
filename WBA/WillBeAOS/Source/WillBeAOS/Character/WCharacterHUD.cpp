@@ -72,8 +72,10 @@ void UWCharacterHUD::ReBindSkill()
 	}
 }
 
-void UWCharacterHUD::OnSkillUsed(float SkillCoolTime)
+void UWCharacterHUD::OnSkillUsed(FString CharacterName, float SkillCoolTime)
 {
+	if (GetOwningPlayerPawn()->GetName() != CharacterName) return;
+	
 	QSkillCoolDownTime = SkillCoolTime;
 
 	UsedQSkill();

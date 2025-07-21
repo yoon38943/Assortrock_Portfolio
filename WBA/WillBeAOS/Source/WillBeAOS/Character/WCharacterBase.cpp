@@ -51,12 +51,16 @@ AWCharacterBase::AWCharacterBase()
 
 	bUseControllerRotationYaw = false;
 	TurningInPlace = E_TurningInPlace::E_NotTurning;
+
+	bReplicates = true;
 }
 
 
 void AWCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+	if (HasAuthority())
+		UE_LOG(LogTemp, Warning, TEXT("AWCharacterBase::BeginPlay()"));
 	//HandleApplyPointDamage 멀티델리게이트 바인딩
 	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
@@ -479,6 +483,11 @@ void AWCharacterBase::StopMove(const FInputActionValue& Value)
 	}
 }
 
+void AWCharacterBase::SkillQ(const FInputActionValue& Value)
+{
+	// 오버라이드 정의
+}
+
 void AWCharacterBase::NM_StopPlayMontage_Implementation()
 {
 	StopAnimMontage();
@@ -567,21 +576,6 @@ void AWCharacterBase::S_Behavior_Implementation()
 void AWCharacterBase::NM_Behavior_Implementation(int32 Combo)
 {
 	ACharacter::PlayAnimMontage(AttackMontages[Combo]);
-}
-
-void AWCharacterBase::SkillQ(const FInputActionValue& Value)
-{
-	// 캐릭마다 정의 (클라)
-}
-
-void AWCharacterBase::Server_SkillQ_Implementation()
-{
-	// 캐릭마다 정의 (서버)
-}
-
-void AWCharacterBase::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
-{
-	// 캐릭마다 정의 (멀티캐스트)
 }
 
 void AWCharacterBase::UpdateAcceleration()

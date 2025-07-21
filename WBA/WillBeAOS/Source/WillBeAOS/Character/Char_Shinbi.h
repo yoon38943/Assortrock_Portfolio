@@ -20,12 +20,14 @@ public:
 	
 	
 	TArray<AActor*> GetTartgetInCenter();
-
-	virtual void SkillQ(const FInputActionValue& Value) override;
-	virtual void Server_SkillQ() override;
-	virtual void NM_SkillPlayMontage(UAnimMontage* SkillMontage) override;
-	void SpawnWolfSkill();
 	
+	virtual void SkillQ(const FInputActionValue& Value) override;
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Combat")
+	void Server_SkillQ();
+	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
+	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
+	void SpawnWolfSkill();
+
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AWolf> WolfClass;
 };

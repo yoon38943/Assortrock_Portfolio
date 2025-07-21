@@ -1,6 +1,5 @@
 #include "Character/Shinbi/Wolf/Wolf.h"
 
-#include "Chaos/AABBTree.h"
 #include "Character/AOSActor.h"
 #include "Character/AOSCharacter.h"
 #include "Kismet/GameplayStatics.h"
@@ -10,6 +9,7 @@
 AWolf::AWolf()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	RootCollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RootComponent"));
 	RootComponent = RootCollisionComponent;
@@ -24,29 +24,13 @@ AWolf::AWolf()
 	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
 	CollisionComponent->SetGenerateOverlapEvents(true);
 	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AWolf::OnOverlapBegin);
-
-	SetReplicateMovement(true);
+	
 	bAlwaysRelevant = true;
 }
 
 void AWolf::BeginPlay()
 {
 	Super::BeginPlay();
-
-	UE_LOG(LogTemp, Warning, TEXT("=== WOLF BeginPlay ==="));
-	UE_LOG(LogTemp, Warning, TEXT("NetMode: %d (0=Standalone, 1=DedicatedServer, 2=Client)"), (int32)GetNetMode());
-	UE_LOG(LogTemp, Warning, TEXT("HasAuthority: %s"), HasAuthority() ? TEXT("TRUE") : TEXT("FALSE"));
-	UE_LOG(LogTemp, Warning, TEXT("LocalRole: %d (0=None, 1=SimulatedProxy, 2=AutonomousProxy, 3=Authority)"), (int32)GetLocalRole());
-	UE_LOG(LogTemp, Warning, TEXT("RemoteRole: %d"), (int32)GetRemoteRole());
-
-	if (HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawned Wolf In Server"));
-	}
-	if (!HasAuthority())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Spawned Wolf In Client"));
-	}
 }
 
 void AWolf::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -81,11 +65,10 @@ void AWolf::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherAct
 			GetActorForwardVector(),
 			SweepResult,
 			GetInstigatorController(),
-			GetOwner(),
+			this,
 			UDamageType::StaticClass()
 			);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Cntl: %s"), *GetInstigatorController()->GetName());
 }
 
 void AWolf::Tick(float DeltaTime)
