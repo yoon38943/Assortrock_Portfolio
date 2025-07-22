@@ -1,6 +1,5 @@
 #include "WCharacterHUD.h"
 
-#include "WCharacterBase.h"
 #include "Components/TextBlock.h"
 #include "PersistentGame/GamePlayerState.h"
 
@@ -64,17 +63,17 @@ float UWCharacterHUD::GetHealthBarPercentage()
 
 void UWCharacterHUD::ReBindSkill()
 {
-	AWCharacterBase* Character = Cast<AWCharacterBase>(GetOwningPlayerPawn());
-	if (Character)
+	AGamePlayerState* PS = GetOwningPlayer()->GetPlayerState<AGamePlayerState>();
+	if (PS)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ReBindSkillTimerHandle);
-		Character->OnQSkillUsed.AddDynamic(this, &ThisClass::OnSkillUsed);
+		PS->OnQSkillUsed.AddDynamic(this, &ThisClass::OnSkillUsed);
 	}
 }
 
-void UWCharacterHUD::OnSkillUsed(FString CharacterName, float SkillCoolTime)
+void UWCharacterHUD::OnSkillUsed(FString UserControllerName, float SkillCoolTime)
 {
-	if (GetOwningPlayerPawn()->GetName() != CharacterName) return;
+	if (GetOwningPlayer()->GetName() != UserControllerName) return;
 	
 	QSkillCoolDownTime = SkillCoolTime;
 

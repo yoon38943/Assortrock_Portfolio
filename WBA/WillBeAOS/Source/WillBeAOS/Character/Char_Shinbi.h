@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "WCharacterBase.h"
+#include "Shinbi/Skill/Shinbi_SkillDataTable.h"
 #include "Char_Shinbi.generated.h"
 
 UCLASS()
@@ -18,12 +19,11 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 	
-	
 	TArray<AActor*> GetTartgetInCenter();
-	
+
+	FShinbi_SkillDataTable* QSkill;
 	virtual void SkillQ(const FInputActionValue& Value) override;
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Combat")
-	void Server_SkillQ();
+	virtual void Server_SkillQ() override;
 	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
 	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
 	void SpawnWolfSkill();

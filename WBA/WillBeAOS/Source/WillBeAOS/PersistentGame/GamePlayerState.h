@@ -5,10 +5,16 @@
 #include "GameFramework/PlayerState.h"
 #include "GamePlayerState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQSkillUsed, FString, CharacterName, float, SkillCollTime);
+
 UCLASS()
 class WILLBEAOS_API AGamePlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// ---------------------------------------------
 	// 플레이 캐릭터 선택 페이즈
@@ -113,6 +119,20 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Stats")
     int32 CAbLevel;
 
+	// 스킬 관련 함수
+	FOnQSkillUsed OnQSkillUsed;
+	
+	// 스킬 쿨타임 관련
+	UPROPERTY(BlueprintReadOnly, Category = "Skill")
+	bool SkillQEnable = true;
+	bool ServerSkillQEnable = true;
+
+	float SkillQCoolTime;
+	FTimerHandle C_SkillQTimer;
+	FTimerHandle S_SkillQTimer;
+	
+	void UsedQSkill();
+	void Server_UsedQSkill(float CoolTime);
 	
 	// 플레이어 골드 관련 스탯
 	// Gold

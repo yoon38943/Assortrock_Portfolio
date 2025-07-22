@@ -350,11 +350,11 @@ void AWGameMode::HandleMatchHasEnded()
 
 void AWGameMode::Logout(AController* Exiting)
 {
-	AWPlayerController* WPlayerController = Cast<AWPlayerController>(Exiting);
+	/*AWPlayerController* WPlayerController = Cast<AWPlayerController>(Exiting);
 	if (WPlayerController)
 	{
 		WGS->RemovePlayer(WPlayerController);	
 	}
 	
-	Super::Logout(Exiting);
+	Super::Logout(Exiting);*/
 }

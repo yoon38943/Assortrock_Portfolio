@@ -2,13 +2,12 @@
 
 #include "CoreMinimal.h"
 #include "AOSCharacter.h"
-#include "WDelegateDefine.h"
 #include "WEnumFile.h"
 #include "WCharacterBase.generated.h"
 
 #define PLAYERKILLGOLD 100
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQSkillUsed, FString, CharacterName, float, SkillCollTime);
+class AGamePlayerState;
 
 class AWolf;
 struct FInputActionValue;
@@ -118,28 +117,22 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
 	TArray<UAnimMontage*> AttackMontages = {};
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combo)
-	TArray<UAnimMontage*> SkillQMontage;
+	UAnimMontage* SkillQMontage;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Skill)
+	UDataTable* SkillDataTable;
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
 	UFUNCTION(Category = "Combat")
 	virtual void SkillQ(const FInputActionValue& Value);
+	virtual void Server_SkillQ();
 	
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SetControlRotationYaw(FRotator YawRotation);
-
-	// 스킬 관련 함수
-	FOnQSkillUsed OnQSkillUsed;
-	float SkillQCollTime;
-	FTimerHandle C_SkillQTimer;
-	FTimerHandle S_SkillQTimer;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Skill")
-	bool SkillQEnable = true;
-	bool ServerSkillQEnable = true;
 	
 	// ---- 귀환 관련 함수 ----
 	bool IsRecalling;

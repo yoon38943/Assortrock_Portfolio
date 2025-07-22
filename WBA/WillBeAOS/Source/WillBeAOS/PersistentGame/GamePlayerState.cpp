@@ -4,9 +4,41 @@
 #include "PlayGameMode.h"
 #include "PlayGameState.h"
 #include "Character/WCharacterBase.h"
+#include "Character/WCharacterHUD.h"
 #include "Game/WGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
+
+void AGamePlayerState::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (HasAuthority()) return;
+
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetOwningController());
+	if (PC)
+	{
+		UWCharacterHUD* HUD = Cast<UWCharacterHUD>(PC->PlayerHUD);
+		if (HUD)
+		{
+			HUD->ReBindSkill();
+		}
+	}
+}
+
+void AGamePlayerState::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (C_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
+	}
+	if (S_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(S_SkillQTimer);
+	}
+}
 
 void AGamePlayerState::StartCharacterSelectPhase()
 {
@@ -269,6 +301,41 @@ void AGamePlayerState::AddDeathPoint_Implementation()
 void AGamePlayerState::AddKillPoint_Implementation()
 {
 	PlayerKillCount++;
+}
+
+void AGamePlayerState::UsedQSkill()
+{
+	SkillQEnable = false;
+			
+	GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+	{
+		SkillQEnable = true;
+	}, SkillQCoolTime, false);
+
+	OnQSkillUsed.Broadcast(GetPlayerController()->GetName(), SkillQCoolTime);
+
+	Server_UsedQSkill(SkillQCoolTime);
+}
+
+void AGamePlayerState::Server_UsedQSkill(float CoolTime)
+{
+	UE_LOG(LogTemp, Warning, TEXT("PlayerState 서버 스킬 온"));
+	
+	if (ServerSkillQEnable == true)
+	{
+		AWCharacterBase* Character = Cast<AWCharacterBase>(GetPlayerController()->GetPawn());
+		if (Character)
+		{
+			Character->Server_SkillQ();
+		}
+		
+		ServerSkillQEnable = false;
+		
+		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
+		{
+			ServerSkillQEnable = true;
+		}, CoolTime, false);
+	}
 }
 
 int32 AGamePlayerState::GetKillPoints()

@@ -73,13 +73,7 @@ void AWCharacterBase::BeginPlay()
 
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC)
-	{
-		UWCharacterHUD* HUD = Cast<UWCharacterHUD>(PC->PlayerHUD);
-		if (HUD)
-		{
-			HUD->ReBindSkill();
-		}
-		
+	{			
 		FVector StartLocation = GetActorLocation();  // 현재 위치
 	
 		FRotator LookAtRotation = FRotationMatrix::MakeFromX(FVector(0, 0, 100) - StartLocation).Rotator();
@@ -123,14 +117,6 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	if (CheckTimerHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
-	}
-	if (C_SkillQTimer.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
-	}
-	if (S_SkillQTimer.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(S_SkillQTimer);
 	}
 }
 
@@ -484,6 +470,11 @@ void AWCharacterBase::StopMove(const FInputActionValue& Value)
 }
 
 void AWCharacterBase::SkillQ(const FInputActionValue& Value)
+{
+	// 오버라이드 정의
+}
+
+void AWCharacterBase::Server_SkillQ()
 {
 	// 오버라이드 정의
 }

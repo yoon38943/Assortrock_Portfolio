@@ -2,6 +2,7 @@
 
 #include "AOSActor.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Shinbi/Wolf/Wolf.h"
 
@@ -9,14 +10,21 @@
 AChar_Shinbi::AChar_Shinbi()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	SkillQCollTime = 7.f;
 }
 
 void AChar_Shinbi::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (SkillDataTable)
+	{
+		QSkill = SkillDataTable->FindRow<FShinbi_SkillDataTable>(FName("QSkill"), TEXT(""));
+	}
 	
+	if (QSkill)
+	{
+		SkillQMontage = QSkill->SkillMontage;
+	}
 }
 
 void AChar_Shinbi::Tick(float DeltaTime)
@@ -130,45 +138,22 @@ TArray<AActor*> AChar_Shinbi::GetTartgetInCenter()
 
 void AChar_Shinbi::SkillQ(const FInputActionValue& Value)
 {
-	if (SkillQEnable == true)
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
 	{
-		SkillQEnable = false;
-			
-		GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+		if (PS->SkillQEnable == true)
 		{
-			SkillQEnable = true;
-		}, SkillQCollTime, false);
-
-		OnQSkillUsed.Broadcast(this->GetName(), SkillQCollTime);
-
-		if (IsLocallyControlled())
-		{
-			Server_SkillQ();
+			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
+			PS->UsedQSkill();
 		}
 	}
 }
 
-void AChar_Shinbi::Server_SkillQ_Implementation()
+void AChar_Shinbi::Server_SkillQ()
 {
-	if (ServerSkillQEnable == true)
-	{
-		ServerSkillQEnable = false;
-
-		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
-		{
-			ServerSkillQEnable = true;
-		}, SkillQCollTime, false);
-		
-		SpawnWolfSkill();
-		
-		if (SkillQMontage.Num() > 0)
-		{
-			int32 RandomIndex = FMath::RandRange(0, SkillQMontage.Num() - 1);
-			auto RandomMontage = SkillQMontage[RandomIndex];
-
-			NM_SkillPlayMontage(RandomMontage);
-		}
-	}
+	SpawnWolfSkill();
+	
+	NM_SkillPlayMontage(SkillQMontage);
 }
 
 void AChar_Shinbi::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
