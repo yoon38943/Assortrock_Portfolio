@@ -90,9 +90,6 @@ DerivedDataCache/
 Intermediate/
 Saved/
 
-# 에디터
-*.uproject
-
 # IDE 관련
 .vs/
 .idea/
