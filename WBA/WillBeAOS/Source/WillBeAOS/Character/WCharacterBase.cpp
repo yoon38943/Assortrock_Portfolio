@@ -32,6 +32,7 @@ AWCharacterBase::AWCharacterBase()
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera"));
 	CameraBoom->SetupAttachment(GetMesh());
+	CameraBoom->bUsePawnControlRotation = true;
 
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -469,14 +470,9 @@ void AWCharacterBase::StopMove(const FInputActionValue& Value)
 	}
 }
 
-void AWCharacterBase::SkillQ(const FInputActionValue& Value)
+void AWCharacterBase::SkillQ()
 {
-	// 오버라이드 정의
-}
-
-void AWCharacterBase::Server_SkillQ()
-{
-	// 오버라이드 정의
+	// 오버라이드 함수
 }
 
 void AWCharacterBase::NM_StopPlayMontage_Implementation()

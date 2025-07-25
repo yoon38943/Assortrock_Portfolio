@@ -20,6 +20,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> Projectile_Normal;
+
 	UFUNCTION(NetMulticast, reliable)
 	void NM_HitParticle(FVector HitLocation);
 
@@ -33,7 +36,7 @@ public:
 	
 	virtual void Behavior() override;
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION()
 	void AttackFire();
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)

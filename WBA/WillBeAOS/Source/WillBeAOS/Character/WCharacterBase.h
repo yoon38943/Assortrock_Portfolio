@@ -126,8 +126,7 @@ public:
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
 	UFUNCTION(Category = "Combat")
-	virtual void SkillQ(const FInputActionValue& Value);
-	virtual void Server_SkillQ();
+	virtual void SkillQ();
 	
 	void UpdateAcceleration();
 

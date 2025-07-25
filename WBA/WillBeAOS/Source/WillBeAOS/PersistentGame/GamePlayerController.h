@@ -120,6 +120,8 @@ public:
 	void CancelRecall();
 	void CompleteRecall();
 	void RecallToBase();
+	UFUNCTION(Client, Reliable)
+	void SetClientControlRotation(FRotator ControlRot);
 
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	TSubclassOf<UUserWidget> RecallWidgetClass;

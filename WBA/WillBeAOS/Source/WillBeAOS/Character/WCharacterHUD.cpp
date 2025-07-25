@@ -18,6 +18,7 @@ void UWCharacterHUD::NativeConstruct()
 		if (AWPS)
 		{
 			auto Message = FString::Printf(TEXT("PlayerState 가져오기 성공: %s"), *AWPS->GetName());
+			ReBindSkill();
 		}
 		else
 		{
@@ -63,11 +64,10 @@ float UWCharacterHUD::GetHealthBarPercentage()
 
 void UWCharacterHUD::ReBindSkill()
 {
-	AGamePlayerState* PS = GetOwningPlayer()->GetPlayerState<AGamePlayerState>();
-	if (PS)
+	if (AWPS)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ReBindSkillTimerHandle);
-		PS->OnQSkillUsed.AddDynamic(this, &ThisClass::OnSkillUsed);
+		AWPS->OnQSkillUsed.AddDynamic(this, &ThisClass::OnSkillUsed);
 	}
 }
 

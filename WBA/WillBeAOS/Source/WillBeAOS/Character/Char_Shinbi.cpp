@@ -136,7 +136,7 @@ TArray<AActor*> AChar_Shinbi::GetTartgetInCenter()
 	return AllTarget;
 }
 
-void AChar_Shinbi::SkillQ(const FInputActionValue& Value)
+void AChar_Shinbi::SkillQ()
 {
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
@@ -145,15 +145,27 @@ void AChar_Shinbi::SkillQ(const FInputActionValue& Value)
 		{
 			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
 			PS->UsedQSkill();
+
+			Server_SkillQ();
 		}
 	}
 }
 
-void AChar_Shinbi::Server_SkillQ()
+void AChar_Shinbi::Server_SkillQ_Implementation()
 {
-	SpawnWolfSkill();
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
+	{
+		if (PS->ServerSkillQEnable == true)
+		{
+			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
+			PS->Server_UsedQSkill();
+			
+			SpawnWolfSkill();
 	
-	NM_SkillPlayMontage(SkillQMontage);
+			NM_SkillPlayMontage(SkillQMontage);
+		}
+	}
 }
 
 void AChar_Shinbi::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)

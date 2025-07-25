@@ -2,6 +2,8 @@
 
 #include "AOSActor.h"
 #include "CombatComponent.h"
+#include "Engine/SkeletalMeshSocket.h"
+#include "Gimmick/Projectile.h"
 #include "Kismet/GameplayStatics.h"
 #include "PersistentGame/PlayGameState.h"
 
@@ -204,7 +206,23 @@ void AChar_Wraith::Behavior()
 	}
 }
 
-void AChar_Wraith::AttackFire_Implementation()
+void AChar_Wraith::AttackFire()
 {
-	// 블루프린트 내 구현
+	if (HasAuthority())
+	{
+		const USkeletalMeshSocket* MuzzleFlashSocket = GetMesh()->GetSocketByName("Muzzle_01");
+
+		if (MuzzleFlashSocket)
+		{
+			FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetMesh());
+			if (Projectile_Normal)
+			{
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.Owner = this;
+				SpawnParams.Instigator = this;
+
+				GetWorld()->SpawnActor<AProjectile>(Projectile_Normal, SocketTransform.GetLocation(), )
+			}
+		}
+	}
 }

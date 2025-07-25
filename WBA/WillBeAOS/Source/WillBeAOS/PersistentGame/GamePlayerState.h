@@ -132,7 +132,7 @@ public:
 	FTimerHandle S_SkillQTimer;
 	
 	void UsedQSkill();
-	void Server_UsedQSkill(float CoolTime);
+	void Server_UsedQSkill();
 	
 	// 플레이어 골드 관련 스탯
 	// Gold

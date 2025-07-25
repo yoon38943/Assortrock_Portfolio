@@ -305,36 +305,29 @@ void AGamePlayerState::AddKillPoint_Implementation()
 
 void AGamePlayerState::UsedQSkill()
 {
-	SkillQEnable = false;
-			
-	GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+	if (SkillQEnable)
 	{
-		SkillQEnable = true;
-	}, SkillQCoolTime, false);
+		SkillQEnable = false;
+			
+		GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
+		{
+			SkillQEnable = true;
+		}, SkillQCoolTime, false);
 
-	OnQSkillUsed.Broadcast(GetPlayerController()->GetName(), SkillQCoolTime);
-
-	Server_UsedQSkill(SkillQCoolTime);
+		OnQSkillUsed.Broadcast(GetPlayerController()->GetName(), SkillQCoolTime);
+	}
 }
 
-void AGamePlayerState::Server_UsedQSkill(float CoolTime)
+void AGamePlayerState::Server_UsedQSkill()
 {
-	UE_LOG(LogTemp, Warning, TEXT("PlayerState 서버 스킬 온"));
-	
 	if (ServerSkillQEnable == true)
-	{
-		AWCharacterBase* Character = Cast<AWCharacterBase>(GetPlayerController()->GetPawn());
-		if (Character)
-		{
-			Character->Server_SkillQ();
-		}
-		
+	{		
 		ServerSkillQEnable = false;
 		
 		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
 		{
 			ServerSkillQEnable = true;
-		}, CoolTime, false);
+		}, SkillQCoolTime, false);
 	}
 }
 

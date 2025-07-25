@@ -254,9 +254,16 @@ void AGamePlayerController::RecallToBase()
 		if (AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(GetCharacter()))
 		{
 			PlayerChar->SetActorLocation(WPlayerState->PlayerSpawner->GetActorLocation());
-			SetControlRotation(FRotationMatrix::MakeFromX(FVector(0, 0, 100) - GetPawn()->GetActorLocation()).Rotator());
+			FRotator LookCenter = (FVector(0, 0, 100) - GetPawn()->GetActorLocation()).Rotation();
+			GetPawn()->SetActorRotation(LookCenter);
+			SetClientControlRotation(LookCenter);
 		}
 	}
+}
+
+void AGamePlayerController::SetClientControlRotation_Implementation(FRotator ControlRot)
+{
+	SetControlRotation(ControlRot);
 }
 
 void AGamePlayerController::S_SetCurrentRespawnTime_Implementation()
@@ -419,22 +426,6 @@ void AGamePlayerController::OnPossess(APawn* InPawn)
 				PlayerChar->TeamID = WPlayerState->InGamePlayerInfo.PlayerTeam;
 			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
 		}
-
-		/*// 타워에 캐릭터 재설정 부분
-		if (this == GetWorld()->GetFirstPlayerController())
-		{
-			TArray<AActor*> FoundTowers;
-			UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATower::StaticClass(), FoundTowers);
-
-			for (AActor* Actor : FoundTowers)
-			{
-				ATower* Tower = Cast<ATower>(Actor);
-				if (Tower)
-				{
-					Tower->FindPlayerPawn();  // 타워의 특정 함수 호출
-				}
-			}
-		}*/
 	}
 }
 

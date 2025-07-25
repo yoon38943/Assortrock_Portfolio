@@ -22,8 +22,9 @@ public:
 	TArray<AActor*> GetTartgetInCenter();
 
 	FShinbi_SkillDataTable* QSkill;
-	virtual void SkillQ(const FInputActionValue& Value) override;
-	virtual void Server_SkillQ() override;
+	virtual void SkillQ() override;
+	UFUNCTION(Server, Reliable)
+	virtual void Server_SkillQ();
 	UFUNCTION(NetMulticast, Reliable, Category = "Combat")
 	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
 	void SpawnWolfSkill();
