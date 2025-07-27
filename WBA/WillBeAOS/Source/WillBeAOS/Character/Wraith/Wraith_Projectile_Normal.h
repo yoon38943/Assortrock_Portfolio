@@ -17,16 +17,28 @@ protected:
 	virtual void Destroyed() override;
 	
 private:
+	UPROPERTY(EditDefaultsOnly)
 	class UBoxComponent* BoxCollision;
 
-	UPROPERTY(EditAnywhere)
-	UParticleSystem* Tracer;
-	
+	UPROPERTY(EditDefaultsOnly)
 	UParticleSystemComponent* TracerComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	UProjectileMovementComponent* ProjectileMovement_C;
 
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticle;
 
 	UFUNCTION()
-	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
+	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+					UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+					bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_HitEffect(const FVector& HitLocation);
+
+public:
+	E_TeamID TeamID;
+
+	void DestroyProjectile(const FVector& StartLocation, const FVector& EndLocation);
 };

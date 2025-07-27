@@ -23,9 +23,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> Projectile_Normal;
 
-	UFUNCTION(NetMulticast, reliable)
-	void NM_HitParticle(FVector HitLocation);
-
 public:
 	AActor* LastTarget;
 	// 타겟 락온 관련
@@ -36,9 +33,9 @@ public:
 	
 	virtual void Behavior() override;
 
-	UFUNCTION()
+	UFUNCTION(BlueprintNativeEvent)
 	void AttackFire();
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void WraithAttack(const FVector& Start, const FVector& End);
+	void WraithAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
 };

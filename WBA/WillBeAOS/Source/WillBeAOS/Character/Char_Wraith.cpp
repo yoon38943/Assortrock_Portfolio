@@ -2,67 +2,87 @@
 
 #include "AOSActor.h"
 #include "CombatComponent.h"
-#include "Engine/SkeletalMeshSocket.h"
 #include "Gimmick/Projectile.h"
-#include "Kismet/GameplayStatics.h"
 #include "PersistentGame/PlayGameState.h"
+#include "Wraith/Wraith_Projectile_Normal.h"
 
-void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVector& End)
+void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVector& Direction, const FVector& SocketLocation)
 {
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this);
-
-	if (GS)
+	if (HasAuthority())
 	{
-		for (AActor* Ally : GS->GameManagedActors)
+		if (Projectile_Normal)
 		{
-			if (IsValid(Ally))
-			{
-				// AAOSCharacter 중 아군 채널 제외
-				AAOSCharacter* InGameChar = Cast<AAOSCharacter>(Ally);
-				if (InGameChar && InGameChar->TeamID == TeamID)
-					QueryParams.AddIgnoredActor(Ally);
+			FVector TraceStart = Start;
+			FVector TraceEnd = TraceStart + Direction * 1500;
 			
-				// AAOSActor 중 아군 채널 제외
-				AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
-				if (InGameActor && InGameActor->TeamID == TeamID)
-					QueryParams.AddIgnoredActor(Ally);
+			FHitResult HitActor;
+			FCollisionQueryParams QueryParams;
+			QueryParams.AddIgnoredActor(this);
+
+			if (GS)
+			{
+				for (TWeakObjectPtr<AActor> WeakActor : GS->CachedActors)
+				{
+					if (WeakActor.IsValid())
+					{
+						AActor* Ally = WeakActor.Get();
+				
+						if (!IsValid(Ally)) continue;
+			
+						// AAOSCharacter 중 아군 채널 제외
+						AAOSCharacter* InGameChar = Cast<AAOSCharacter>(Ally);
+						if (InGameChar)
+						{
+							if (InGameChar->TeamID == TeamID)
+								QueryParams.AddIgnoredActor(Ally);
+						}
+
+						// AAOSActor 중 아군 채널 제외
+						AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
+						if (InGameActor)
+						{
+							if (IsValid(InGameActor) && InGameActor->TeamID == TeamID)
+								QueryParams.AddIgnoredActor(Ally);
+						}
+					}
+				}
+			}
+			
+			FCollisionObjectQueryParams ObjectQuery;
+			ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
+			ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
+
+			bool AttackSuccess = GetWorld()->LineTraceSingleByObjectType(
+				HitActor,
+				TraceStart,
+				TraceEnd,
+				ObjectQuery,
+				QueryParams
+			);
+
+			FVector HitLocation;
+			if (AttackSuccess)
+			{
+				HitLocation = HitActor.ImpactPoint;
+			}
+			else
+			{
+				HitLocation = TraceEnd;
+			}
+			
+			FVector ProjectileWay = HitLocation - SocketLocation;
+			FRotator ProjectileWayRot = ProjectileWay.Rotation();
+
+			AWraith_Projectile_Normal* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Normal>(Projectile_Normal, SocketLocation, ProjectileWayRot);
+			if (Proj)
+			{
+				Proj->SetOwner(this);
+				Proj->SetInstigator(this);
+				Proj->TeamID = TeamID;
+				Proj->DestroyProjectile(SocketLocation, HitLocation);
 			}
 		}
 	}
-
-	FCollisionObjectQueryParams ObjectQuery;
-	ObjectQuery.AddObjectTypesToQuery(ECC_WorldStatic);
-	ObjectQuery.AddObjectTypesToQuery(ECC_Pawn);
-
-	bool AttackSuccess = GetWorld()->LineTraceSingleByObjectType(
-		HitResult,
-		Start,
-		End,
-		ObjectQuery,
-		QueryParams
-	);
-
-	if (AttackSuccess)
-	{
-		NM_HitParticle(HitResult.Location);
-		HandleApplyPointDamage(HitResult);
-	}
-}
-
-void AChar_Wraith::NM_HitParticle_Implementation(FVector HitLocation)
-{
-	if (!HitParticle) return;
-	
-	UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			HitParticle,
-			HitLocation,
-			FRotator::ZeroRotator,
-			FVector(0.7f),
-			true
-			);
 }
 
 void AChar_Wraith::BeginPlay()
@@ -110,7 +130,7 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 	PC->DeprojectScreenPositionToWorld(ScreenCenter.X, ScreenCenter.Y, WorldLocation, WorldDirection);
 
 	FVector TraceStart = WorldLocation;
-	FVector TraceEnd = TraceStart + WorldDirection * 1600.0f;
+	FVector TraceEnd = TraceStart + WorldDirection * 1500.0f;
 
 	FHitResult HitActor;
 	FCollisionQueryParams QueryParams;
@@ -192,7 +212,7 @@ void AChar_Wraith::Behavior()
 				GetWorld()->GetTimerManager().SetTimer(AttackTimer,
 					[this]()
 					{
-						CanAttack = true;	
+						CanAttack = true;
 					},
 					0.77f,
 					false);
@@ -206,23 +226,7 @@ void AChar_Wraith::Behavior()
 	}
 }
 
-void AChar_Wraith::AttackFire()
+void AChar_Wraith::AttackFire_Implementation()
 {
-	if (HasAuthority())
-	{
-		const USkeletalMeshSocket* MuzzleFlashSocket = GetMesh()->GetSocketByName("Muzzle_01");
-
-		if (MuzzleFlashSocket)
-		{
-			FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetMesh());
-			if (Projectile_Normal)
-			{
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.Owner = this;
-				SpawnParams.Instigator = this;
-
-				GetWorld()->SpawnActor<AProjectile>(Projectile_Normal, SocketTransform.GetLocation(), )
-			}
-		}
-	}
+	// 블루프린트 정의
 }

@@ -141,7 +141,7 @@ void AWCharacterBase::Tick(float DeltaTime)
 
 	AimOffset(DeltaTime);
 	
-	if (!HasAuthority())
+	if (!HasAuthority() && IsLocallyControlled())
 	{
 		if (AttackTarget != CurrentTarget)
 		{
@@ -150,10 +150,13 @@ void AWCharacterBase::Tick(float DeltaTime)
 				// 이전 타겟의 외곽선 끄기
 				for (auto& Actor : CurrentTarget)
 				{
-					auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-					if (IsValid(EnemyMesh))
+					if (Actor)
 					{
-						EnemyMesh->SetRenderCustomDepth(false);
+						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+						if (IsValid(EnemyMesh))
+						{
+							EnemyMesh->SetRenderCustomDepth(false);
+						}
 					}
 				}
 			}
@@ -163,15 +166,26 @@ void AWCharacterBase::Tick(float DeltaTime)
 				// 외곽선 표시하기
 				for (auto& Actor : AttackTarget)
 				{
-					auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-					if (IsValid(EnemyMesh))
+					if (Actor)
 					{
-						EnemyMesh->SetRenderCustomDepth(true);
+						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+						if (IsValid(EnemyMesh))
+						{
+							EnemyMesh->SetRenderCustomDepth(true);
+						}
 					}
 				}
 			}
 
 			CurrentTarget = AttackTarget;
+		}
+
+		if (bIsDead)
+		{
+			for (auto& Elem : AttackTarget)
+			{
+				AttackTarget.Remove(Elem);
+			}
 		}
 	}
 }
