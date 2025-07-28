@@ -26,11 +26,14 @@ AWraith_Projectile_Normal::AWraith_Projectile_Normal()
 	TracerComponent->SetupAttachment(BoxCollision);
 
 	ProjectileMovement_C = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement_C"));
+	ProjectileMovement_C->SetIsReplicated(false);
 }
 
 void AWraith_Projectile_Normal::BeginPlay()
 {
 	Super::BeginPlay();
+
+	ActorStartLocation = GetActorLocation();
 
 	if (HasAuthority())
 	{
@@ -38,11 +41,20 @@ void AWraith_Projectile_Normal::BeginPlay()
 	}
 }
 
+void AWraith_Projectile_Normal::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	float MoveDistance = FVector::Dist(GetActorLocation(), ActorStartLocation);
+	if (MoveDistance >= DistanceVector)
+	{
+		Destroy();
+	}
+}
+
 void AWraith_Projectile_Normal::Destroyed()
 {
 	Super::Destroyed();
-
-	//UE_LOG(LogTemp, Warning, TEXT("%s"), *GetActorLocation().ToString());
 }
 
 void AWraith_Projectile_Normal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -50,6 +62,7 @@ void AWraith_Projectile_Normal::OnOverlapBegin(UPrimitiveComponent* OverlappedCo
 {
 	if (OtherActor && HasAuthority())
 	{
+		if (!CanHit) return;
 		if (OtherActor == GetOwner()) return;
 		
 		AAOSCharacter* Character = Cast<AAOSCharacter>(OtherActor);
@@ -63,7 +76,7 @@ void AWraith_Projectile_Normal::OnOverlapBegin(UPrimitiveComponent* OverlappedCo
 			if (ObjActor->TeamID == TeamID) return;
 		}
 
-		float CharacterDamage = 0;
+		/*float CharacterDamage = 0;
 		AGamePlayerController* PC = Cast<AGamePlayerController>(GetInstigatorController());
 		if (PC)
 		{
@@ -87,7 +100,7 @@ void AWraith_Projectile_Normal::OnOverlapBegin(UPrimitiveComponent* OverlappedCo
 			);
 		}
 
-		NM_HitEffect(SweepResult.ImpactPoint);
+		NM_HitEffect(SweepResult.ImpactPoint);*/
 		Destroy();
 	}
 }
@@ -104,16 +117,4 @@ void AWraith_Projectile_Normal::NM_HitEffect_Implementation(const FVector& HitLo
 			FVector(0.7f),
 			true);
 	}
-}
-
-void AWraith_Projectile_Normal::DestroyProjectile(const FVector& StartLocation, const FVector& EndLocation)
-{
-	float TimeToDestroy = (FVector::Dist(StartLocation, EndLocation) / ProjectileMovement_C->MaxSpeed);
-	FTimerHandle DestroyTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(DestroyTimerHandle, [this]()
-	{
-		Destroy();
-	},
-	TimeToDestroy,
-	false);
 }

@@ -38,4 +38,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void WraithAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_HitEffect(const FVector& HitLocation);
 };

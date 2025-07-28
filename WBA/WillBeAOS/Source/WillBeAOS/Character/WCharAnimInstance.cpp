@@ -20,6 +20,8 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AWCharacterBase* Character = Cast<AWCharacterBase>(TryGetPawnOwner());
 	if (Character)
 	{
+		IsInCombat = Character->IsCombat;
+		
 		TurningInPlace = Character->TurningInPlace;
 		
 		if (TurningInPlace == E_TurningInPlace::E_NotTurning)
@@ -58,11 +60,4 @@ void UWCharAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		else
 			FullBody = false;
 	}
-}
-
-void UWCharAnimInstance::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ThisClass, IsInCombat);
 }

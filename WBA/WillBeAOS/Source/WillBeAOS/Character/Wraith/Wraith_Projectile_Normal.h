@@ -13,7 +13,7 @@ class WILLBEAOS_API AWraith_Projectile_Normal : public AProjectile
 
 protected:
 	virtual void BeginPlay() override;
-
+	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
 	
 private:
@@ -29,6 +29,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticle;
 
+	FVector ActorStartLocation;
+
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 					UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -40,5 +42,7 @@ private:
 public:
 	E_TeamID TeamID;
 
-	void DestroyProjectile(const FVector& StartLocation, const FVector& EndLocation);
+	bool CanHit;
+	
+	float DistanceVector;
 };

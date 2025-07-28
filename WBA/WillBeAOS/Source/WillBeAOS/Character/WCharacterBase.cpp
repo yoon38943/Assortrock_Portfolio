@@ -153,7 +153,7 @@ void AWCharacterBase::Tick(float DeltaTime)
 					if (Actor)
 					{
 						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-						if (IsValid(EnemyMesh))
+						if (EnemyMesh)
 						{
 							EnemyMesh->SetRenderCustomDepth(false);
 						}
@@ -169,7 +169,7 @@ void AWCharacterBase::Tick(float DeltaTime)
 					if (Actor)
 					{
 						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-						if (IsValid(EnemyMesh))
+						if (EnemyMesh)
 						{
 							EnemyMesh->SetRenderCustomDepth(true);
 						}
@@ -539,19 +539,9 @@ void AWCharacterBase::Behavior()
 void AWCharacterBase::EnterCombat()
 {
 	IsCombat = true;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance)
-	{
-		UWCharAnimInstance* Anim = Cast<UWCharAnimInstance>(AnimInstance);
-		if (Anim)
-		{
-			Anim->IsInCombat = true;
-		}
-	}
 	
 	GetWorld()->GetTimerManager().ClearTimer(CombatTimer);
-	GetWorld()->GetTimerManager().SetTimer(CombatTimer, this, &ThisClass::ExitCombat, 15.f, false);
+	GetWorld()->GetTimerManager().SetTimer(CombatTimer, this, &ThisClass::ExitCombat, 8.f, false);
 }
 
 void AWCharacterBase::ExitCombat()
@@ -785,4 +775,5 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 	DOREPLIFETIME(ThisClass, CharacterTeam);
 	DOREPLIFETIME(ThisClass, ControllerRotation);
 	DOREPLIFETIME(ThisClass, Yaw);
+	DOREPLIFETIME(ThisClass, IsCombat);
 }

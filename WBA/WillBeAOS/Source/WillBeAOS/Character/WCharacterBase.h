@@ -106,7 +106,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
-public:
+public:	
 	UPROPERTY(BlueprintReadonly)
 	bool IsDead = false;
 	
@@ -163,7 +163,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_Behavior(int32 Combo);
 
-	bool IsCombat;
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	bool IsCombat = false;
 
 	void EnterCombat();
 	void ExitCombat();

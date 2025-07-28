@@ -23,8 +23,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = MoveMent)
 	E_TurningInPlace TurningInPlace;
 
-	UPROPERTY(BlueprintReadOnly, Replicated)
-	bool IsInCombat;
+	UPROPERTY(BlueprintReadOnly)
+	bool IsInCombat = false;
 
 
 protected:

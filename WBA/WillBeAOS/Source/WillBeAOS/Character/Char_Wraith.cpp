@@ -3,6 +3,7 @@
 #include "AOSActor.h"
 #include "CombatComponent.h"
 #include "Gimmick/Projectile.h"
+#include "Kismet/GameplayStatics.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Wraith/Wraith_Projectile_Normal.h"
 
@@ -21,20 +22,22 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 
 			if (GS)
 			{
-				for (TWeakObjectPtr<AActor> WeakActor : GS->CachedActors)
+				for (auto WeakActor : GS->GameManagedActors)
 				{
-					if (WeakActor.IsValid())
+					if (WeakActor)
 					{
-						AActor* Ally = WeakActor.Get();
+						AActor* Ally = WeakActor;
 				
-						if (!IsValid(Ally)) continue;
+						if (!Ally) continue;
 			
 						// AAOSCharacter 중 아군 채널 제외
 						AAOSCharacter* InGameChar = Cast<AAOSCharacter>(Ally);
 						if (InGameChar)
 						{
 							if (InGameChar->TeamID == TeamID)
+							{
 								QueryParams.AddIgnoredActor(Ally);
+							}
 						}
 
 						// AAOSActor 중 아군 채널 제외
@@ -42,7 +45,9 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 						if (InGameActor)
 						{
 							if (IsValid(InGameActor) && InGameActor->TeamID == TeamID)
+							{
 								QueryParams.AddIgnoredActor(Ally);
+							}
 						}
 					}
 				}
@@ -63,7 +68,19 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 			FVector HitLocation;
 			if (AttackSuccess)
 			{
+				UGameplayStatics::ApplyPointDamage(
+				HitActor.GetActor(),
+				CharacterDamage,
+				GetActorForwardVector(),
+				HitActor,
+				GetInstigatorController(),
+				this,
+				UDamageType::StaticClass()
+				);
+				
 				HitLocation = HitActor.ImpactPoint;
+
+				NM_HitEffect(HitLocation);
 			}
 			else
 			{
@@ -79,7 +96,8 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 				Proj->SetOwner(this);
 				Proj->SetInstigator(this);
 				Proj->TeamID = TeamID;
-				Proj->DestroyProjectile(SocketLocation, HitLocation);
+				Proj->CanHit = AttackSuccess;
+				Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
 			}
 		}
 	}
@@ -194,6 +212,8 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 
 void AChar_Wraith::Behavior()
 {
+	EnterCombat();
+	
 	CombatComp->SetCollisionMesh(GetMesh());
 	if (CombatComp != nullptr)
 	{
@@ -223,6 +243,20 @@ void AChar_Wraith::Behavior()
 				}
 			}
 		}
+	}
+}
+
+void AChar_Wraith::NM_HitEffect_Implementation(const FVector& HitLocation)
+{
+	if (HitParticle && !HasAuthority())
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(
+			GetWorld(),
+			HitParticle,
+			HitLocation,
+			FRotator::ZeroRotator,
+			FVector(0.7f),
+			true);
 	}
 }
 
