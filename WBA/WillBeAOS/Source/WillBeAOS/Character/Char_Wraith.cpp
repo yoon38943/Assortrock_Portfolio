@@ -114,21 +114,51 @@ void AChar_Wraith::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bIsDead) return;
+
 	if (!HasAuthority() && IsLocallyControlled())
 	{
 		AActor* TargetEnemy = CheckTargettingInCenter();
 
-		if (IsValid(TargetEnemy))
+		if (LastTarget != TargetEnemy)
 		{
-			bIsEnemyLockOn = true;
-			LastTarget = TargetEnemy;
-			AttackTarget.AddUnique(LastTarget);
-		}
-		else
-		{
-			bIsEnemyLockOn = false;
-			AttackTarget.Remove(LastTarget);
-			LastTarget = nullptr;
+			if (IsValid(TargetEnemy))
+			{
+				bIsEnemyLockOn = true;
+				if (AttackTarget.Num() > 0)
+				{
+					TArray<AActor*> DeleteActors;
+					for (auto& Actor : AttackTarget)
+					{
+						DeleteActors.Add(Actor);
+					}
+
+					for (auto& Actor : DeleteActors)
+					{
+						AttackTarget.Remove(Actor);
+					}
+				}
+				LastTarget = TargetEnemy;
+				AttackTarget.AddUnique(LastTarget);
+			}
+			else
+			{
+				bIsEnemyLockOn = false;
+				if (AttackTarget.Num() > 0)
+				{
+					TArray<AActor*> DeleteActors;
+					for (auto& Actor : AttackTarget)
+					{
+						DeleteActors.Add(Actor);
+					}
+
+					for (auto& Actor : DeleteActors)
+					{
+						AttackTarget.Remove(Actor);
+					}
+				}
+				LastTarget = nullptr;
+			}
 		}
 	}
 }

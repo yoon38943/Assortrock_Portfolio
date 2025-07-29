@@ -106,10 +106,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
-public:	
-	UPROPERTY(BlueprintReadonly)
-	bool IsDead = false;
-	
+public:		
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
 	UAnimMontage* DeadAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
@@ -125,6 +122,7 @@ public:
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
+	void VisibleOutline();
 	UFUNCTION(Category = "Combat")
 	virtual void SkillQ();
 	

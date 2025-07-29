@@ -140,54 +140,8 @@ void AWCharacterBase::Tick(float DeltaTime)
 	}
 
 	AimOffset(DeltaTime);
-	
-	if (!HasAuthority() && IsLocallyControlled())
-	{
-		if (AttackTarget != CurrentTarget)
-		{
-			if (CurrentTarget.Num() > 0)
-			{
-				// 이전 타겟의 외곽선 끄기
-				for (auto& Actor : CurrentTarget)
-				{
-					if (Actor)
-					{
-						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-						if (EnemyMesh)
-						{
-							EnemyMesh->SetRenderCustomDepth(false);
-						}
-					}
-				}
-			}
 
-			if (AttackTarget.Num() > 0)
-			{
-				// 외곽선 표시하기
-				for (auto& Actor : AttackTarget)
-				{
-					if (Actor)
-					{
-						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
-						if (EnemyMesh)
-						{
-							EnemyMesh->SetRenderCustomDepth(true);
-						}
-					}
-				}
-			}
-
-			CurrentTarget = AttackTarget;
-		}
-
-		if (bIsDead)
-		{
-			for (auto& Elem : AttackTarget)
-			{
-				AttackTarget.Remove(Elem);
-			}
-		}
-	}
+	VisibleOutline();
 }
 
 void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -484,6 +438,71 @@ void AWCharacterBase::StopMove(const FInputActionValue& Value)
 	}
 }
 
+void AWCharacterBase::VisibleOutline()
+{
+	if (!HasAuthority() && IsLocallyControlled())
+	{
+		// 캐릭터 죽었을 경우 현재 타겟 모두 없애기
+		if (bIsDead)
+		{
+			if (AttackTarget.Num() > 0)
+			{
+				TArray<AActor*> DeleteActors;
+				for (auto& Actor : AttackTarget)
+				{
+					DeleteActors.Add(Actor);
+				}
+
+				for (auto& Actor : DeleteActors)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("%s"), *Actor->GetName());
+					AttackTarget.Remove(Actor);
+				}
+			}
+		}
+
+		// 타겟에 변화가 일어 났을 때
+		if (AttackTarget != CurrentTarget)
+		{
+			// 타겟이 줄었을 때
+			if (CurrentTarget.Num() > 0)
+			{
+				// 타겟이 아니게된 액터 찾아서 외곽선 끄기
+				for (auto& Actor : CurrentTarget)
+				{
+					if (Actor && !AttackTarget.Contains(Actor))
+					{
+						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+						if (EnemyMesh)
+						{
+							EnemyMesh->SetRenderCustomDepth(false);
+						}
+					}
+				}
+			}
+
+			// 타겟이 늘었을 때
+			if (AttackTarget.Num() > 0)
+			{
+				// 새로 타겟이 된 액터 찾아서 외곽선 표시하기
+				for (auto& Actor : AttackTarget)
+				{
+					if (Actor && !CurrentTarget.Contains(Actor))
+					{
+						auto EnemyMesh = Actor->FindComponentByClass<UMeshComponent>();
+						if (EnemyMesh)
+						{
+							EnemyMesh->SetRenderCustomDepth(true);
+						}
+					}
+				}
+			}
+
+			CurrentTarget = AttackTarget;	// 외곽선 표시처리 후 배열 동일하게 처리
+		}
+	}
+}
+
 void AWCharacterBase::SkillQ()
 {
 	// 오버라이드 함수
@@ -496,7 +515,7 @@ void AWCharacterBase::NM_StopPlayMontage_Implementation()
 
 void AWCharacterBase::Attack()
 {
-	if (IsDead == true) return;
+	if (bIsDead == true) return;
 	
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
@@ -622,7 +641,7 @@ void AWCharacterBase::NM_SpawnHitEffect_Implementation(FVector HitLocation)
 
 void AWCharacterBase::BeingDead()
 {
-	IsDead = true;
+	bIsDead = true;
 
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	
@@ -658,7 +677,12 @@ void AWCharacterBase::S_BeingDead_Implementation(AGamePlayerController* PC, APaw
 				GameMode->RespawnPlayer(Player, PC);
 			}, GameState->RespawnTime, false);
 
-		PC->PossessToSpectatorCamera(FollowCamera->GetComponentLocation(), FollowCamera->GetComponentRotation());
+		FTimerHandle SpectatorCamera;
+		GetWorld()->GetTimerManager().SetTimer(SpectatorCamera,
+			[this, PC]()
+			{
+				PC->PossessToSpectatorCamera(FollowCamera->GetComponentLocation(), FollowCamera->GetComponentRotation());
+			}, 1.3f, false);
 	}
 	
 	NM_BeingDead();
@@ -696,6 +720,9 @@ void AWCharacterBase::C_BeingDead_Implementation(AGamePlayerController* PC)
 
 	//죽으면 카메라 움직임에 메쉬 따라 움직이지 않게 하기
 	this->bUseControllerRotationYaw = false;
+
+	// 죽으면 카메라 회전 못하게 하기
+	PC->SetIgnoreLookInput(true);
 }
 
 //포인트 데미지 주는 함수

@@ -31,6 +31,8 @@ void AChar_Shinbi::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (bIsDead) return;
+
 	if (!HasAuthority() && IsLocallyControlled())
 	{
 		TArray<AActor*> TargetEnemy = GetTartgetInCenter();
