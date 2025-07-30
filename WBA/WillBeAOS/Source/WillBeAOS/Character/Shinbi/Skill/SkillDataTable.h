@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Shinbi_SkillDataTable.generated.h"
+#include "SkillDataTable.generated.h"
 
 USTRUCT(BlueprintType)
-struct FShinbi_SkillDataTable : public FTableRowBase
+struct FSkillDataTable : public FTableRowBase
 {
 	GENERATED_BODY()
 

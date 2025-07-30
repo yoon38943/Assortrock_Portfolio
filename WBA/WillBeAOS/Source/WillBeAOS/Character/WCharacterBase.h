@@ -154,7 +154,7 @@ public:
 	TArray<AActor*> CurrentTarget;
 	
 	// ---- Attack 관련 함수 ----
-	void Attack();
+	virtual void Attack();
 	virtual void Behavior();
 	UFUNCTION(Server, Reliable)
 	void S_Behavior();

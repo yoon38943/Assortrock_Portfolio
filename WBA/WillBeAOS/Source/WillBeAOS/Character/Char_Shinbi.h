@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "WCharacterBase.h"
-#include "Shinbi/Skill/Shinbi_SkillDataTable.h"
+#include "Shinbi/Skill/SkillDataTable.h"
 #include "Char_Shinbi.generated.h"
 
 UCLASS()
@@ -21,7 +21,7 @@ public:
 	
 	TArray<AActor*> GetTartgetInCenter();
 
-	FShinbi_SkillDataTable* QSkill;
+	FSkillDataTable* QSkill;
 	virtual void SkillQ() override;
 	UFUNCTION(Server, Reliable)
 	virtual void Server_SkillQ();

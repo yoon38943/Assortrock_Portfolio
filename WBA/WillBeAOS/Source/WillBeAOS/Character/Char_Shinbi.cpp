@@ -18,7 +18,7 @@ void AChar_Shinbi::BeginPlay()
 
 	if (SkillDataTable)
 	{
-		QSkill = SkillDataTable->FindRow<FShinbi_SkillDataTable>(FName("QSkill"), TEXT(""));
+		QSkill = SkillDataTable->FindRow<FSkillDataTable>(FName("QSkill"), TEXT(""));
 	}
 	
 	if (QSkill)
