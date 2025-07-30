@@ -62,11 +62,12 @@ public:
 	// Q스킬 사용
 	virtual void SkillQ() override;
 
-	bool bIsZoomIn;
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsZoomIn = false;
 	FSkillDataTable* QSkill;
 
 	FTimerHandle ZoomTimer;
-	
+
 	void ZoomInScope();
 	void ZoomOutScope();
 	void UpdateZoom();
@@ -75,6 +76,7 @@ public:
 	void S_SkillQAttack();
 	UFUNCTION(BlueprintNativeEvent)
 	void BP_EnhancedAttack();
+	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void EnhancedAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);

@@ -35,10 +35,11 @@ void AWraith_Projectile_Normal::BeginPlay()
 
 	ActorStartLocation = GetActorLocation();
 
+	/*
 	if (HasAuthority())
 	{
 		BoxCollision->OnComponentBeginOverlap.AddDynamic(this, &AWraith_Projectile_Normal::OnOverlapBegin);
-	}
+	}*/
 }
 
 void AWraith_Projectile_Normal::Tick(float DeltaTime)
@@ -55,66 +56,4 @@ void AWraith_Projectile_Normal::Tick(float DeltaTime)
 void AWraith_Projectile_Normal::Destroyed()
 {
 	Super::Destroyed();
-}
-
-void AWraith_Projectile_Normal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
-                                               UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	if (OtherActor && HasAuthority())
-	{
-		if (!CanHit) return;
-		if (OtherActor == GetOwner()) return;
-		
-		AAOSCharacter* Character = Cast<AAOSCharacter>(OtherActor);
-		if (Character)
-		{
-			if (Character->TeamID == TeamID) return;
-		}
-		AAOSActor* ObjActor = Cast<AAOSActor>(OtherActor);
-		if (ObjActor)
-		{
-			if (ObjActor->TeamID == TeamID) return;
-		}
-
-		/*float CharacterDamage = 0;
-		AGamePlayerController* PC = Cast<AGamePlayerController>(GetInstigatorController());
-		if (PC)
-		{
-			AGamePlayerState* PState = PC->GetPlayerState<AGamePlayerState>();
-			if (PState)
-			{
-				CharacterDamage = PState->CPower;
-			}
-		}
-
-		if (Character || ObjActor)
-		{
-			UGameplayStatics::ApplyPointDamage(
-				OtherActor,
-				CharacterDamage,
-				GetOwner()->GetActorForwardVector(),
-				SweepResult,
-				GetInstigatorController(),
-				this,
-				UDamageType::StaticClass()
-			);
-		}
-
-		NM_HitEffect(SweepResult.ImpactPoint);*/
-		Destroy();
-	}
-}
-
-void AWraith_Projectile_Normal::NM_HitEffect_Implementation(const FVector& HitLocation)
-{
-	if (ImpactParticle && !HasAuthority())
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(
-			GetWorld(),
-			ImpactParticle,
-			HitLocation,
-			FRotator::ZeroRotator,
-			FVector(0.7f),
-			true);
-	}
 }

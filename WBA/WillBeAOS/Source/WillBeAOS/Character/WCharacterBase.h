@@ -113,7 +113,7 @@ public:
 	UAnimMontage* HitAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
 	TArray<UAnimMontage*> AttackMontages = {};
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combo)
+
 	UAnimMontage* SkillQMontage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Skill)

@@ -505,6 +505,7 @@ void AWCharacterBase::VisibleOutline()
 
 void AWCharacterBase::SkillQ()
 {
+	if (bIsDead) return;
 	// 오버라이드 함수
 }
 

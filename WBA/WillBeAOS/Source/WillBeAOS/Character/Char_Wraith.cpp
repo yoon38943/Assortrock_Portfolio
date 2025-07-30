@@ -120,6 +120,11 @@ void AChar_Wraith::BeginPlay()
 	
 	GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 
+	if (SkillDataTable)
+	{
+		QSkill = SkillDataTable->FindRow<FSkillDataTable>(FName("QSkill"), TEXT(""));
+	}
+	
 	if (QSkill)
 	{
 		SkillQMontage = QSkill->SkillMontage;
@@ -130,6 +135,8 @@ void AChar_Wraith::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/*if (!HasAuthority())
+	UE_LOG(LogTemp, Warning, TEXT("%s"), bIsZoomIn ? TEXT("ZoomIn") : TEXT("ZoomOut"));*/
 	if (bIsDead) return;
 
 	if (!HasAuthority() && IsLocallyControlled())
@@ -258,6 +265,8 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 
 void AChar_Wraith::Attack()
 {
+	if (HasAuthority())
+	UE_LOG(LogTemp, Warning, TEXT("서버에서 실행"));
 	if (bIsZoomIn)
 	{
 		SkillQAttack();
@@ -358,7 +367,7 @@ void AChar_Wraith::ZoomOutScope()
 
 void AChar_Wraith::UpdateZoom()
 {
-	float TargetFOV = bIsZoomIn ? 60.f : 90.f;
+	float TargetFOV = bIsZoomIn ? 38.f : 90.f;
 	float CurrentFOV = FollowCamera->FieldOfView;
 	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, GetWorld()->DeltaTimeSeconds, 10.f);
 
@@ -373,6 +382,8 @@ void AChar_Wraith::UpdateZoom()
 
 void AChar_Wraith::SkillQAttack()
 {
+	if (bIsDead) return;
+	
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
@@ -410,7 +421,7 @@ void AChar_Wraith::BP_EnhancedAttack_Implementation()
 	// 블루 프린트 정의
 }
 
-void AChar_Wraith::EnhancedAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation)
+void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVector& Direction, const FVector& SocketLocation)
 {
 	if (HasAuthority())
 	{
@@ -493,7 +504,7 @@ void AChar_Wraith::EnhancedAttack(const FVector& Start, const FVector& Direction
 			FVector ProjectileWay = HitLocation - SocketLocation;
 			FRotator ProjectileWayRot = ProjectileWay.Rotation();
 
-			AWraith_Projectile_Normal* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Normal>(Projectile_Enhanced, SocketLocation, ProjectileWayRot);
+			AProjectile* Proj = GetWorld()->SpawnActor<AProjectile>(Projectile_Enhanced, SocketLocation, ProjectileWayRot);
 			if (Proj)
 			{
 				Proj->SetOwner(this);
