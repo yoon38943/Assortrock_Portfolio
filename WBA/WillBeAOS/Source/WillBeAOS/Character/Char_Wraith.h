@@ -62,6 +62,9 @@ public:
 	// Q스킬 사용
 	virtual void SkillQ() override;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void NM_SpawnProjectile(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot);
+
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsZoomIn = false;
 	FSkillDataTable* QSkill;

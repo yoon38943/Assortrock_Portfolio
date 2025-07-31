@@ -8,6 +8,7 @@
 #include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
+#include "Wraith/Wraith_Projectile_Enhanced.h"
 #include "Wraith/Wraith_Projectile_Normal.h"
 
 
@@ -351,6 +352,20 @@ void AChar_Wraith::SkillQ()
 	}
 }
 
+void AChar_Wraith::NM_SpawnProjectile_Implementation(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot)
+{
+	if (!HasAuthority())
+	{
+		AWraith_Projectile_Enhanced* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Enhanced>(Projectile_Enhanced, SocketLocation, ProjectileRot);
+		if (Proj)
+		{
+			Proj->SetOwner(this);
+			Proj->SetInstigator(this);
+			Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
+		}
+	}
+}
+
 void AChar_Wraith::ZoomInScope()
 {
 	bIsZoomIn = true;
@@ -504,15 +519,7 @@ void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVe
 			FVector ProjectileWay = HitLocation - SocketLocation;
 			FRotator ProjectileWayRot = ProjectileWay.Rotation();
 
-			AProjectile* Proj = GetWorld()->SpawnActor<AProjectile>(Projectile_Enhanced, SocketLocation, ProjectileWayRot);
-			if (Proj)
-			{
-				Proj->SetOwner(this);
-				Proj->SetInstigator(this);
-				Proj->TeamID = TeamID;
-				Proj->CanHit = AttackSuccess;
-				Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
-			}
+			NM_SpawnProjectile(SocketLocation, HitLocation, ProjectileWayRot);
 		}
 	}
 }
