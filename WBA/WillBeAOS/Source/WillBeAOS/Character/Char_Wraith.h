@@ -63,7 +63,7 @@ public:
 	virtual void SkillQ() override;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void NM_SpawnProjectile(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot);
+	void NM_SpawnProjectile(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot, bool SkillBullet);
 
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsZoomIn = false;
@@ -73,7 +73,13 @@ public:
 
 	void ZoomInScope();
 	void ZoomOutScope();
+	UFUNCTION(Server, Reliable)
+	void SetZoomInBool(bool bZoomIn);
 	void UpdateZoom();
+	UFUNCTION(Server, Reliable)
+	void ChangeCharacterSpeed(float Speed);
+	UFUNCTION(Client, Reliable)
+	void C_ChangeCharacterSpeed(float Speed);
 	void SkillQAttack();
 	UFUNCTION(Server, Reliable)
 	void S_SkillQAttack();
@@ -82,5 +88,7 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void EnhancedAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
 	UFUNCTION(NetMulticast, Reliable)
-	void NM_SkillPlayMontage(UAnimMontage* SkillMontage);
+	void NM_PlayMontage(UAnimMontage* SkillMontage);
+
+	virtual void CallRecall() override;
 };

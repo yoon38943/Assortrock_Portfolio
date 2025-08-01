@@ -81,6 +81,12 @@ void AWCharacterBase::BeginPlay()
     
 		PC->SetControlRotation(LookAtRotation);
 	}
+
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
+	}
 	
 	if (!HasAuthority())
 	{
@@ -121,15 +127,9 @@ void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-void AWCharacterBase::Tick(float DeltaTime)	
+void AWCharacterBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
-	}
 	
 	UpdateAcceleration();
 
@@ -507,6 +507,11 @@ void AWCharacterBase::SkillQ()
 {
 	if (bIsDead) return;
 	// 오버라이드 함수
+}
+
+void AWCharacterBase::ChangeSpeed(float Speed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
 
 void AWCharacterBase::NM_StopPlayMontage_Implementation()

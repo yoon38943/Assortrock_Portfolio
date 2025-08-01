@@ -125,7 +125,8 @@ public:
 	void VisibleOutline();
 	UFUNCTION(Category = "Combat")
 	virtual void SkillQ();
-	
+
+	void ChangeSpeed(float Speed);
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -134,7 +135,7 @@ public:
 	// ---- 귀환 관련 함수 ----
 	bool IsRecalling;
 	
-	void CallRecall();
+	virtual void CallRecall();
 
 	UPROPERTY(EditAnywhere, Category = "Recall")
 	UAnimMontage* StartRecallMontage;

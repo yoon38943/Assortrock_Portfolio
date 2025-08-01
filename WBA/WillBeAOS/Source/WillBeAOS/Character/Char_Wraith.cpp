@@ -3,9 +3,12 @@
 #include "AOSActor.h"
 #include "CombatComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Gimmick/Projectile.h"
+#include "Gimmick/Tower.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
+#include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Wraith/Wraith_Projectile_Enhanced.h"
@@ -80,15 +83,30 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 			FVector HitLocation;
 			if (AttackSuccess)
 			{
-				UGameplayStatics::ApplyPointDamage(
-				HitActor.GetActor(),
-				CharacterDamage,
-				GetActorForwardVector(),
-				HitActor,
-				GetInstigatorController(),
-				this,
-				UDamageType::StaticClass()
-				);
+				float Damage = 0;
+				AController* Ctrl = Cast<AController>(GetController());
+				if (Ctrl)
+				{
+					AGamePlayerState* PS = Ctrl->GetPlayerState<AGamePlayerState>();
+					if (PS)
+					{
+						Damage = PS->CPower;
+					}
+				}
+
+				if (Damage > 0)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
+					UGameplayStatics::ApplyPointDamage(
+					HitActor.GetActor(),
+					Damage,
+					GetActorForwardVector(),
+					HitActor,
+					GetInstigatorController(),
+					this,
+					UDamageType::StaticClass()
+					);
+				}
 				
 				HitLocation = HitActor.ImpactPoint;
 
@@ -102,15 +120,7 @@ void AChar_Wraith::WraithAttack_Implementation(const FVector& Start, const FVect
 			FVector ProjectileWay = HitLocation - SocketLocation;
 			FRotator ProjectileWayRot = ProjectileWay.Rotation();
 
-			AWraith_Projectile_Normal* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Normal>(Projectile_Normal, SocketLocation, ProjectileWayRot);
-			if (Proj)
-			{
-				Proj->SetOwner(this);
-				Proj->SetInstigator(this);
-				Proj->TeamID = TeamID;
-				Proj->CanHit = AttackSuccess;
-				Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
-			}
+			NM_SpawnProjectile(SocketLocation, HitLocation, ProjectileWayRot, false);
 		}
 	}
 }
@@ -137,7 +147,7 @@ void AChar_Wraith::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	/*if (!HasAuthority())
-	UE_LOG(LogTemp, Warning, TEXT("%s"), bIsZoomIn ? TEXT("ZoomIn") : TEXT("ZoomOut"));*/
+	UE_LOG(LogTemp, Warning, TEXT("%f"), TargettingTraceLength);*/
 	if (bIsDead) return;
 
 	if (!HasAuthority() && IsLocallyControlled())
@@ -266,8 +276,6 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 
 void AChar_Wraith::Attack()
 {
-	if (HasAuthority())
-	UE_LOG(LogTemp, Warning, TEXT("서버에서 실행"));
 	if (bIsZoomIn)
 	{
 		SkillQAttack();
@@ -338,6 +346,12 @@ void AChar_Wraith::SkillQ()
 {
 	Super::SkillQ();
 
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
+	if (PC && PC->IsRecalling)
+	{
+		PC->Server_CancelRecall();
+	}
+
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
@@ -352,16 +366,30 @@ void AChar_Wraith::SkillQ()
 	}
 }
 
-void AChar_Wraith::NM_SpawnProjectile_Implementation(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot)
+void AChar_Wraith::NM_SpawnProjectile_Implementation(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot, bool SkillBullet)
 {
 	if (!HasAuthority())
 	{
-		AWraith_Projectile_Enhanced* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Enhanced>(Projectile_Enhanced, SocketLocation, ProjectileRot);
-		if (Proj)
+		if (SkillBullet == true)
 		{
-			Proj->SetOwner(this);
-			Proj->SetInstigator(this);
-			Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
+			UE_LOG(LogTemp, Warning, TEXT("%f"), FVector::Dist(SocketLocation, HitLocation));
+			AWraith_Projectile_Enhanced* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Enhanced>(Projectile_Enhanced, SocketLocation, ProjectileRot);
+			if (Proj)
+			{
+				Proj->SetOwner(this);
+				Proj->SetInstigator(this);
+				Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
+			}
+		}
+		else
+		{
+			AWraith_Projectile_Normal* Proj = GetWorld()->SpawnActor<AWraith_Projectile_Normal>(Projectile_Normal, SocketLocation, ProjectileRot);
+			if (Proj)
+			{
+				Proj->SetOwner(this);
+				Proj->SetInstigator(this);
+				Proj->DistanceVector = FVector::Dist(SocketLocation, HitLocation);
+			}
 		}
 	}
 }
@@ -369,6 +397,12 @@ void AChar_Wraith::NM_SpawnProjectile_Implementation(const FVector& SocketLocati
 void AChar_Wraith::ZoomInScope()
 {
 	bIsZoomIn = true;
+	SetZoomInBool(bIsZoomIn);
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
+	{
+		ChangeCharacterSpeed(PS->CSpeed / 3);
+	}
 	TargettingTraceLength = 4000.f;
 	GetWorld()->GetTimerManager().SetTimer(ZoomTimer, this, &ThisClass::UpdateZoom, 0.01f, true);
 }
@@ -376,13 +410,24 @@ void AChar_Wraith::ZoomInScope()
 void AChar_Wraith::ZoomOutScope()
 {
 	bIsZoomIn = false;
+	SetZoomInBool(bIsZoomIn);
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
+	{
+		ChangeCharacterSpeed(PS->CSpeed);
+	}
 	TargettingTraceLength = 1500.f;
 	GetWorld()->GetTimerManager().SetTimer(ZoomTimer, this, &ThisClass::UpdateZoom, 0.01f, true);
 }
 
+void AChar_Wraith::SetZoomInBool_Implementation(bool bZoomIn)
+{
+	bIsZoomIn = bZoomIn;
+}
+
 void AChar_Wraith::UpdateZoom()
 {
-	float TargetFOV = bIsZoomIn ? 38.f : 90.f;
+	float TargetFOV = bIsZoomIn ? 45.f : 90.f;
 	float CurrentFOV = FollowCamera->FieldOfView;
 	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, GetWorld()->DeltaTimeSeconds, 10.f);
 
@@ -393,6 +438,17 @@ void AChar_Wraith::UpdateZoom()
 		FollowCamera->SetFieldOfView(TargetFOV);
 		GetWorld()->GetTimerManager().ClearTimer(ZoomTimer);
 	}
+}
+
+void AChar_Wraith::ChangeCharacterSpeed_Implementation(float Speed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Speed;
+	C_ChangeCharacterSpeed(Speed);
+}
+
+void AChar_Wraith::C_ChangeCharacterSpeed_Implementation(float Speed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Speed;
 }
 
 void AChar_Wraith::SkillQAttack()
@@ -413,6 +469,16 @@ void AChar_Wraith::SkillQAttack()
 	}
 }
 
+void AChar_Wraith::CallRecall()
+{
+	if (bIsZoomIn)
+	{
+		ZoomOutScope();
+	}
+	
+	Super::CallRecall();
+}
+
 void AChar_Wraith::S_SkillQAttack_Implementation()
 {
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
@@ -425,8 +491,7 @@ void AChar_Wraith::S_SkillQAttack_Implementation()
 
 			TargettingTraceLength = 4000.f;
 			BP_EnhancedAttack();
-			NM_SkillPlayMontage(SkillQMontage);
-			TargettingTraceLength = 1500.f;
+			NM_PlayMontage(SkillQMontage);
 		}
 	}
 }
@@ -477,6 +542,12 @@ void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVe
 							{
 								QueryParams.AddIgnoredActor(Ally);
 							}
+
+							ATower* Tower = Cast<ATower>(InGameActor);
+							if (Tower)
+							{
+								QueryParams.AddIgnoredActor(Ally);
+							}
 						}
 					}
 				}
@@ -497,15 +568,29 @@ void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVe
 			FVector HitLocation;
 			if (AttackSuccess)
 			{
-				UGameplayStatics::ApplyPointDamage(
-				HitActor.GetActor(),
-				CharacterDamage,
-				GetActorForwardVector(),
-				HitActor,
-				GetInstigatorController(),
-				this,
-				UDamageType::StaticClass()
-				);
+				float Damage = 0;
+				AController* Ctrl = Cast<AController>(GetController());
+				if (Ctrl)
+				{
+					AGamePlayerState* PS = Ctrl->GetPlayerState<AGamePlayerState>();
+					if (PS)
+					{
+						Damage = PS->CPower * 2.f;
+					}
+				}
+
+				if (Damage > 0)
+				{
+					UGameplayStatics::ApplyPointDamage(
+					HitActor.GetActor(),
+					Damage,
+					GetActorForwardVector(),
+					HitActor,
+					GetInstigatorController(),
+					this,
+					UDamageType::StaticClass()
+					);
+				}
 				
 				HitLocation = HitActor.ImpactPoint;
 
@@ -519,12 +604,16 @@ void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVe
 			FVector ProjectileWay = HitLocation - SocketLocation;
 			FRotator ProjectileWayRot = ProjectileWay.Rotation();
 
-			NM_SpawnProjectile(SocketLocation, HitLocation, ProjectileWayRot);
+			UE_LOG(LogTemp, Warning, TEXT("%s"), *HitLocation.ToString())
+
+			NM_SpawnProjectile(SocketLocation, HitLocation, ProjectileWayRot, true);
+
+			TargettingTraceLength = 1500;
 		}
 	}
 }
 
-void AChar_Wraith::NM_SkillPlayMontage_Implementation(UAnimMontage* SkillMontage)
+void AChar_Wraith::NM_PlayMontage_Implementation(UAnimMontage* SkillMontage)
 {
 	if (!HasAuthority())
 	{

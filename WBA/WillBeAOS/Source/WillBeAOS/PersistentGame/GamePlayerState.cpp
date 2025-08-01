@@ -13,6 +13,8 @@ void AGamePlayerState::BeginPlay()
 {
 	Super::BeginPlay();
 
+	CSpeed = 600.0f;
+	
 	if (HasAuthority()) return;
 
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetOwningController());
@@ -99,12 +101,22 @@ float AGamePlayerState::GetHPPercentage()
 void AGamePlayerState::C_SetSpeed_Implementation(float NewSpeed)
 {
 	CSpeed = NewSpeed;
+	AWCharacterBase* Character = Cast<AWCharacterBase>(GetOwner());
+	if (Character)
+	{
+		Character->ChangeSpeed(CSpeed);
+	}
 }
 
 void AGamePlayerState::AddSpeed_Implementation(float Speed)
 {
 	CSpeed += Speed;
 	C_SetSpeed(CSpeed);
+	AWCharacterBase* Character = Cast<AWCharacterBase>(GetOwner());
+	if (Character)
+	{
+		Character->ChangeSpeed(CSpeed);
+	}
 }
 
 void AGamePlayerState::C_SetDefence_Implementation(float NewDefence)
