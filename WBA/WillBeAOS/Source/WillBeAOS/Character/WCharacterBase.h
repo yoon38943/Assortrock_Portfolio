@@ -3,6 +3,9 @@
 #include "CoreMinimal.h"
 #include "AOSCharacter.h"
 #include "WEnumFile.h"
+#include "Character/Skill/SkillInterface.h"
+#include "Character/Skill/SkillType.h"
+#include "Interface/VisibleSightInterface.h"
 #include "WCharacterBase.generated.h"
 
 #define PLAYERKILLGOLD 100
@@ -16,7 +19,7 @@ class UAnimMontage;
 class UWidgetComponent;
 
 UCLASS()
-class WILLBEAOS_API AWCharacterBase : public AAOSCharacter
+class WILLBEAOS_API AWCharacterBase : public AAOSCharacter, public ISkillInterface, public IVisibleSightInterface
 {
 
 	GENERATED_BODY()
@@ -83,10 +86,16 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Distance")
 	float VisibleWidgetDistance = 5000.f;
 
-	void SetVisibleWidgetDistance();
+	// 거리에 따라 위젯을 on/off 시키는 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
+	class UVisibleWidgetComponent* SightComp;
+
+	virtual class UWidgetComponent* GetHPWidgetComponent() const override { return HPInfoBarComponent; }
+	
+	/*void Server_SetVisibleWidgetDistance();
 
 	UFUNCTION(Client, Reliable)
-	void SetWidgetVisible(AActor* Actor, bool bIsVisible);
+	void SetWidgetVisible(AActor* Actor, bool bIsVisible);*/
 	
 public:
 	AWCharacterBase();
@@ -113,8 +122,6 @@ public:
 	UAnimMontage* HitAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
 	TArray<UAnimMontage*> AttackMontages = {};
-
-	UAnimMontage* SkillQMontage;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Skill)
 	UDataTable* SkillDataTable;
@@ -123,8 +130,6 @@ public:
 	void Move(const FInputActionValue& Value);
 	void StopMove(const FInputActionValue& Value);
 	void VisibleOutline();
-	UFUNCTION(Category = "Combat")
-	virtual void SkillQ();
 
 	void ChangeSpeed(float Speed);
 	void UpdateAcceleration();
@@ -175,6 +180,20 @@ public:
 	void SpawnHitEffect(FVector HitLocation);
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_SpawnHitEffect(FVector HitLocation);
+
+	// ----- 스킬 이벤트 관련 -----
+
+	void Input_QSkill(const FInputActionValue& Value);
+	void Input_ESkill(const FInputActionValue& Value);
+	void Input_RSkill(const FInputActionValue& Value);
+	
+	virtual void Handle_UseSkillButton(ESkillSlot Skillslot);
+	
+	// PlayerState에게 요청 함수
+	virtual void ActivateSkill_Implementation(ESkillSlot SkillSlot) override;
+
+	// 캐릭터에서 스킬 실행 함수
+	virtual void ExecuteSkill(ESkillSlot SkillSlot);
 
 	// ---- 골드 관련 ----
 	virtual void SetGoldReward(int32 NewGold) override {GoldReward = NewGold;}

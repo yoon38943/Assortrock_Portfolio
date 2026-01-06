@@ -213,6 +213,7 @@ void APlayGameState::AllPlayerChosenChar()
 		}
 	}
 
+	UpdateChosenCharacterToPlayerState();
 	UploadStateToGameInstance();
 }
 
@@ -260,6 +261,38 @@ void APlayGameState::UploadStateToGameInstance()
 	if (GM)
 	{
 		GM->StartLoading();
+	}
+}
+
+void APlayGameState::UpdateChosenCharacterToPlayerState()
+{
+	// 캐릭터 선택 시간이 끝났을 때 PlayerState에 선택한 캐릭터 업데이트
+	if (HasAuthority())
+	{
+		for (APlayerState* Player : PlayerArray)
+		{
+			AGamePlayerState* PS = Cast<AGamePlayerState>(Player);
+			if (PS)
+			{
+				for (auto& Elem : BlueTeamPlayerInfo)
+				{
+					if (PS->GetPlayerName() == Elem.PlayerName)
+					{
+						PS->PlayerInfo.SelectedCharacter = Elem.SelectedCharacter;
+						return;
+					}
+				}
+
+				for (auto& Elem : RedTeamPlayerInfo)
+				{
+					if (PS->GetPlayerName() == Elem.PlayerName)
+					{
+						PS->PlayerInfo.SelectedCharacter = Elem.SelectedCharacter;
+						return;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -530,7 +563,7 @@ void APlayGameState::NM_ReplicateTotalKillPoints_Implementation(int32 Blue, int3
 	BlueTeamTotalKillPoints = Blue;
 	RedTeamTotalKillPoints = Red;
 
-	DelegateShowKillState.ExecuteIfBound(BlueTeamTotalKillPoints, RedTeamTotalKillPoints);
+	DelegateShowKillState.Broadcast(BlueTeamTotalKillPoints, RedTeamTotalKillPoints);
 }
 
 void APlayGameState::CheckKilledTeam(E_TeamID KillTeam)

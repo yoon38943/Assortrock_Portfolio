@@ -5,7 +5,8 @@
 #include "GameFramework/PlayerState.h"
 #include "GamePlayerState.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQSkillUsed, FString, CharacterName, float, SkillCollTime);
+DECLARE_DELEGATE(FLoadSkillIcon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillCooldown, FSkillUsedInfo, UsedSkillInfo);
 
 UCLASS()
 class WILLBEAOS_API AGamePlayerState : public APlayerState
@@ -14,7 +15,6 @@ class WILLBEAOS_API AGamePlayerState : public APlayerState
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	// ---------------------------------------------
 	// 플레이 캐릭터 선택 페이즈
@@ -22,11 +22,11 @@ protected:
 public:
 	void StartCharacterSelectPhase();
 	
-	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AddWidget)
+	UPROPERTY(BlueprintReadOnly, Replicated)
 	FPlayerInfoStruct PlayerInfo;
 
-	UFUNCTION()
-	void OnRep_AddWidget();
+	UFUNCTION(Client, Reliable)
+	void Client_PlayerInfoReady();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_ChooseTheCharacter(TSubclassOf<APawn> ChosenChar);
@@ -49,8 +49,13 @@ public:
 	void S_SetPlayerReady(bool bReady);
 
 	// 유저 정보
-	UPROPERTY(BlueprintReadOnly, Replicated)
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_AddSkillIcon)
 	FPlayerInfoStruct InGamePlayerInfo;
+
+	FLoadSkillIcon LoadSkillIcon;
+	
+	UFUNCTION()
+	void OnRep_AddSkillIcon();
 
 	// 유저 정보 받아오기
 	UFUNCTION(Server, Reliable)
@@ -119,22 +124,32 @@ public:
     UPROPERTY(BlueprintReadWrite, Category = "Stats")
     int32 CAbLevel;
 
-	// 스킬 관련 함수
-	FOnQSkillUsed OnQSkillUsed;
-	
-	// 스킬 쿨타임 관련
-	UPROPERTY(BlueprintReadOnly, Category = "Skill")
-	bool SkillQEnable = true;
-	bool ServerSkillQEnable = true;
+	// ----- 스킬 관련 -----
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnSkillCooldown OnSkillCooldown;
 
-	float SkillQCoolTime;
-	FTimerHandle C_SkillQTimer;
-	FTimerHandle S_SkillQTimer;
+	// 스킬 실행할 캐릭터가 "요청"하는 함수
+	UFUNCTION(Server, Reliable)
+	void Server_RequestUseSkill(ESkillSlot SkillSlot);
+
+protected:
+	UPROPERTY(Replicated)
+	TArray<FSkillUsedInfo> SkillCooldownEndTimes;
+
+	UPROPERTY()
+	FSkillUsedInfo LastSkillCooldown;
+
+	UFUNCTION(Client, Reliable)
+	void Client_Delegate_UsedSkill(FSkillUsedInfo LastUsedSkill);
+
+	// 쿨다운 검사 및 시작을 위한 헬퍼 함수
+	bool IsSkillReady(ESkillSlot Skillslot);
+	void StartCooldown(ESkillSlot Skillslot);
+
 	
-	void UsedQSkill();
-	void Server_UsedQSkill();
-	
-	// 플레이어 골드 관련 스탯
+
+public:
+	// ----- 플레이어 골드 관련 스탯 -----
 	// Gold
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Gold")
 	int32 CGold;

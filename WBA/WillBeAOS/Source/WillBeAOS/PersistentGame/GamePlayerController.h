@@ -63,7 +63,7 @@ public:
 	void BP_StartInGamePhase();
 
 	E_TeamID PlayerTeamID;
-
+	
 	//이김 위젯
 	UPROPERTY(EditAnywhere, Category = "Widget")
 	TSubclassOf< UUserWidget> WinScreenClass;

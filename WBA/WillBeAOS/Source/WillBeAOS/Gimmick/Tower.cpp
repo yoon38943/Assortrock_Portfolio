@@ -10,9 +10,9 @@
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h"
 #include "../Minions/HealthBar.h"
+#include "Component/VisibleWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/PlayGameMode.h"
 #include "PersistentGame/PlayGameState.h"
 
@@ -55,6 +55,8 @@ ATower::ATower()
 	bAlwaysRelevant = true;
 
 	SetGoldReward(GOLDAMOUNT);
+
+	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
 }
 
 void ATower::InitHPPercentage(float Health, float MaxHealth)
