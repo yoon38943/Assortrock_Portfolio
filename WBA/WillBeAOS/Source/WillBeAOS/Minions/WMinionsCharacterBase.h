@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Character/AOSCharacter.h"
-#include "Interface/VisibleSightInterface.h"
 #include "WMinionsCharacterBase.generated.h"
 
 #define MINIONKILLGOLD 30
@@ -17,7 +16,7 @@ class UProgressBar;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDetectedSignature, AActor*, DetectedActor);
 
 UCLASS()
-class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter, public IVisibleSightInterface
+class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter
 {
 	GENERATED_BODY()
 
@@ -52,12 +51,6 @@ public:
 	void FindPlayerPC();
 	void FindPlayerPawn();
 
-	// 거리에 따라 위젯을 on/off 시키는 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
-	class UVisibleWidgetComponent* SightComp;
-
-	virtual class UWidgetComponent* GetHPWidgetComponent() const override { return WidgetComponent;}
-	
 	// 타겟 인식 관련 로직
 	FTimerHandle CheckDistanceTimerHandle;
 

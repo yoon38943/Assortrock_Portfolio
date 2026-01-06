@@ -2,7 +2,6 @@
 
 #include "AOSActor.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Shinbi/Wolf/Wolf.h"
@@ -26,13 +25,6 @@ void AChar_Shinbi::BeginPlay()
 	{
 		SkillQMontage = QSkill->SkillMontage;
 	}
-}
-
-void AChar_Shinbi::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
-
-	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void AChar_Shinbi::Tick(float DeltaTime)
@@ -146,30 +138,35 @@ TArray<AActor*> AChar_Shinbi::GetTartgetInCenter()
 	return AllTarget;
 }
 
-/*void AChar_Shinbi::SkillQ()
+void AChar_Shinbi::SkillQ()
 {
-	if (bEnableQSkill == true)
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
 	{
-		QSkillCooldownTime = QSkill->SkillCooldownTime;
-		OnQSkillUsed.Broadcast(GetController()->GetName(), QSkillCooldownTime);
+		if (PS->SkillQEnable == true)
+		{
+			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
+			PS->UsedQSkill();
 
-		Server_SkillQ();
+			Server_SkillQ();
+		}
 	}
-}*/
+}
 
 void AChar_Shinbi::Server_SkillQ_Implementation()
 {
-	if (bEnableQSkill == true)
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
+	if (PS)
 	{
-		QSkillCooldownTime = QSkill->SkillCooldownTime;
-		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
+		if (PS->ServerSkillQEnable == true)
 		{
-			bEnableQSkill = true;
-		}, QSkillCooldownTime, false);
-		
-		SpawnWolfSkill();
-
-		NM_SkillPlayMontage(SkillQMontage);
+			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
+			PS->Server_UsedQSkill();
+			
+			SpawnWolfSkill();
+	
+			NM_SkillPlayMontage(SkillQMontage);
+		}
 	}
 }
 
@@ -195,11 +192,4 @@ void AChar_Shinbi::SpawnWolfSkill()
 	
 	AWolf* ShinbiWolf = GetWorld()->SpawnActor<AWolf>(WolfClass, SpawnLocation, SpawnRotation, SpawnParams);
 	ShinbiWolf->TeamID = TeamID;
-}
-
-void AChar_Shinbi::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ThisClass, bEnableQSkill);
 }

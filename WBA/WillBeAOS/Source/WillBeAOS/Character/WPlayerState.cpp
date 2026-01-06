@@ -1,4 +1,3 @@
-/*
 #include "Character/WPlayerState.h"
 
 #include "WCharacterBase.h"
@@ -252,4 +251,3 @@ void AWPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(ThisClass, HP);
     DOREPLIFETIME(ThisClass, MaxHP);
 }
-*/

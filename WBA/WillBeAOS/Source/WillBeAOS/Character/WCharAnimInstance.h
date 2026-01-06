@@ -38,18 +38,12 @@ protected:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsRecalling;
 
-	UPROPERTY(BlueprintReadOnly, Category = Velocity)
-	FVector Velocity;
-	UPROPERTY(BlueprintReadOnly, Category = Velocity)
-	FVector Velocity2D;
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
+	FVector WCharVelocity;
 
 	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	float WCharSpeed;
-	UPROPERTY(BlueprintReadOnly, Category = Acceleration)
-	FVector Acceleration;
-	UPROPERTY(BlueprintReadOnly, Category = Acceleration)
-	FVector Acceleration2D;
-	UPROPERTY(BlueprintReadOnly, Category = Acceleration)
+	UPROPERTY(BlueprintReadOnly, Category = Movement)
 	bool WIsAccelerating;
 	UPROPERTY(BlueprintReadOnly, Category = "FullBody")
 	bool FullBody;

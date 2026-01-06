@@ -420,12 +420,13 @@ void AGamePlayerController::OnPossess(APawn* InPawn)
 	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(InPawn);
 	if (PlayerChar)
 	{
-		if (AGamePlayerState* WPlayerState = GetPlayerState<AGamePlayerState>())
-			PlayerChar->TeamID = WPlayerState->InGamePlayerInfo.PlayerTeam;
-		UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
+		if (PlayerChar)
+		{
+			if (AGamePlayerState* WPlayerState = GetPlayerState<AGamePlayerState>())
+				PlayerChar->TeamID = WPlayerState->InGamePlayerInfo.PlayerTeam;
+			UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
+		}
 	}
-
-	/*OnPawnPossessed.Broadcast(InPawn);*/
 }
 
 void AGamePlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

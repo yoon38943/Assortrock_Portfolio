@@ -1,66 +1,21 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WCharacterHUD.h"
+#include "WEnumFile.h"
+#include "Game/WGameState.h"
 #include "GameFramework/PlayerController.h"
-#include "GamePlayerController.generated.h"
+#include "WPlayerController.generated.h"
 
-enum class E_GamePlay : uint8;
-class UTowerNexusHPWidget;
+class AWCharacterBase;
 class UWCharacterHUD;
-enum class E_TeamID : uint8;
+class UTowerNexusHPWidget;
+class UUserWidget;
 
 UCLASS()
-class WILLBEAOS_API AGamePlayerController : public APlayerController
+class WILLBEAOS_API AWPlayerController : public APlayerController
 {
 	GENERATED_BODY()
-
-
-	
-	// ---------------------------------------------
-	// 플레이 캐릭터 선택 페이즈
-	// ---------------------------------------------
-public:
-	void StartCharacterSelectPhase();
-
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UUserWidget> SelectCharacterWidgetClass;
-
-	UUserWidget* SelectCharacterWidget = nullptr;
-	
-	UFUNCTION(Client, Reliable)
-	void PlayerStateInfoReady();
-
-	UFUNCTION(Client, Reliable)
-	void UpdatePlayerWidget();
-
-	// 클라 컨트롤러가 서버 컨트롤러에게 준비 됐다고 보고
-	UFUNCTION(Server, Reliable)
-	void Server_ControllerIsReady();
-
-	// 모든 플레이어가 캐릭터를 선택하지 않아 로비로 복귀
-	UFUNCTION(Client, Reliable)
-	void BackToLobby();
-
-	// 인게임 맵 전환 로딩창
-	UPROPERTY(EditAnywhere)
-	TSubclassOf<UUserWidget> ToInGameLoadingWidgetClass;
-
-	UUserWidget* LoadingWidget;
-
-	UFUNCTION(Client, Reliable)
-	void ToInGameLoading();
-
-
-	
-	// ---------------------------------------------
-	// 인게임 플레이 페이즈
-	// ---------------------------------------------
-	void CheckLoadedAllStreamingLevels();
-	
-	void StartInGamePhase();
-
-	UFUNCTION(BlueprintNativeEvent)
-	void BP_StartInGamePhase();
 
 	E_TeamID PlayerTeamID;
 
@@ -91,9 +46,10 @@ public:
 	UUserWidget* RespawnScreen;
 
 public:
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "UI")
+	UPROPERTY(ReplicatedUsing = OnRep_Countdown, BlueprintReadOnly, Category = "UI")
 	int32 CountdownTime;
-	
+	UFUNCTION(Category = "UI")
+	void OnRep_Countdown();
 public:	//상점 관련
 	UPROPERTY(BlueprintReadWrite, Category = "Store")
 	bool IsOpenedStore;
@@ -114,14 +70,12 @@ public:
 	UFUNCTION(Client, Reliable)
 	void ShowRecallWidget();
 	UFUNCTION(Client, Reliable)
-	void HiddenRecallWidget(bool IsRecallCompleted);
+	void HiddenRecallWidget(bool IsRecallCancel);
 	UFUNCTION(Server, Reliable)
 	void Server_CancelRecall();
 	void CancelRecall();
 	void CompleteRecall();
 	void RecallToBase();
-	UFUNCTION(Client, Reliable)
-	void SetClientControlRotation(FRotator ControlRot);
 
 	UPROPERTY(EditDefaultsOnly, Category = UI)
 	TSubclassOf<UUserWidget> RecallWidgetClass;
@@ -158,9 +112,12 @@ public://리스폰 함수(PlayerController->GameHasEnded())
 	void OnGameStateChanged(E_GamePlay CurrentGameState);
 	
 protected:
+	virtual void BeginPlay() override;
+
 	UFUNCTION(Server, Reliable)
 	void Server_SetPlayerReady(); // 서버에 준비 완료 신호 전송
-
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:
 	virtual void OnPossess(APawn* InPawn) override;
 };

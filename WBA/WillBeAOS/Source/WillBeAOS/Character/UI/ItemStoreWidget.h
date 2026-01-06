@@ -2,8 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Character/WPlayerController.h"
 #include "Components/Button.h"
-#include "Components/TextBlock.h"
 #include "ItemStoreWidget.generated.h"
 
 UCLASS()

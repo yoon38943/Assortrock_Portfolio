@@ -3,13 +3,9 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "PersistentGame/PlayGameState.h"
-#include "Skill/SkillType.h"
-#include "UI/SkillIconWidget.h"
 #include "WCharacterHUD.generated.h"
 
 class UTextBlock;
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillCooldownSignature, FSkillUsedInfo, UsedSkillInfo);
 
 UCLASS()
 class WILLBEAOS_API UWCharacterHUD : public UUserWidget
@@ -56,16 +52,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Stat")
 	UTextBlock* CurrentHP;
 
-	FOnSkillCooldownSignature OnSkillCooldownStarted; 
-	
+	FTimerHandle ReBindSkillTimerHandle;
+	void ReBindSkill();
+	UFUNCTION()
+	void OnSkillUsed(FString UserControllerName, float SkillCoolTime);
 	UPROPERTY(BlueprintReadWrite, Category = Skill)
 	bool bSkillUsed;
+	UFUNCTION(BlueprintNativeEvent, Category = Skill)
+	void UsedQSkill();
 	UPROPERTY(BlueprintReadOnly, Category = Skill)
 	float QSkillCoolDownTime;
 	FTimerHandle CooldownTimerHandle;
-
-	UPROPERTY(meta = (BindWidget))
-	USkillIconWidget* QSkillWidget;
 
 public:
 	void SetState();

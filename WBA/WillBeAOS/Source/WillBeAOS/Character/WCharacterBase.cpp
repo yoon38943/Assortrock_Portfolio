@@ -8,8 +8,8 @@
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "CombatComponent.h"
+#include "WCharacterHUD.h"
 #include "WCharAnimInstance.h"
-#include "Component/VisibleWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
@@ -54,8 +54,6 @@ AWCharacterBase::AWCharacterBase()
 	TurningInPlace = E_TurningInPlace::E_NotTurning;
 
 	bReplicates = true;
-
-	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
 }
 
 
@@ -92,9 +90,22 @@ void AWCharacterBase::BeginPlay()
 	
 	if (!HasAuthority())
 	{
+		if (IsLocallyControlled())
+			HPInfoBarComponent->SetVisibility(true);
 		SetHPInfoBarColor();
 		SetHPPercentage();
 		ShowNickName();
+
+		if (IsLocallyControlled())
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+				CheckTimerHandle,
+				this,
+				&ThisClass::SetVisibleWidgetDistance,
+				0.2f,
+				true
+			);
+		}
 	}
 	else
 	{
@@ -152,9 +163,7 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
 		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
-		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::Input_QSkill);
-		// E 스킬 자리
-		// R 스킬 자리
+		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::SkillQ);
 		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 	}
 }
@@ -324,8 +333,7 @@ void AWCharacterBase::ShowNickName()
 	}
 }
 
-// 시야체크 완료하면 삭제
-/*void AWCharacterBase::Server_SetVisibleWidgetDistance()
+void AWCharacterBase::SetVisibleWidgetDistance()
 {
 	FVector MyLocation = GetActorLocation();
 	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
@@ -355,12 +363,12 @@ void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVis
 	{
 		if (Character->bIsDead == true)
 		{
-			bIsVisibleEnemy = false;
+			bIsVisible = false;
 		}
 		
-		if (Character->HPInfoBarComponent && Character->HPInfoBarComponent->IsVisible() != bIsVisibleEnemy)
+		if (Character->HPInfoBarComponent && Character->HPInfoBarComponent->IsVisible() != bIsVisible)
 		{
-			Character->HPInfoBarComponent->SetVisibility(bIsVisibleEnemy);
+			Character->HPInfoBarComponent->SetVisibility(bIsVisible);
 		}
 	}
 	else if (AWMinionsCharacterBase* Minion = Cast<AWMinionsCharacterBase>(Actor))
@@ -382,7 +390,7 @@ void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVis
 			Tower->WidgetComponent->SetVisibility(bIsVisible);
 		}
 	}
-}*/
+}
 
 void AWCharacterBase::Look(const FInputActionValue& Value)
 {
@@ -495,6 +503,12 @@ void AWCharacterBase::VisibleOutline()
 	}
 }
 
+void AWCharacterBase::SkillQ()
+{
+	if (bIsDead) return;
+	// 오버라이드 함수
+}
+
 void AWCharacterBase::ChangeSpeed(float Speed)
 {
 	GetCharacterMovement()->MaxWalkSpeed = Speed;
@@ -570,26 +584,6 @@ void AWCharacterBase::ExitCombat()
 	}
 }
 
-void AWCharacterBase::Input_QSkill(const FInputActionValue& Value)
-{
-	Handle_UseSkillButton(ESkillSlot::Q);
-}
-
-void AWCharacterBase::Input_ESkill(const FInputActionValue& Value)
-{
-	Handle_UseSkillButton(ESkillSlot::E);
-}
-
-void AWCharacterBase::Input_RSkill(const FInputActionValue& Value)
-{
-	Handle_UseSkillButton(ESkillSlot::R);
-}
-
-void AWCharacterBase::Handle_UseSkillButton(ESkillSlot Skillslot)
-{
-	// 자식 함수에서 정의
-}
-
 void AWCharacterBase::S_Behavior_Implementation()
 {
 	Behavior();
@@ -649,16 +643,6 @@ void AWCharacterBase::SpawnHitEffect_Implementation(FVector HitLocation)
 void AWCharacterBase::NM_SpawnHitEffect_Implementation(FVector HitLocation)
 {
 	SpawnHitEffect(HitLocation);
-}
-
-void AWCharacterBase::ActivateSkill_Implementation(ESkillSlot SkillSlot)
-{
-	// 자식 캐릭터 클래스에서 채움
-}
-
-void AWCharacterBase::ExecuteSkill(ESkillSlot SkillSlot)
-{
-	// 자식 캐릭터 클래스에서 채움
 }
 
 void AWCharacterBase::BeingDead()

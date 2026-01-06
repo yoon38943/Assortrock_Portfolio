@@ -2,7 +2,6 @@
 
 #include "Components/TextBlock.h"
 #include "PersistentGame/GamePlayerState.h"
-#include "Character/WCharacterBase.h"
 
 
 void UWCharacterHUD::NativeConstruct()
@@ -19,6 +18,7 @@ void UWCharacterHUD::NativeConstruct()
 		if (AWPS)
 		{
 			auto Message = FString::Printf(TEXT("PlayerState 가져오기 성공: %s"), *AWPS->GetName());
+			ReBindSkill();
 		}
 		else
 		{
@@ -60,6 +60,39 @@ float UWCharacterHUD::GetHealthBarPercentage()
 	}
 		
 	return AWPS->GetHP() / AWPS->GetMaxHP();
+}
+
+void UWCharacterHUD::ReBindSkill()
+{
+	if (AWPS)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(ReBindSkillTimerHandle);
+		AWPS->OnQSkillUsed.AddDynamic(this, &ThisClass::OnSkillUsed);
+	}
+}
+
+void UWCharacterHUD::OnSkillUsed(FString UserControllerName, float SkillCoolTime)
+{
+	if (GetOwningPlayer()->GetName() != UserControllerName) return;
+	
+	QSkillCoolDownTime = SkillCoolTime;
+
+	UsedQSkill();
+	
+	GetWorld()->GetTimerManager().SetTimer(CooldownTimerHandle, [this]()
+	{		
+		QSkillCoolDownTime -= 0.1;
+
+		if (QSkillCoolDownTime <= 0)
+		{
+			GetWorld()->GetTimerManager().ClearTimer(CooldownTimerHandle);
+		}
+	}, 0.1f, true);
+}
+
+void UWCharacterHUD::UsedQSkill_Implementation()
+{
+	// 블프에서 정의
 }
 
 void UWCharacterHUD::SetState()

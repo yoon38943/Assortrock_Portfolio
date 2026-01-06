@@ -13,7 +13,7 @@ class UStaticMeshComponent;
 
 #define GOLDAMOUNT 50
 UCLASS()
-class WILLBEAOS_API ATower : public AAOSActor, public IVisibleSightInterface
+class WILLBEAOS_API ATower : public AAOSActor
 {
 
 	GENERATED_BODY()
@@ -114,8 +114,6 @@ public://타격 관련
 
 public:
 	// ----- HP 위젯 조절 함수 -----
-	virtual class UWidgetComponent* GetHPWidgetComponent() const override { return WidgetComponent; }
-	
 	bool bLastVisibleState = true;
 	
 	UPROPERTY(EditAnywhere, Category = "UI")
@@ -126,10 +124,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "UI")
 	float MaxWidgetScale = 1.f;
-
-	// 거리에 따라 위젯을 on/off 시키는 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
-	class UVisibleWidgetComponent* SightComp;
 
 	/*AWCharacterBase* PlayerChar;
 	AGamePlayerController* PlayerController;

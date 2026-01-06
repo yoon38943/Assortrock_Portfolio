@@ -5,7 +5,6 @@
 #include "PlayGameState.h"
 #include "Character/WCharacterBase.h"
 #include "Character/WCharacterHUD.h"
-#include "Character/Shinbi/Skill/SkillDataTable.h"
 #include "Game/WGameInstance.h"
 #include "Net/UnrealNetwork.h"
 
@@ -15,6 +14,32 @@ void AGamePlayerState::BeginPlay()
 	Super::BeginPlay();
 
 	CSpeed = 600.0f;
+	
+	if (HasAuthority()) return;
+
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetOwningController());
+	if (PC)
+	{
+		UWCharacterHUD* HUD = Cast<UWCharacterHUD>(PC->PlayerHUD);
+		if (HUD)
+		{
+			HUD->ReBindSkill();
+		}
+	}
+}
+
+void AGamePlayerState::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (C_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(C_SkillQTimer);
+	}
+	if (S_SkillQTimer.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(S_SkillQTimer);
+	}
 }
 
 void AGamePlayerState::StartCharacterSelectPhase()
@@ -22,7 +47,7 @@ void AGamePlayerState::StartCharacterSelectPhase()
 	Server_ReplicatePlayerInfo(GetPlayerName());
 }
 
-void AGamePlayerState::Client_PlayerInfoReady_Implementation()
+void AGamePlayerState::OnRep_AddWidget()
 {
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetPlayerController());
 	if (PC)
@@ -51,11 +76,6 @@ void AGamePlayerState::StartInGamePhase()
 	if (HasAuthority()) return;
 
 	Server_TakePlayerInfo(GetPlayerName());
-}
-
-void AGamePlayerState::OnRep_AddSkillIcon()
-{
-	LoadSkillIcon.ExecuteIfBound();
 }
 
 float AGamePlayerState::GetHP()
@@ -264,8 +284,6 @@ void AGamePlayerState::Server_ReplicatePlayerInfo_Implementation(const FString& 
 			UE_LOG(LogTemp, Log, TEXT("플레이어 팀 정보 : %s"), PlayerInfo.PlayerTeam == E_TeamID::Blue? TEXT("블루팀") : TEXT("레드팀"));
 		}
 	}
-
-	Client_PlayerInfoReady();
 }
 
 void AGamePlayerState::Server_ChooseTheCharacter_Implementation(TSubclassOf<APawn> ChosenChar)
@@ -297,91 +315,31 @@ void AGamePlayerState::AddKillPoint_Implementation()
 	PlayerKillCount++;
 }
 
-void AGamePlayerState::Server_RequestUseSkill_Implementation(ESkillSlot SkillSlot)
+void AGamePlayerState::UsedQSkill()
 {
-	if (IsSkillReady(SkillSlot))
+	if (SkillQEnable)
 	{
-		StartCooldown(SkillSlot);
-
-		AWCharacterBase* PlayChar = GetPawn<AWCharacterBase>();
-		if (PlayChar)
+		SkillQEnable = false;
+			
+		GetWorld()->GetTimerManager().SetTimer(C_SkillQTimer, [this]()
 		{
-			PlayChar->ExecuteSkill(SkillSlot);
-		}
+			SkillQEnable = true;
+		}, SkillQCoolTime, false);
+
+		OnQSkillUsed.Broadcast(GetPlayerController()->GetName(), SkillQCoolTime);
 	}
 }
 
-void AGamePlayerState::Client_Delegate_UsedSkill_Implementation(FSkillUsedInfo LastUsedSkill)
+void AGamePlayerState::Server_UsedQSkill()
 {
-	OnSkillCooldown.Broadcast(LastUsedSkill);
-}
-
-bool AGamePlayerState::IsSkillReady(ESkillSlot Skillslot)
-{
-	float CurrentTime = GetWorld()->GetTimeSeconds();
-
-	for (FSkillUsedInfo& CooldownData : SkillCooldownEndTimes)
-	{
-		if (CooldownData.SkillSlot == Skillslot)
-		{
-			if (CurrentTime < CooldownData.CooldownTimeEnd)
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-void AGamePlayerState::StartCooldown(ESkillSlot Skillslot)
-{
-	AWCharacterBase* PlayChar = GetPawn<AWCharacterBase>();
-	if (PlayChar)
-	{
-		FName SkillID;
-		switch (Skillslot)
-		{
-		case ESkillSlot::Q:
-			SkillID = "QSkill";
-			break;
-		case ESkillSlot::E:
-			SkillID = "ESkill";
-			break;
-		case ESkillSlot::R:
-			SkillID = "RSkill";
-			break;
-		}
+	if (ServerSkillQEnable == true)
+	{		
+		ServerSkillQEnable = false;
 		
-		FSkillDataTable* SkillInfo = PlayChar->SkillDataTable->FindRow<FSkillDataTable>(SkillID, TEXT(""));
-		if (SkillInfo)
+		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
 		{
-			float EndCooldownTime = GetWorld()->GetGameState()->GetServerWorldTimeSeconds() + SkillInfo->SkillCooldownTime;
-
-			bool bFound = false;
-			for (FSkillUsedInfo& CooldownData : SkillCooldownEndTimes)
-			{
-				if (CooldownData.SkillSlot == Skillslot)
-				{
-					CooldownData.CooldownTimeEnd = EndCooldownTime;
-					bFound = true;
-					break;
-				}
-			}
-
-			if (!bFound)
-			{
-				FSkillUsedInfo NewData;
-				NewData.SkillSlot = Skillslot;
-				NewData.CooldownTimeEnd = EndCooldownTime;
-				SkillCooldownEndTimes.Add(NewData);
-			}
-
-			LastSkillCooldown.SkillSlot = Skillslot;
-			LastSkillCooldown.CooldownTime = SkillInfo->SkillCooldownTime;
-			LastSkillCooldown.CooldownTimeEnd = EndCooldownTime;
-			Client_Delegate_UsedSkill(LastSkillCooldown);
-		}
+			ServerSkillQEnable = true;
+		}, SkillQCoolTime, false);
 	}
 }
 
@@ -403,5 +361,4 @@ void AGamePlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AGamePlayerState, InGamePlayerInfo);
 	DOREPLIFETIME(AGamePlayerState, HP);
 	DOREPLIFETIME(AGamePlayerState, MaxHP);
-	DOREPLIFETIME(AGamePlayerState, SkillCooldownEndTimes);
 }
