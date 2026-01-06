@@ -2,13 +2,15 @@
 
 #include "CoreMinimal.h"
 #include "WEnumFile.h"
-#include "Game/WGameState.h"
 #include "GameFramework/GameState.h"
+#include "Gimmick/Nexus.h"
 #include "PlayGameState.generated.h"
 
 class AGamePlayerState;
 class AGamePlayerController;
 struct FPlayerInfoStruct;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDelegateShowKillState, int, BlueTeamScore, int, RedTeamScore);
 
 UCLASS()
 class WILLBEAOS_API APlayGameState : public AGameState
@@ -57,7 +59,7 @@ public:
 
 	// 캐릭터 선택 카운트 다운
 	UPROPERTY(BlueprintReadOnly, Replicated)
-	float SelectCountdown = 20.0;
+	float SelectCountdown = 10.0;
 	FTimerHandle CountdownTimerHandle;
 
 	void UpdateCountdown();
@@ -78,7 +80,8 @@ public:
 	// 캐릭터 선택 후 정보 인스턴스에 업로드
 	void UploadStateToGameInstance();
 
-	
+	// 캐릭터 선택 후 정보 플레이어 스테이트에 업데이트
+	void UpdateChosenCharacterToPlayerState();
 
 	// ---------------------------------------------
 	// 인게임 게임 스테이트

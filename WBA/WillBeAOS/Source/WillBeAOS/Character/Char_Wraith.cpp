@@ -4,6 +4,7 @@
 #include "CombatComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Gimmick/Nexus.h"
 #include "Gimmick/Projectile.h"
 #include "Gimmick/Tower.h"
 #include "Kismet/GameplayStatics.h"
@@ -142,12 +143,17 @@ void AChar_Wraith::BeginPlay()
 	}
 }
 
+void AChar_Wraith::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
+}
+
 void AChar_Wraith::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	/*if (!HasAuthority())
-	UE_LOG(LogTemp, Warning, TEXT("%f"), TargettingTraceLength);*/
 	if (bIsDead) return;
 
 	if (!HasAuthority() && IsLocallyControlled())
@@ -237,11 +243,28 @@ AActor* AChar_Wraith::CheckTargettingInCenter()
 				}
 
 				// AAOSActor 중 아군 채널 제외
-				AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
-				if (InGameActor)
+				if (bIsZoomIn)	// 줌인 시 타워 타겟팅 X
 				{
-					if (IsValid(InGameActor) && InGameActor->TeamID == TeamID)
-						QueryParams.AddIgnoredActor(Ally);
+					ATower* Tower = Cast<ATower>(Ally);
+					if (Tower)
+					{
+						QueryParams.AddIgnoredActor(Tower);
+					}
+					ANexus* Nexus = Cast<ANexus>(Ally);
+					if (Nexus)
+					{
+						if (IsValid(Nexus) && Nexus->TeamID == TeamID)
+							QueryParams.AddIgnoredActor(Ally);
+					}
+				}
+				else   // 줌아웃 시 타워 타겟팅 O
+				{
+					AAOSActor* InGameActor = Cast<AAOSActor>(Ally);
+					if (InGameActor)
+					{
+						if (IsValid(InGameActor) && InGameActor->TeamID == TeamID)
+							QueryParams.AddIgnoredActor(Ally);
+					}
 				}
 			}
 		}
@@ -278,6 +301,7 @@ void AChar_Wraith::Attack()
 {
 	if (bIsZoomIn)
 	{
+		Execute_ActivateSkill(this, ESkillSlot::Q);
 		SkillQAttack();
 	}
 	else
@@ -342,27 +366,46 @@ void AChar_Wraith::AttackFire_Implementation()
 	// 블루프린트 정의
 }
 
-void AChar_Wraith::SkillQ()
+void AChar_Wraith::ActivateSkill_Implementation(ESkillSlot SkillSlot)
 {
-	Super::SkillQ();
+	AGamePlayerState* PS = GetPlayerState<AGamePlayerState>();
+	if (PS)
+	{
+		PS->Server_RequestUseSkill(SkillSlot);
+	}
+}
 
+void AChar_Wraith::Handle_UseSkillButton(ESkillSlot Skillslot)
+{
+	switch (Skillslot)
+	{
+	case ESkillSlot::Q:
+		SkillQ_Shot();
+		break;
+	case ESkillSlot::E:
+
+		break;
+	case ESkillSlot::R:
+
+		break;
+	}
+}
+
+void AChar_Wraith::SkillQ_Shot()
+{
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{
 		PC->Server_CancelRecall();
 	}
-
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
+	
+	if (!bIsZoomIn && bEnableQSkill == true)
 	{
-		if (!bIsZoomIn && PS->SkillQEnable == true)
-		{
-			ZoomInScope();
-		}
-		else if (bIsZoomIn && PS->SkillQEnable == true)
-		{
-			ZoomOutScope();
-		}
+		ZoomInScope();
+	}
+	else if (bIsZoomIn && bEnableQSkill == true)
+	{
+		ZoomOutScope();
 	}
 }
 
@@ -394,10 +437,16 @@ void AChar_Wraith::NM_SpawnProjectile_Implementation(const FVector& SocketLocati
 	}
 }
 
+void AChar_Wraith::ClickQButton_Implementation()
+{
+	// 블루프린트 내에서 정의
+}
+
 void AChar_Wraith::ZoomInScope()
 {
 	bIsZoomIn = true;
 	SetZoomInBool(bIsZoomIn);
+	ClickQButton();
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
@@ -411,6 +460,7 @@ void AChar_Wraith::ZoomOutScope()
 {
 	bIsZoomIn = false;
 	SetZoomInBool(bIsZoomIn);
+	ClickQButton();
 	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 	if (PS)
 	{
@@ -455,17 +505,38 @@ void AChar_Wraith::SkillQAttack()
 {
 	if (bIsDead) return;
 	
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
-	{
-		if (PS->SkillQEnable == true)
-		{
-			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
-			PS->UsedQSkill();
+	if (bEnableQSkill == true)
+	{		
+		S_SkillQAttack();
+		ZoomOutScope();
+	}
+}
 
-			S_SkillQAttack();
-			ZoomOutScope();
-		}
+void AChar_Wraith::S_SkillQAttack_Implementation()
+{
+	if (bEnableQSkill == true)
+	{
+		bEnableQSkill = false;
+		QSkillCooldownTime = QSkill->SkillCooldownTime;
+		
+		GetWorld()->GetTimerManager().SetTimer(S_SkillQTimer, [this]()
+		{
+			bEnableQSkill = true;
+		}, QSkillCooldownTime, false);
+
+		TargettingTraceLength = 4000.f;
+		BP_EnhancedAttack();
+
+		bOnQSkillFiring = true;
+		bOnQSkillFiring = false;
+	}
+}
+
+void AChar_Wraith::OnRep_OnQSkillFiring()
+{
+	if (bOnQSkillFiring == true)
+	{
+		PlayAnimMontage(SkillQMontage);
 	}
 }
 
@@ -477,23 +548,6 @@ void AChar_Wraith::CallRecall()
 	}
 	
 	Super::CallRecall();
-}
-
-void AChar_Wraith::S_SkillQAttack_Implementation()
-{
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
-	{
-		if (PS->ServerSkillQEnable == true)
-		{
-			PS->SkillQCoolTime = QSkill->SkillCooldownTime;
-			PS->Server_UsedQSkill();
-
-			TargettingTraceLength = 4000.f;
-			BP_EnhancedAttack();
-			NM_PlayMontage(SkillQMontage);
-		}
-	}
 }
 
 void AChar_Wraith::BP_EnhancedAttack_Implementation()
@@ -613,17 +667,13 @@ void AChar_Wraith::EnhancedAttack_Implementation(const FVector& Start, const FVe
 	}
 }
 
-void AChar_Wraith::NM_PlayMontage_Implementation(UAnimMontage* SkillMontage)
-{
-	if (!HasAuthority())
-	{
-		GetMesh()->GetAnimInstance()->Montage_Play(SkillMontage);
-	}
-}
+
 
 void AChar_Wraith::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, TargettingTraceLength);
+	DOREPLIFETIME(ThisClass, bEnableQSkill);
+	DOREPLIFETIME(ThisClass, bOnQSkillFiring);
 }

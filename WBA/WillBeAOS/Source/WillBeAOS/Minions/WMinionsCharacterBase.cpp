@@ -9,7 +9,7 @@
 #include "Components/ProgressBar.h"
 #include "HealthBar.h"
 #include "Character/WCharacterBase.h"
-#include "Gimmick/Tower.h"
+#include "Component/VisibleWidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/PlayGameMode.h"
@@ -32,6 +32,8 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	bAlwaysRelevant = true;
 	
 	SetGoldReward(MINIONKILLGOLD);
+
+	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
 }
 
 void AWMinionsCharacterBase::HandleGameEnd()

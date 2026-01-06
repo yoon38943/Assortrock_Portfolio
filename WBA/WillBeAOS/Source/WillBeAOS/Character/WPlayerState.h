@@ -11,7 +11,7 @@ class WILLBEAOS_API AWPlayerState : public APlayerState
 {
 	GENERATED_BODY()
 
-protected:
+/*protected:
 	virtual void BeginPlay() override;
 	
 public:
@@ -130,5 +130,5 @@ public:
 	int32 GetDeathPoints();
 	
 public:
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;*/
 };

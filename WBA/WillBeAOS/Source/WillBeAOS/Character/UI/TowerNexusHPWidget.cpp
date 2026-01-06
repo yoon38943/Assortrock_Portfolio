@@ -11,7 +11,7 @@ void UTowerNexusHPWidget::NativeConstruct()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AWGS was created"));
 		UpdateTeamKillPoints(AWGS->BlueTeamTotalKillPoints, AWGS->RedTeamTotalKillPoints);
-		AWGS->DelegateShowKillState.BindUObject(this, &ThisClass::UpdateTeamKillPoints);
+		AWGS->DelegateShowKillState.AddDynamic(this, &ThisClass::UpdateTeamKillPoints);
 	}
 }
 

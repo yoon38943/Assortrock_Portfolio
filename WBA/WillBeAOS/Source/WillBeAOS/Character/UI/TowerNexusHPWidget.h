@@ -40,5 +40,6 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UTextBlock* RedTeamKillPoints;
 
+	UFUNCTION()
 	void UpdateTeamKillPoints(int32 Blue, int32 Red);
 };
