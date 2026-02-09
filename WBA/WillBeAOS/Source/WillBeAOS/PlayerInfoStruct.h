@@ -23,4 +23,7 @@ struct FPlayerInfoStruct
 
 	UPROPERTY(BlueprintReadOnly)
 	TSubclassOf<AWCharacterBase> SelectedCharacter = nullptr;
+
+	UPROPERTY(BlueprintReadWrite)
+	FName SelectedCharacterName;
 };

@@ -18,10 +18,8 @@
 
 AWMinionsCharacterBase::AWMinionsCharacterBase()
 {
-	PrimaryActorTick.bCanEverTick = true;
-
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-	CombatComponent->SetCombatEnable(false);
+	CombatComponent->SetCombatEnable(true);
 	CombatComponent->SetCollisionMesh(GetMesh());
 
 	WidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBar"));
@@ -90,15 +88,7 @@ void AWMinionsCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
 
-	if (CheckDistanceTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckDistanceTimerHandle);
-	}
-}
-
-void AWMinionsCharacterBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void AWMinionsCharacterBase::FindPlayerPC()
@@ -106,11 +96,11 @@ void AWMinionsCharacterBase::FindPlayerPC()
 	if (HasAuthority()) return;
 	
 	PlayerController = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
-	FTimerHandle MinionPCTimerManager;
-	if (!PlayerController)
+	
+	if (!PlayerController && MinionPCTimerManager.IsValid())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("PlayerController is null"));
-		GetWorldTimerManager().SetTimer(MinionPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
+		GetWorldTimerManager().SetTimer(MinionPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, false);
 	}
 	else
 	{
@@ -212,10 +202,10 @@ void AWMinionsCharacterBase::StartSetHPbarColor()
 void AWMinionsCharacterBase::SetHPbarColor(FLinearColor HealthBarColor)
 {
 	if (!WidgetComponent || !WidgetComponent->GetWidget()) {
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this, HealthBarColor]()
+		GetWorld()->GetTimerManager().SetTimer(HPbarColorTimerHandle, [this, HealthBarColor]()
 		{
 			SetHPbarColor(HealthBarColor);
-		});
+		}, 0.1f, false);
 		return;
 	}
 
@@ -231,11 +221,6 @@ void AWMinionsCharacterBase::SetHPbarColor(FLinearColor HealthBarColor)
 
 		Widget->InvalidateLayoutAndVolatility();
 	}
-}
-
-void AWMinionsCharacterBase::RetrySetHPbarColor(FLinearColor HealthBarColor)
-{
-	SetHPbarColor(HealthBarColor);
 }
 
 void AWMinionsCharacterBase::Dead()
@@ -341,7 +326,7 @@ float AWMinionsCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const&
 
 void AWMinionsCharacterBase::NM_Minion_Attack_Implementation()
 {
-	    PlayAnimMontage(MinionAttackMontage);
+	PlayAnimMontage(MinionAttackMontage);
 }
 
 void AWMinionsCharacterBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps)const

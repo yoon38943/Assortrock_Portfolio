@@ -64,8 +64,11 @@ public:
 	float QSkillCoolDownTime;
 	FTimerHandle CooldownTimerHandle;
 
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	USkillIconWidget* QSkillWidget;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	USkillIconWidget* ESkillWidget;
 
 public:
 	void SetState();

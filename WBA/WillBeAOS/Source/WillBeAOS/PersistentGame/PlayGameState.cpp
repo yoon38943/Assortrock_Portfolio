@@ -169,7 +169,7 @@ void APlayGameState::CheckPlayerIsReady(AGamePlayerController* PC)
 	}
 }
 
-void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar, E_TeamID& Team)
+void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar, E_TeamID& Team, FName CharacterName)
 {
 	if (Team == E_TeamID::Blue)
 	{
@@ -178,6 +178,7 @@ void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, T
 			if (Elem.PlayerName == PlayerName)
 			{
 				Elem.SelectedCharacter = ChosenChar;
+				Elem.SelectedCharacterName = CharacterName;
 			}
 		}
 	}
@@ -188,6 +189,7 @@ void APlayGameState::AddSelectCharacterToPlayerInfo(const FString& PlayerName, T
 			if (Elem.PlayerName == PlayerName)
 			{
 				Elem.SelectedCharacter = ChosenChar;
+				Elem.SelectedCharacterName = CharacterName;
 			}
 		}
 	}

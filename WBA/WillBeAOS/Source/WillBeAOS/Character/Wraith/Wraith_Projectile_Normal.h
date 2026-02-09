@@ -12,9 +12,7 @@ class WILLBEAOS_API AWraith_Projectile_Normal : public AProjectile
 	AWraith_Projectile_Normal();
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-	virtual void Destroyed() override;
 	
 private:
 	UPROPERTY(EditDefaultsOnly)
@@ -29,13 +27,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* ImpactParticle;
 
-	FVector ActorStartLocation;
-
 
 public:
-	E_TeamID TeamID;
+	FVector OwnerLocation;
+	float TraceLength;
+	float BulletSpeed;
+	bool bReady = false;
 
-	bool CanHit;
-	
-	float DistanceVector;
+	void CalcFireBullet();
 };

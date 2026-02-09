@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
 #include "WEnumFile.h"
+#include "Struct_Enum/E_LocomotionDirection.h"
 #include "WCharAnimInstance.generated.h"
 
 class AWCharacterBase;
@@ -23,7 +24,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = MoveMent)
 	E_TurningInPlace TurningInPlace;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	bool IsInCombat = false;
 
 
@@ -54,7 +55,18 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "FullBody")
 	bool FullBody;
 
+	UPROPERTY(BlueprintReadOnly)
+	FRotator WorldRotation;
+
+	UPROPERTY(BlueprintReadOnly)
+	float VelocityLocomotionAngle;
+	UPROPERTY(BlueprintReadOnly)
+	E_LocomotionDirection LocomotionDirection;
+
+	virtual void NativeThreadSafeUpdateAnimation(float DeltaSeconds) override;
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+public:
+	void CaculateLocomotionDirection();
 };

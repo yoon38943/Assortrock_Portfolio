@@ -47,7 +47,8 @@ public:
 	
 	AWCharacterBase* PlayerChar;
 	AGamePlayerController* PlayerController;
-
+	FTimerHandle MinionPCTimerManager;
+	
 	UFUNCTION()
 	void FindPlayerPC();
 	void FindPlayerPawn();
@@ -99,13 +100,14 @@ public:	//타격 관련
 	void NM_Minion_Attack();
 
 public:	//체력관련
+	FTimerHandle HPbarColorTimerHandle;
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void SetHpPercentage(float Health, float MaxHealth);
 	UFUNCTION(Server, Reliable)
 	void S_SetHpPercentage(float Health, float MaxHealth);
 	void StartSetHPbarColor();
 	void SetHPbarColor(FLinearColor HealthBarColor);
-	void RetrySetHPbarColor(FLinearColor HealthBarColor);
 
 public: //죽을 때
 	UPROPERTY(BlueprintReadWrite, Category = Dead)
@@ -122,6 +124,4 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
-	virtual void Tick(float DeltaTime) override;
 };

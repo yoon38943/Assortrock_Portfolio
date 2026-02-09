@@ -34,8 +34,8 @@ ATower::ATower()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(GetRootComponent());
 
-	CapsuleCollisionComponet = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollision"));
-	CapsuleCollisionComponet->SetupAttachment(GetRootComponent());
+	/*CapsuleCollisionComponet = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollision"));
+	CapsuleCollisionComponet->SetupAttachment(GetRootComponent());*/
 
 	AttackStartPoint = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AttackStartPoint"));
 	AttackStartPoint->SetupAttachment(GetRootComponent());
@@ -113,9 +113,13 @@ void ATower::BeginPlay()
 		S_InitHPPercentage();
 		InitHPPercentage(CombatComp->Health, CombatComp->Max_Health);
 	}
+}
 
-	// 플레이어 컨트롤러 찾기
-	/*FindPlayerPC();*/
+void ATower::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void ATower::Tick(float DeltaTime)
@@ -289,9 +293,9 @@ void ATower::OnEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActo
 
 void ATower::TowerDestroyInClient_Implementation()
 {
-	if (IsValid(CapsuleCollisionComponet))
+	if (IsValid(StaticMesh))
 	{
-		FVector DestroyLocation = CapsuleCollisionComponet->GetComponentLocation();
+		FVector DestroyLocation = StaticMesh->GetComponentLocation();
 		
 		UGameplayStatics::SpawnEmitterAtLocation(
 			GetWorld(),

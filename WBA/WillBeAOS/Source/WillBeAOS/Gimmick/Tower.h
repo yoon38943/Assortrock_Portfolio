@@ -71,8 +71,8 @@ public://스폰
 public:	
 	UPROPERTY(EditAnywhere)
 	USceneComponent* DefaultSceneRoot;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCapsuleComponent* CapsuleCollisionComponet;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* CapsuleCollisionComponet;*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UNiagaraComponent* NiagaraComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -131,13 +131,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
 	class UVisibleWidgetComponent* SightComp;
 
-	/*AWCharacterBase* PlayerChar;
-	AGamePlayerController* PlayerController;
-
-	UFUNCTION()
-	void FindPlayerPC();
-	void FindPlayerPawn();*/
-
 	// 타겟 빔
 	void BeamToTarget(FVector TargetLocation, AAOSCharacter* Target);
 
@@ -158,5 +151,6 @@ private:
 	UFUNCTION(BlueprintCallable)
 	virtual void OnEndOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 };

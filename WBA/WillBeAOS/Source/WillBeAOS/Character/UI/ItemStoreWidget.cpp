@@ -3,6 +3,7 @@
 #include "Components/TextBlock.h"
 #include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/GamePlayerState.h"
+#include "PersistentGame/PlayGameState.h"
 
 void UItemStoreWidget::NativeConstruct()
 {
@@ -99,6 +100,6 @@ void UItemStoreWidget::AddSpeedState()
 	if (PS)
 	{
 		PS->Server_AddGold(-G_Speed);
-		PS->AddSpeed(60);
+		PS->AddSpeed(0.03f);
 	}
 }

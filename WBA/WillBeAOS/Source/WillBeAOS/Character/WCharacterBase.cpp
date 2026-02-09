@@ -38,7 +38,7 @@ AWCharacterBase::AWCharacterBase()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
-	CombatComp->SetCombatEnable(false);
+	CombatComp->SetCombatEnable(true);
 
 	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
 	HPInfoBarComponent->SetupAttachment(GetRootComponent());
@@ -54,10 +54,7 @@ AWCharacterBase::AWCharacterBase()
 	TurningInPlace = E_TurningInPlace::E_NotTurning;
 
 	bReplicates = true;
-
-	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
 }
-
 
 void AWCharacterBase::BeginPlay()
 {
@@ -83,12 +80,6 @@ void AWCharacterBase::BeginPlay()
     
 		PC->SetControlRotation(LookAtRotation);
 	}
-
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = PS->CSpeed;
-	}
 	
 	if (!HasAuthority())
 	{
@@ -104,16 +95,19 @@ void AWCharacterBase::BeginPlay()
 			GS->GameManagedActors.AddUnique(this);
 		}
 	}
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		Anim = Cast<UWCharAnimInstance>(AnimInstance);
+	}
 }
 
 void AWCharacterBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-
-	if (CheckTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(CheckTimerHandle);
-	}
+	
+	GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 }
 
 void AWCharacterBase::Tick(float DeltaTime)
@@ -153,7 +147,7 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
 		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
 		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::Input_QSkill);
-		// E 스킬 자리
+		EnhancedInputComponent->BindAction(IA_SkillE, ETriggerEvent::Started, this, &AWCharacterBase::Input_ESkill);
 		// R 스킬 자리
 		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 	}
@@ -189,12 +183,35 @@ void AWCharacterBase::AimOffset(float DeltaTime)
 		TurningInPlace = E_TurningInPlace::E_NotTurning;
 	}
 
-	Pitch = GetBaseAimRotation().Pitch;
+	if (IsLocallyControlled())
+	{
+		Pitch = GetBaseAimRotation().Pitch;
+	}
+	else
+	{
+		// 원격 플레이어는 서버가 복제해준 RemoteViewPitch를 각도로 변환해서 사용
+		// RemoteViewPitch는 0~255 사이의 바이트 값이므로 다시 각도로 바꿔야 합니다.
+		Pitch = RemoteViewPitch * 360.f / 255.f;
+	}
+	
 	if (Pitch > 90.f && !IsLocallyControlled())
 	{
 		FVector2D InRange(270.f, 360.f);
 		FVector2D OutRange(-90.f, 0.f);
 		Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, Pitch);
+	}
+}
+
+void AWCharacterBase::SetCombatRotationMode(bool bIsAiming)
+{
+	if (bIsAiming)
+	{
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f);
+	}
+	else
+	{
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
 	}
 }
 
@@ -220,13 +237,16 @@ void AWCharacterBase::TurnInPlace(float DeltaTime)
 	}
 	if (TurningInPlace != E_TurningInPlace::E_NotTurning)
 	{
-		GetCharacterMovement()->RotationRate = FRotator(0.f, 250.f, 0.f);
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		FRotator CurrentRotation = GetActorRotation();
+		FRotator TargetRotation = FRotator(0.f, GetControlRotation().Yaw, 0.f);
+       
+		// 회전 속도를 직접 제어 (250.f)
+		FRotator NewRotation = FMath::RInterpTo(CurrentRotation, TargetRotation, DeltaTime, 8.0f); 
+		SetActorRotation(NewRotation);
         
 		if (FMath::Abs(Yaw) < 5.f)
 		{
 			TurningInPlace = E_TurningInPlace::E_NotTurning;
-			GetCharacterMovement()->bUseControllerDesiredRotation = false;
 			StartAimRotation = FRotator(0.f, GetBaseAimRotation().Yaw, 0.f);
 		}
 	}
@@ -285,10 +305,15 @@ void AWCharacterBase::SetHPPercentage()
 		else
 		{
 			// 위젯이 아직 안 붙었을 경우 딜레이 후 재시도
+			TWeakObjectPtr<AWCharacterBase> WeakThis(this);
+			
 			FTimerHandle Handle;
-			GetWorld()->GetTimerManager().SetTimer(Handle, [this]()
+			GetWorld()->GetTimerManager().SetTimer(Handle, [WeakThis]()
 			{
-				SetHPPercentage();
+				if (WeakThis.IsValid())
+				{
+					WeakThis->SetHPPercentage();
+				}
 			}, 0.1f, false);
 		}
 	}
@@ -323,66 +348,6 @@ void AWCharacterBase::ShowNickName()
 		GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::ShowNickName, 0.1f, false);
 	}
 }
-
-// 시야체크 완료하면 삭제
-/*void AWCharacterBase::Server_SetVisibleWidgetDistance()
-{
-	FVector MyLocation = GetActorLocation();
-	float VisibleDistanceSqr = FMath::Square(VisibleWidgetDistance);
-
-	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
-	if (GS)
-	{
-		for (TWeakObjectPtr<AActor> WeakActor : GS->CachedActors)
-		{
-			if (WeakActor.IsValid())
-			{
-				AActor* Actor = WeakActor.Get();
-				if (!IsValid(Actor) || Actor == this) continue;
-
-				float DistSqr = FVector::DistSquared(MyLocation, Actor->GetActorLocation());
-				bool bShouldShow = DistSqr <= VisibleDistanceSqr;
-
-				SetWidgetVisible(Actor, bShouldShow);
-			}
-		}
-	}
-}
-
-void AWCharacterBase::SetWidgetVisible_Implementation(AActor* Actor, bool bIsVisible)
-{
-	if (AWCharacterBase* Character = Cast<AWCharacterBase>(Actor))
-	{
-		if (Character->bIsDead == true)
-		{
-			bIsVisibleEnemy = false;
-		}
-		
-		if (Character->HPInfoBarComponent && Character->HPInfoBarComponent->IsVisible() != bIsVisibleEnemy)
-		{
-			Character->HPInfoBarComponent->SetVisibility(bIsVisibleEnemy);
-		}
-	}
-	else if (AWMinionsCharacterBase* Minion = Cast<AWMinionsCharacterBase>(Actor))
-	{
-		if (Minion->bIsDead == true)
-		{
-			bIsVisible = false;
-		}
-		
-		if (Minion->WidgetComponent && Minion->WidgetComponent->IsVisible() != bIsVisible)
-		{
-			Minion->WidgetComponent->SetVisibility(bIsVisible);
-		}
-	}
-	else if (ATower* Tower = Cast<ATower>(Actor))
-	{
-		if (Tower->WidgetComponent && Tower->WidgetComponent->IsVisible() != bIsVisible)
-		{
-			Tower->WidgetComponent->SetVisibility(bIsVisible);
-		}
-	}
-}*/
 
 void AWCharacterBase::Look(const FInputActionValue& Value)
 {
@@ -495,9 +460,32 @@ void AWCharacterBase::VisibleOutline()
 	}
 }
 
-void AWCharacterBase::ChangeSpeed(float Speed)
+void AWCharacterBase::UpdateMovementSpeedData(float Multiplier)
 {
-	GetCharacterMovement()->MaxWalkSpeed = Speed;
+	AGamePlayerState* PS = GetPlayerState<AGamePlayerState>();
+	if (PS)
+	{
+		// 속도
+		float CaculatedWalkSpeed = MovementSpeedData.MaxWalkSpeed * PS->ItemSpeed;
+		float FinalSpeed = CaculatedWalkSpeed * Multiplier;
+		GetCharacterMovement()->MaxWalkSpeed = FinalSpeed;
+
+		// 가속도
+		float CaculatedAcceleration = MovementSpeedData.MaxAcceleration * PS->ItemSpeed;
+		float FinalAcceleration = CaculatedAcceleration * Multiplier;
+		GetCharacterMovement()->MaxAcceleration = FinalAcceleration;
+
+		// 제동력
+		float CaculatedBrakingDeceleration = MovementSpeedData.BrakingDeceleration * PS->ItemSpeed;
+		float FinalBrakingDeceleration = CaculatedBrakingDeceleration * Multiplier;
+		GetCharacterMovement()->BrakingDecelerationWalking = FinalBrakingDeceleration;
+
+		// BrakingFrictionFactor
+		GetCharacterMovement()->BrakingFrictionFactor = MovementSpeedData.BrakingFrictionFactor;
+
+		// BrakingFriction
+		GetCharacterMovement()->BrakingFriction = MovementSpeedData.BrakingFriction;
+	}
 }
 
 void AWCharacterBase::NM_StopPlayMontage_Implementation()
@@ -517,22 +505,23 @@ void AWCharacterBase::Attack()
 	
 	if (!HasAuthority())
 	{
+		ClientAttack();
 		S_Behavior();
 	}
 }
 
 void AWCharacterBase::Behavior()
 {
-	EnterCombat();
+	Server_EnterCombat();
 	
 	CombatComp->SetCollisionMesh(GetMesh());
 	if (CombatComp != nullptr)
 	{
 		//공격중이 아닐시
-		if (CombatComp->IsCombatEnable() == false)
+		if (CombatComp->IsAttackEnable() == true)
 		{
 			//공격중 활성화
-			CombatComp->SetCombatEnable(true);
+			CombatComp->SetCombatEnable(false);
 			//콤보 로직
 			if ((CombatComp->GetAttackCount()) < AttackMontages.Num())
 			{
@@ -547,27 +536,37 @@ void AWCharacterBase::Behavior()
 	}
 }
 
-void AWCharacterBase::EnterCombat()
+void AWCharacterBase::ClientAttack()
 {
-	IsCombat = true;
-	
-	GetWorld()->GetTimerManager().ClearTimer(CombatTimer);
-	GetWorld()->GetTimerManager().SetTimer(CombatTimer, this, &ThisClass::ExitCombat, 8.f, false);
 }
 
-void AWCharacterBase::ExitCombat()
+void AWCharacterBase::Server_EnterCombat_Implementation()
+{
+	if (!IsCombat)	IsCombat = true;
+	
+	GetWorld()->GetTimerManager().ClearTimer(CombatTimer);
+	GetWorld()->GetTimerManager().SetTimer(CombatTimer, this, &ThisClass::ServerExitCombat, 12.f, false);
+
+	ServerChangeCombatMode(IsCombat);
+}
+
+void AWCharacterBase::ServerExitCombat()
 {
 	IsCombat = false;
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance)
-	{
-		UWCharAnimInstance* Anim = Cast<UWCharAnimInstance>(AnimInstance);
-		if (Anim)
-		{
-			Anim->IsInCombat = false;
-		}
-	}
+	ServerChangeCombatMode(IsCombat);
+}
+
+void AWCharacterBase::ServerChangeCombatMode(bool isCombat)
+{
+}
+
+void AWCharacterBase::OnRep_QSkillUsing()
+{
+}
+
+void AWCharacterBase::OnRep_ESkillUsing()
+{
 }
 
 void AWCharacterBase::Input_QSkill(const FInputActionValue& Value)
@@ -587,6 +586,8 @@ void AWCharacterBase::Input_RSkill(const FInputActionValue& Value)
 
 void AWCharacterBase::Handle_UseSkillButton(ESkillSlot Skillslot)
 {
+	if (!IsLocallyControlled()) return;
+	
 	// 자식 함수에서 정의
 }
 
@@ -696,7 +697,10 @@ void AWCharacterBase::S_BeingDead_Implementation(AGamePlayerController* PC, APaw
 		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle,
 			[Player, PC, GameMode]()
 			{
-				GameMode->RespawnPlayer(Player, PC);
+				if (PC)
+				{
+					GameMode->RespawnPlayer(Player, PC);
+				}
 			}, GameState->RespawnTime, false);
 
 		FTimerHandle SpectatorCamera;
@@ -718,11 +722,7 @@ void AWCharacterBase::NM_BeingDead_Implementation()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 	PlayAnimMontage(DeadAnimMontage);
 
-	FTimerHandle DeadTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, [this]()
-	{
-		Destroy();
-	}, 1.3f, false);
+	SetLifeSpan(1.3f);
 }
 
 void AWCharacterBase::C_BeingDead_Implementation(AGamePlayerController* PC)
@@ -783,7 +783,7 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 
 	if (HasAuthority())
 	{
-		EnterCombat();
+		Server_EnterCombat();
 		
 		LastHitBy = EventInstigator;
 		
@@ -825,4 +825,6 @@ void AWCharacterBase::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>
 	DOREPLIFETIME(ThisClass, ControllerRotation);
 	DOREPLIFETIME(ThisClass, Yaw);
 	DOREPLIFETIME(ThisClass, IsCombat);
+	DOREPLIFETIME(ThisClass, bIsQSkillUsing);
+	DOREPLIFETIME(ThisClass, bIsESkillUsing);
 }

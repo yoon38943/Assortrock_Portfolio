@@ -29,7 +29,7 @@ public:
 	void Client_PlayerInfoReady();
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void Server_ChooseTheCharacter(TSubclassOf<APawn> ChosenChar);
+	void Server_ChooseTheCharacter(TSubclassOf<APawn> ChosenChar, FName CharacterName);
 
 	UFUNCTION(Server, Reliable)
 	void Server_ReplicatePlayerInfo(const FString& ClientPlayerName);
@@ -107,8 +107,8 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void C_SetDefence(float NewDefence);
     // Movement speed
-    UPROPERTY(BlueprintReadWrite, Category = "Stats")
-    float CSpeed;
+	UPROPERTY(BlueprintReadWrite, Category = "Stats")
+	float ItemSpeed = 1.f;
 	UFUNCTION(Server, Reliable)
 	void AddSpeed(float Speed);
 	UFUNCTION(NetMulticast, Reliable)
@@ -127,6 +127,9 @@ public:
 	// ----- 스킬 관련 -----
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnSkillCooldown OnSkillCooldown;
+
+	float LastUseQSkillTime = -100.f;
+	float LastUseESkillTime = -100.f;
 
 	// 스킬 실행할 캐릭터가 "요청"하는 함수
 	UFUNCTION(Server, Reliable)

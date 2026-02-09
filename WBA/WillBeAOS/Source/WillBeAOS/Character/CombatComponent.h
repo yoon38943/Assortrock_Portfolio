@@ -45,7 +45,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void ResetCombo();//??? ????
 	UFUNCTION(BlueprintCallable, Category = "Combat")
-	bool IsCombatEnable();//?????????? ???
+	bool IsAttackEnable();//?????????? ???
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	void SetCombatEnable(bool Val);//?????? ????
 	
@@ -65,7 +65,7 @@ protected:
 public:
 	
 	UPROPERTY(BluePrintReadOnly, Category = "Combat")
-	bool CombatEnable = false;
+	bool AttackEnable = true;
 	
 	UPROPERTY(BlueprintReadWrite, Category = Combo)
 	int32 AttackCount = 0;

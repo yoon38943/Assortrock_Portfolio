@@ -6,10 +6,12 @@
 #include "Character/Skill/SkillInterface.h"
 #include "Character/Skill/SkillType.h"
 #include "Interface/VisibleSightInterface.h"
+#include "Struct_Enum/WalkSpeedStruct.h"
 #include "WCharacterBase.generated.h"
 
 #define PLAYERKILLGOLD 100
 
+class UWCharAnimInstance;
 class AGamePlayerState;
 
 class AWolf;
@@ -34,6 +36,8 @@ protected:
 	class UCombatComponent* CombatComp;
 
 	void AimOffset(float DeltaTime);
+
+	void SetCombatRotationMode(bool bIsAiming);
 	
 public:
 	FRotator StartAimRotation;
@@ -86,21 +90,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Distance")
 	float VisibleWidgetDistance = 5000.f;
 
-	// 거리에 따라 위젯을 on/off 시키는 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
-	class UVisibleWidgetComponent* SightComp;
-
 	virtual class UWidgetComponent* GetHPWidgetComponent() const override { return HPInfoBarComponent; }
-	
-	/*void Server_SetVisibleWidgetDistance();
-
-	UFUNCTION(Client, Reliable)
-	void SetWidgetVisible(AActor* Actor, bool bIsVisible);*/
 	
 public:
 	AWCharacterBase();
 
-private:
+private: 
 	//입력 에셋
 	UPROPERTY(EditAnywhere, Category = Input)
 	class UInputMappingContext* IMC_Asset;
@@ -113,9 +108,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_SkillQ;
 	UPROPERTY(EditAnywhere, Category = Input)
+	UInputAction* IA_SkillE;
+	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
-public:		
+public:
+	UWCharAnimInstance* Anim;
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
 	UAnimMontage* DeadAnimMontage;
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
@@ -128,10 +126,13 @@ public:
 
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
-	void StopMove(const FInputActionValue& Value);
+	virtual void StopMove(const FInputActionValue& Value);
 	void VisibleOutline();
 
-	void ChangeSpeed(float Speed);
+	FMovementSpeedStruct MovementSpeedData;
+	
+	UFUNCTION(BlueprintCallable)
+	void UpdateMovementSpeedData(float Multiplier);
 	void UpdateAcceleration();
 
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -162,6 +163,7 @@ public:
 	// ---- Attack 관련 함수 ----
 	virtual void Attack();
 	virtual void Behavior();
+	virtual void ClientAttack();
 	UFUNCTION(Server, Reliable)
 	void S_Behavior();
 	UFUNCTION(NetMulticast, Reliable)
@@ -170,8 +172,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	bool IsCombat = false;
 
-	void EnterCombat();
-	void ExitCombat();
+	UFUNCTION(Server, Reliable)
+	void Server_EnterCombat();
+	void ServerExitCombat();
+
+	virtual void ServerChangeCombatMode(bool isCombat);
 
 	FTimerHandle CombatTimer;
 
@@ -182,6 +187,16 @@ public:
 	void NM_SpawnHitEffect(FVector HitLocation);
 
 	// ----- 스킬 이벤트 관련 -----
+
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_QSkillUsing)
+	bool bIsQSkillUsing = false;
+	UPROPERTY(BlueprintReadOnly, ReplicatedUsing = OnRep_ESkillUsing)
+	bool bIsESkillUsing = false;
+
+	UFUNCTION()
+	virtual void OnRep_QSkillUsing();
+	UFUNCTION()
+	virtual void OnRep_ESkillUsing();
 
 	void Input_QSkill(const FInputActionValue& Value);
 	void Input_ESkill(const FInputActionValue& Value);

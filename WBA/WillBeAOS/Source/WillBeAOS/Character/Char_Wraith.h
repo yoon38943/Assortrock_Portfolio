@@ -4,19 +4,28 @@
 #include "Character/WCharacterBase.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Shinbi/Skill/SkillDataTable.h"
+#include "Struct_Enum/WalkSpeedStruct.h"
+#include "Wraith/Enum/ShootingMode.h"
 #include "Char_Wraith.generated.h"
+
+
+class ABomb_ESkill;
+class USplineMeshComponent;
+class USplineComponent;
+struct FPredictProjectilePathPointData;
+class AProjectile_Normal;
+class AProjectile_QSkill;
+enum class ShootingMode : uint8;
 
 UCLASS()
 class WILLBEAOS_API AChar_Wraith : public AWCharacterBase
 {
 	GENERATED_BODY()
 
+public:
 	AChar_Wraith();
 
-protected:	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	UStaticMeshComponent* ScopeAttackCameraPoint;
-
+protected:
 	APlayGameState* GS;
 
 	UPROPERTY(EditDefaultsOnly, Category = "HitParticle")
@@ -26,88 +35,162 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
+	
+	virtual void StopMove(const FInputActionValue& Value) override;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class AProjectile> Projectile_Normal;
+	TSubclassOf<AProjectile_Normal> Projectile_Normal;
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AProjectile> Projectile_Enhanced;
-	UPROPERTY(EditAnywhere)
-	UAnimMontage* ZoomInMontage;
+	TSubclassOf<AProjectile_QSkill> Projectile_QSkill;
 
 public:
+	
+	virtual void CallRecall() override;
+	
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_ChangeMode)
+	ShootingMode shootingMode = ShootingMode::NonCombat;
+
+	UFUNCTION()
+	void OnRep_ChangeMode();
+	
+	UFUNCTION(Server, Reliable)
+	void Server_ChangeShootingMode(ShootingMode Mode);
+
+	virtual void ServerChangeCombatMode(bool isCombat) override;
+	
 	AActor* LastTarget;
-	// 타겟 락온 관련
-	AActor* CheckTargettingInCenter();
+	// 타겟팅 관련
+	TOptional<FHitResult> CheckTargettingInCenter();
 
 	UPROPERTY(Replicated)
-	float TargettingTraceLength = 1500.f;
+	float TargettingTraceLength = 1200.f;
+
+	float NormalAttackDistance = 1200.f;
+	float QSkillDistance = 1500.f;
 
 	// 공격
 	bool CanAttack = true;
 
 	virtual void Attack() override;
-	
-	virtual void Behavior() override;
 
-	UFUNCTION(BlueprintNativeEvent)
-	void AttackFire();
+	virtual void ClientAttack() override;
+	virtual void Behavior() override;
+	void PlayNormalAttackAnim();
+
+	float BulletSpeed = 12000.f;
+	float ComboCount = 0;
+	bool bIsStriking = false;
 	
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void WraithAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
+	void AttackFire(FVector TraceEnd);
+
+	void CaculatedBulletDirection(FVector Point, bool isStriking, bool isSkill);
+
+	float LastAttackTime = 0.f;
+	float AttackCountTime = 0.73f;
+	UFUNCTION(Server, Reliable)
+	void Server_AttackFire(FVector TraceStart, FVector TraceEnd, FVector MuzzleLocation);
+	void ServerLineTraceHit(FVector TraceStart, FVector TraceEnd, FVector MuzzleLocation);
+
+	UFUNCTION(NetMulticast,Reliable)
+	void Multicast_AttackFire(FVector Point, bool isStriking);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void NM_HitEffect(const FVector& HitLocation);
 
 public:
-	// 스킬 관련 함수
+	// 스킬 관련
+	ESkillSlot CurrentUsingSkill = ESkillSlot::None;
+
+	void UseNewSkill(ESkillSlot NewSkill);
+	
 	virtual void ActivateSkill_Implementation(ESkillSlot SkillSlot) override;
 	
 	virtual void Handle_UseSkillButton(ESkillSlot Skillslot) override;	// 스킬 input switch 함수
 	
 	// Q스킬
-	UAnimMontage* SkillQMontage;
-	void SkillQ_Shot();
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ZoomInMontage;
+	void QSkill_Shot();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void NM_SpawnProjectile(const FVector& SocketLocation, const FVector& HitLocation, const FRotator& ProjectileRot, bool SkillBullet);
+	FMovementSpeedStruct MovementSpeedData;
 
 	UPROPERTY(BlueprintReadOnly)
-	bool bIsZoomIn = false;
-	UPROPERTY(Replicated)
-	bool bEnableQSkill = true;
+	bool bUseGun = false;
 	FSkillDataTable* QSkill;
 
-	FTimerHandle S_SkillQTimer;
 	float QSkillCooldownTime;
+	FTimerHandle S_SkillQTimer;
 
 	FTimerHandle ZoomTimer;
 
-	UFUNCTION(BlueprintNativeEvent)
-	void ClickQButton();
 	void ZoomInScope();
 	void ZoomOutScope();
 	UFUNCTION(Server, Reliable)
 	void SetZoomInBool(bool bZoomIn);
 	void UpdateZoom();
-	UFUNCTION(Server, Reliable)
-	void ChangeCharacterSpeed(float Speed);
-	UFUNCTION(Client, Reliable)
-	void C_ChangeCharacterSpeed(float Speed);
 	void SkillQAttack();
+	void ClientQSkill();
+	virtual void OnRep_QSkillUsing() override;
+	
 	UFUNCTION(Server, Reliable)
-	void S_SkillQAttack();
-	UFUNCTION(BlueprintNativeEvent)
-	void BP_EnhancedAttack();
-	UFUNCTION(BlueprintCallable, Server, Reliable)
-	void EnhancedAttack(const FVector& Start, const FVector& Direction, const FVector& SocketLocation);
+	void S_SkillQAttack(FVector TraceStart, FVector TraceEnd, FVector MuzzleLocation);
+	void ServerLineTraceQSkill(FVector TraceStart, FVector TraceEnd, FVector MuzzleLocation);
 
-	//  스킬 사용시 애니메이션 실행 함수
-	UPROPERTY(ReplicatedUsing = "OnRep_OnQSkillFiring")
-	bool bOnQSkillFiring;
-	UFUNCTION()
-	void OnRep_OnQSkillFiring();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_QSkill(FVector Point, bool isStriking);
 
-	void QSKillEffect();
+	void PlayQSKillAnim();
 
-	virtual void CallRecall() override;
+	// E스킬
+	UPROPERTY(EditAnywhere)
+	UAnimMontage* ESkillReadyMontage;
+	UPROPERTY()
+	UAnimMontage* SkillEMontage;
+	UPROPERTY(VisibleAnywhere, Category = Trajectory)
+	USplineComponent* TrajectorySpline;
+	UPROPERTY(EditAnywhere, Category = Trajectory)
+	UStaticMesh* SplineSphereMesh;
+	UPROPERTY(EditAnywhere, Category = Trajectory)
+	UMaterialInterface* SplineMaterial;
+	UPROPERTY()
+	TArray<USplineMeshComponent*> SplineMeshes;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> Bomb_ESkillClass;
+	TMap<int64, TWeakObjectPtr<ABomb_ESkill>> FakeBombs;
+
+	
+	float ESkillCooldownTime;
+	float ProjectileLaunchSpeed = 800.f;
+	float ESkillTraceDistance = 900.f;
+	float ProjectileCounter = 0.f;
+
+	
+	FSkillDataTable* ESkill;
+	FTimerHandle TrajectoryTimerHandle;
+	FTimerHandle CleanupTimer;
+	
+
+	void ESKill_Bomb();
+	void LoadToBomb();
+	void PutInTheBomb();
+	void UpdateTrajectory();
+	void DrawTrajectoryPath(const TArray<FPredictProjectilePathPointData>& PathData);
+	void ClearTrajectoryPath();
+	void SkillEAttack();
+	void ClientESkill();
+	void SpawnESkillBomb(int64 UniqueID, FVector TraceStart, FVector TraceEnd);
+	int64 GetUniqueProjectileID();
+	void CleanupFakeProjectiles();
+	void PlayThrowBombAnim();
+	virtual void OnRep_ESkillUsing() override;
+
+	
+	UFUNCTION(Server, Reliable)
+	void SetLoadToBombBool(bool bLoad);
+	UFUNCTION(Server, Reliable)
+	void Server_ESkillAttack(int64 UniqueID, FVector TraceStart, FVector TraceEnd);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ESkillAttack(int64 UniqueID, FVector TraceStart, FVector TraceEnd);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_ExplodeBomb(int64 UniID);
 };

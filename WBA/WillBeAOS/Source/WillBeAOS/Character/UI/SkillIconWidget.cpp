@@ -81,7 +81,7 @@ void USkillIconWidget::LoadSkillIcon()
 						SkillIDName = "QSkill";
 						break;
 					case ESkillSlot::E:
-						SkillIDName = "Eskill";
+						SkillIDName = "ESkill";
 						break;
 					case ESkillSlot::R:
 						SkillIDName = "RSkill";

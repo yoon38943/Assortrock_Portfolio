@@ -69,7 +69,7 @@ public:
 	
 	void CheckPlayerIsReady(AGamePlayerController* PC);
 
-	void AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar, E_TeamID& Team);
+	void AddSelectCharacterToPlayerInfo(const FString& PlayerName, TSubclassOf<APawn>& ChosenChar, E_TeamID& Team, FName CharacterName);
 
 	// 모든 플레이어가 캐릭터를 선택 했는지 체크
 	void AllPlayerChosenChar();
@@ -172,10 +172,10 @@ public:
 	float GetRedNexusHP();
 
 	// 골드 관련
-	int Gold_Attack = 60;
+	int Gold_Attack = 120;
 	int Gold_Health = 150;
-	int Gold_Defence = 30;
-	int Gold_Speed = 30;
+	int Gold_Defence = 60;
+	int Gold_Speed = 60;
 
 	// 캐릭터가 거리 계산할 인스턴스 모음
 	UPROPERTY(ReplicatedUsing = OnRep_ManagedActors)

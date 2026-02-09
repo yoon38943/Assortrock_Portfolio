@@ -35,9 +35,9 @@ void UCombatComponent::ResetCombo()
 	AttackCount = 0;
 }
 
-bool UCombatComponent::IsCombatEnable()
+bool UCombatComponent::IsAttackEnable()
 {
-	if (CombatEnable)
+	if (AttackEnable)
 	{
 		return true;
 	}
@@ -46,7 +46,7 @@ bool UCombatComponent::IsCombatEnable()
 
 void UCombatComponent::SetCombatEnable(bool Val)
 {
-	CombatEnable = Val;
+	AttackEnable = Val;
 }
 
 // Called when the game starts

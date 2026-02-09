@@ -32,6 +32,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UImage* SkillIcon;
+	
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* SkillButton;
 
 	void LoadSkillIcon();
 

@@ -13,8 +13,6 @@
 void AGamePlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-
-	CSpeed = 600.0f;
 }
 
 void AGamePlayerState::StartCharacterSelectPhase()
@@ -41,7 +39,6 @@ void AGamePlayerState::StartInGamePhase()
 	CPower = 20;
 	CAdditionalHealth = 0;
 	CDefense = 5;
-	CSpeed = 600.0f; // Unreal units per second
 	CCurrentExp = 0;
 	CExperience = 100;
 	CLevel = 0;
@@ -80,23 +77,23 @@ float AGamePlayerState::GetHPPercentage()
 
 void AGamePlayerState::C_SetSpeed_Implementation(float NewSpeed)
 {
-	CSpeed = NewSpeed;
-	AWCharacterBase* Character = Cast<AWCharacterBase>(GetOwner());
+	ItemSpeed = NewSpeed;
+	AWCharacterBase* Character = Cast<AWCharacterBase>(GetPawn());
 	if (Character)
 	{
-		Character->ChangeSpeed(CSpeed);
+		Character->UpdateMovementSpeedData(1.0f);
 	}
 }
 
 void AGamePlayerState::AddSpeed_Implementation(float Speed)
 {
-	CSpeed += Speed;
-	C_SetSpeed(CSpeed);
-	AWCharacterBase* Character = Cast<AWCharacterBase>(GetOwner());
+	ItemSpeed += Speed;
+	AWCharacterBase* Character = Cast<AWCharacterBase>(GetPawn());
 	if (Character)
 	{
-		Character->ChangeSpeed(CSpeed);
+		Character->UpdateMovementSpeedData(1.0f);
 	}
+	C_SetSpeed(ItemSpeed);
 }
 
 void AGamePlayerState::C_SetDefence_Implementation(float NewDefence)
@@ -268,11 +265,12 @@ void AGamePlayerState::Server_ReplicatePlayerInfo_Implementation(const FString& 
 	Client_PlayerInfoReady();
 }
 
-void AGamePlayerState::Server_ChooseTheCharacter_Implementation(TSubclassOf<APawn> ChosenChar)
+void AGamePlayerState::Server_ChooseTheCharacter_Implementation(TSubclassOf<APawn> ChosenChar, FName CharacterName)
 {
+	InGamePlayerInfo.SelectedCharacter = ChosenChar;
 	APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 	{
-		GS->AddSelectCharacterToPlayerInfo(GetPlayerName(), ChosenChar, PlayerInfo.PlayerTeam);
+		GS->AddSelectCharacterToPlayerInfo(GetPlayerName(), ChosenChar, PlayerInfo.PlayerTeam, CharacterName);
 	}
 }
 

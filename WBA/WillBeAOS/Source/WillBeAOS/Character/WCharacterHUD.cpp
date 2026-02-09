@@ -83,7 +83,7 @@ void UWCharacterHUD::SetState()
 		FString DefenceString = FString::Printf(TEXT("방어력: %.0f"), AWPS->CDefense);
 		Defence->SetText(FText::FromString(DefenceString));
 
-		FString SpeedString = FString::Printf(TEXT("스피드: %.1f"), AWPS->CSpeed/600);
+		FString SpeedString = FString::Printf(TEXT("스피드: %.2f"), AWPS->ItemSpeed);
 		Speed->SetText(FText::FromString(SpeedString));
 
 		FString HealthString = FString::Printf(TEXT("%.f / %.f"), AWPS->GetHP(), AWPS->GetMaxHP());

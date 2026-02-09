@@ -13,13 +13,6 @@ ANexus::ANexus()
 	DefaultSceneRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
 	SetRootComponent(DefaultSceneRootComponent);
 
-	BoxCollisionComponet1 = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision1"));
-	BoxCollisionComponet1->SetupAttachment(DefaultSceneRootComponent);
-	BoxCollisionComponet2 = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision2"));
-	BoxCollisionComponet2->SetupAttachment(DefaultSceneRootComponent);
-	BoxCollisionComponet3 = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxCollision3"));
-	BoxCollisionComponet3->SetupAttachment(DefaultSceneRootComponent);
-
 	NexusMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NexusMesh"));
 	NexusMeshComponent->SetupAttachment(DefaultSceneRootComponent);
 
