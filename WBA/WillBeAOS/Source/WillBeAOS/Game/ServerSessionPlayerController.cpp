@@ -12,14 +12,14 @@ void AServerSessionPlayerController::ClientShowLoadingScreen_Implementation()
 	{
 		MatchingWidget->AddToViewport(0);
 		UWGameInstance* GI = Cast<UWGameInstance>(GetGameInstance());
-		if (GI && GI->OnlineSessionInterface.IsValid())
+		/*if (GI && GI->OnlineSessionInterface.IsValid())
 		{
 			FNamedOnlineSession* Session = GI->OnlineSessionInterface->GetNamedSession(NAME_GameSession);
 			if (Session)
 			{
 				MatchingWidget->UpdateSessionMaxPlayers(Session->SessionSettings.NumPublicConnections);
 			}
-		}
+		}*/
 	}
 }
 

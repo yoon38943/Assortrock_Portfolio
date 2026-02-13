@@ -4,6 +4,13 @@
 #include "ServerSessionPlayerController.h"
 #include "WGameInstance.h"
 #include "GameFramework/GameStateBase.h"
+#include "Network/WGameSession.h"
+
+ALobbyGameMode::ALobbyGameMode()
+{
+	bUseSeamlessTravel = true;
+	GameSessionClass = AWGameSession::StaticClass();
+}
 
 void ALobbyGameMode::BeginPlay()
 {
@@ -37,7 +44,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	UWGameInstance* GameInstance = Cast<UWGameInstance>(GetGameInstance());
 	if (GameInstance)
 	{
-		if (GameInstance->IsSessionFull())
+		/*if (GameInstance->IsSessionFull())
 		{
 			UE_LOG(LogTemp, Log, TEXT("세션이 가득찼으므로 게임 시작!"));
 			UE_LOG(LogTemp, Log, TEXT("비어 있는 플레이어 닉네임 부여!"));
@@ -59,7 +66,7 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 
 			StartSelectCharacterMap();
-		}
+		}*/
 	}
 }
 

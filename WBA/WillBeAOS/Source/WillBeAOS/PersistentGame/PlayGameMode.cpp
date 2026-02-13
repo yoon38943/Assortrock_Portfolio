@@ -7,12 +7,18 @@
 #include "Character/AOSActor.h"
 #include "Character/AOSCharacter.h"
 #include "Character/WCharacterBase.h"
+#include "Game/Network/WGameSession.h"
 #include "Gimmick/PlayerSpawner.h"
 #include "Gimmick/SpawnTowerPoint.h"
 #include "Gimmick/Tower.h"
 #include "Kismet/GameplayStatics.h"
 #include "Minions/MinionsSpawner.h"
 
+
+APlayGameMode::APlayGameMode()
+{
+	GameSessionClass = AWGameSession::StaticClass();
+}
 
 void APlayGameMode::BeginPlay()
 {

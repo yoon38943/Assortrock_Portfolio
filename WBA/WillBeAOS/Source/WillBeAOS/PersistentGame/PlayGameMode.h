@@ -14,6 +14,8 @@ class WILLBEAOS_API APlayGameMode : public AGameMode
 {
 	GENERATED_BODY()
 
+	APlayGameMode();
+
 	APlayGameState* GS;
 
 	virtual void BeginPlay() override;

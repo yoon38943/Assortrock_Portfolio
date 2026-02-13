@@ -11,6 +11,8 @@ class WILLBEAOS_API ALobbyGameMode : public AGameMode
 {
 	GENERATED_BODY()
 
+	ALobbyGameMode();
+
 	virtual void BeginPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;

@@ -6,6 +6,10 @@
 #include "Components/TextBlock.h"
 #include "ItemStoreWidget.generated.h"
 
+class APlayGameState;
+class AGamePlayerState;
+class AGamePlayerController;
+
 UCLASS()
 class WILLBEAOS_API UItemStoreWidget : public UUserWidget
 {

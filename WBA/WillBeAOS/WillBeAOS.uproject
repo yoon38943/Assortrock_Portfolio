@@ -36,11 +36,31 @@
 			"Enabled": false
 		},
 		{
-			"Name": "OnlineSubsystemSteam",
+			"Name": "AnimationWarping",
 			"Enabled": true
 		},
 		{
-			"Name": "AnimationWarping",
+			"Name": "EOSOverlayInputProvider",
+			"Enabled": true
+		},
+		{
+			"Name": "EOSVoiceChat",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineServicesEOS",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineServicesEOSGS",
+			"Enabled": true
+		},
+		{
+			"Name": "OnlineSubsystemEOS",
+			"Enabled": true
+		},
+		{
+			"Name": "SocketSubsystemEOS",
 			"Enabled": true
 		}
 	]

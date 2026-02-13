@@ -2,57 +2,364 @@
 #include "Character/WPlayerState.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "Interfaces/OnlineIdentityInterface.h"
+#include "Network/WNetStatics.h"
 
 void UWGameInstance::Init()
 {
 	Super::Init();
 
-	Subsystem = IOnlineSubsystem::Get();
-	if (Subsystem)
+	if (GetWorld()->IsEditorWorld()) return;
+
+	if (UWNetStatics::IsSessionServer(this))
 	{
-		OnlineSessionInterface = Subsystem->GetSessionInterface();
-		if (OnlineSessionInterface.IsValid())
+		CreateSession();
+	}
+}
+
+void UWGameInstance::StartMatchmaking()
+{
+	UE_LOG(LogTemp, Display, TEXT("매치메이킹 시작!!!"));
+
+	FindSessions();
+}
+
+bool UWGameInstance::IsLoggedIn() const
+{
+	if (IOnlineIdentityPtr IdentityPtr = UWNetStatics::GetIdentityPtr())
+	{
+		return IdentityPtr->GetLoginStatus(0) == ELoginStatus::LoggedIn;
+	}
+
+	return false;
+}
+
+bool UWGameInstance::IsLoggingIn() const
+{
+	return LoggingInDelegatedHandle.IsValid();
+}
+
+void UWGameInstance::ClientAccountPortalLogin()
+{
+	ClinetLogin("AccountPortal", "", "");
+}
+
+void UWGameInstance::ClinetLogin(const FString& Type, const FString& Id, const FString& Token)
+{
+	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
+    
+	if (OSS)
+	{
+		// 2. 서브시스템의 진짜 이름을 로그로 찍습니다.
+		FString SubsystemName = OSS->GetSubsystemName().ToString();
+		UE_LOG(LogTemp, Warning, TEXT("#### 현재 활성화된 서브시스템: %s"), *SubsystemName);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("#### 온라인 서브시스템을 찾을 수 없습니다!"));
+	}
+	
+	if (IOnlineIdentityPtr IdentityPtr = UWNetStatics::GetIdentityPtr())
+	{
+		if (LoggingInDelegatedHandle.IsValid())
 		{
-			OnlineSessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &ThisClass::OnFindSessionComplete);
-			OnlineSessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &ThisClass::OnJoinSessionComplete);
-			
-			if (IsRunningDedicatedServer())
+			IdentityPtr->OnLoginCompleteDelegates->Remove(LoggingInDelegatedHandle);
+			LoggingInDelegatedHandle.Reset();
+		}
+		
+		LoggingInDelegatedHandle = IdentityPtr->OnLoginCompleteDelegates->AddUObject(this, &ThisClass::LoginCompleted);
+		
+		if (!IdentityPtr->Login(0, FOnlineAccountCredentials(Type, Id, Token)))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Login Failed Right Away!!!"));
+			if (LoggingInDelegatedHandle.IsValid())
 			{
-				IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-				if (OnlineSub)
+				IdentityPtr->OnLoginCompleteDelegates->Remove(LoggingInDelegatedHandle);
+				LoggingInDelegatedHandle.Reset();
+			}
+			OnLoginCompleted.Broadcast(false, "", "Login Failed Right Away!!!");
+		}
+	}
+}
+
+void UWGameInstance::LoginCompleted(int NumOfLocalPlayers, bool bWasSuccessful, const FUniqueNetId& UserId,
+	const FString& Error)
+{
+	if (IOnlineIdentityPtr IdentityPtr = UWNetStatics::GetIdentityPtr())
+	{
+		if (LoggingInDelegatedHandle.IsValid())
+		{
+			IdentityPtr->OnLoginCompleteDelegates->Remove(LoggingInDelegatedHandle);
+			LoggingInDelegatedHandle.Reset();
+		}
+
+		FString PlayerNickname = "";
+		if (bWasSuccessful)
+		{
+			PlayerNickname = IdentityPtr->GetPlayerNickname(UserId);
+			OnLoginCompleted.Broadcast(true, PlayerNickname, "");
+			UE_LOG(LogTemp, Warning, TEXT("Logged in successfully as : %s"), *PlayerNickname);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Login Failed : %s"), *Error);
+		}
+	}
+	else
+	{
+		OnLoginCompleted.Broadcast(false, "", "Can't find the Identity Pointer");
+	}
+}
+
+void UWGameInstance::PlayerJoined(const FUniqueNetIdRepl& UniqueId)
+{
+	if (WaitPlayerJoinTimeoutHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(WaitPlayerJoinTimeoutHandle);
+	}
+	
+	PlayerRecord.Add(UniqueId);
+}
+
+void UWGameInstance::PlayerLeft(const FUniqueNetIdRepl& UniqueId)
+{
+	PlayerRecord.Remove(UniqueId);
+	if (PlayerRecord.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player Left is empty"));
+		TerminateSessionServer();
+	}
+}
+
+void UWGameInstance::FindSessions()
+{
+	IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr();
+	if (SessionPtr)
+	{
+		SessionSearch = MakeShareable(new FOnlineSessionSearch());
+
+		SessionSearch->bIsLanQuery = false;
+		SessionSearch->MaxSearchResults = 10000;
+		SessionSearch->QuerySettings.Set(FName("PRESENCESEARCH"), true, EOnlineComparisonOp::Equals);
+
+		SessionPtr->OnFindSessionsCompleteDelegates.RemoveAll(this);
+		SessionPtr->OnFindSessionsCompleteDelegates.AddUObject(this, &ThisClass::OnFindeSessionsComplete);
+
+		SessionPtr->FindSessions(0, SessionSearch.ToSharedRef());
+	}
+}
+
+void UWGameInstance::OnFindeSessionsComplete(bool bWasSuccessful)
+{
+	IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr();
+	if (!SessionPtr) return;
+
+	SessionPtr->OnFindSessionsCompleteDelegates.RemoveAll(this);
+
+	if (bWasSuccessful && SessionSearch.IsValid())
+	{
+		int32 NumSessions = SessionSearch->SearchResults.Num();
+		UE_LOG(LogTemp, Warning, TEXT("Found %d Sessions"), NumSessions);
+
+		if (NumSessions > 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("방을 찾았습니다. 참가 시도 중..."));
+			JoinGameSession(SessionSearch->SearchResults[0]);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("참가할 방이 없습니다. 새로운 방을 생성합니다..."));
+			CreateSession();
+		}
+
+		OnMatchmakingCompleted.Broadcast(true);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("검색 실패!!! 네트워크 연결을 확인해주세요."));
+		OnMatchmakingCompleted.Broadcast(false);
+	}
+}
+
+void UWGameInstance::JoinGameSession(const FOnlineSessionSearchResult& SearchResult)
+{
+	IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr();
+	if (SessionPtr)
+	{
+		SessionPtr->OnJoinSessionCompleteDelegates.RemoveAll(this);
+		SessionPtr->OnJoinSessionCompleteDelegates.AddUObject(this, &ThisClass::OnJoinSessionComplete);
+
+		SessionPtr->JoinSession(0, NAME_GameSession, SearchResult);
+	}
+}
+
+void UWGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+	IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr();
+	if (SessionPtr)
+	{
+		SessionPtr->OnJoinSessionCompleteDelegates.RemoveAll(this);
+
+		if (Result == EOnJoinSessionCompleteResult::Success)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("세션 참가 성공!!!"));
+
+			FString ConnectInfo;
+			if (SessionPtr->GetResolvedConnectString(SessionName, ConnectInfo))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("서버에 접속 중... : %s"), *ConnectInfo);
+				APlayerController* PC = GetFirstLocalPlayerController();
+				if (PC)
 				{
-					IOnlineIdentityPtr IdentityInterface = OnlineSub->GetIdentityInterface();
-					if (IdentityInterface.IsValid())
-					{
-						ELoginStatus::Type Status = IdentityInterface->GetLoginStatus(0);
-						UE_LOG(LogTemp, Log, TEXT("서버 로그인 상태: %d"), (int32)Status);
-					}
+					PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
 				}
-                
-				UE_LOG(LogTemp, Log, TEXT("서버 시작! 세션 생성 시작"));
-			
-				// 델리게이트 연결
-				OnlineSessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &ThisClass::OnCreateSessionComplete);
-			
-				CreateGameSession();
 			}
 			else
 			{
-				UE_LOG(LogTemp, Log, TEXT("클라이언트로 게임 시작!"));
-				
-				IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-				if (OnlineSub)
-				{
-					IOnlineIdentityPtr IdentityInterface = OnlineSub->GetIdentityInterface();
-					if (IdentityInterface.IsValid())
-					{
-						ELoginStatus::Type Status = IdentityInterface->GetLoginStatus(0);
-						UE_LOG(LogTemp, Log, TEXT("클라 Steam 로그인 상태: %d"), (int32)Status);
-					}
-				}
+				UE_LOG(LogTemp, Warning, TEXT("참가 실패."));
 			}
 		}
+	}
+}
+
+void UWGameInstance::CreateSession()
+{
+	IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr();
+	if (SessionPtr)
+	{		
+		ServerSessionName = UWNetStatics::GetSessionNameStr();
+		if (ServerSessionName.IsEmpty()) 
+		{
+			ServerSessionName = TEXT("MyLocalSession"); // 기본 방 이름
+		}
+		FString SessionSearchId = UWNetStatics::GetSessionSearchIdStr();
+		if (SessionSearchId.IsEmpty())
+		{
+			SessionSearchId = TEXT("MyGameRoom"); // 기본 검색 ID
+		}
+		SessionServerPort = UWNetStatics::GetSessionPort();
+
+		FOnlineSessionSettings OnlineSessionSettings = UWNetStatics::GenerateOnlineSessionSettings(FName(ServerSessionName), SessionSearchId, SessionServerPort);
+		SessionPtr->OnCreateSessionCompleteDelegates.RemoveAll(this);
+		SessionPtr->OnCreateSessionCompleteDelegates.AddUObject(this, &ThisClass::OnSessionCreated);
+		if (!SessionPtr->CreateSession(0, FName(ServerSessionName), OnlineSessionSettings))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Session Creating Failed Right Away!!!"));
+			SessionPtr->OnCreateSessionCompleteDelegates.RemoveAll(this);
+			TerminateSessionServer();
+		}
+		
+		UE_LOG(LogTemp, Log, TEXT("#### Create Session With Name: %s, ID: %s, Port: %d"), *ServerSessionName, *SessionSearchId, SessionServerPort);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't find session ptr, Terminate Session Server"));
+		TerminateSessionServer();
+	}
+}
+
+void UWGameInstance::RequestCreateAndJoinSession(const FName& NewSessionName)
+{
+	FHttpRequestRef Request = FHttpModule::Get().CreateRequest();
+	FGuid SessionSearchId = FGuid::NewGuid();
+
+	FString CoordinatorURL = UWNetStatics::GetCoordinatorURL();
+
+	FString URL = FString::Printf(TEXT("%s/Sessions"), *CoordinatorURL);
+	UE_LOG(LogTemp, Warning, TEXT("Sending Request Session Creation to URL: %s"), *URL);
+
+	Request->SetURL(URL);
+	Request->SetVerb("POST");
+
+	Request->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+
+	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject);
+	JsonObject->SetStringField(UWNetStatics::GetSessionNameKey().ToString(), NewSessionName.ToString());
+	JsonObject->SetStringField(UWNetStatics::GetSessionSearchIdKey().ToString(), SessionSearchId.ToString());
+
+	FString RequestBody;
+	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&RequestBody);
+	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
+
+	Request->SetContentAsString(RequestBody);
+	Request->OnProcessRequestComplete().BindUObject(this, &ThisClass::SessionCreationRequestCompleted, SessionSearchId);
+
+	if (!Request->ProcessRequest())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Request ProcessRequest Failed"));
+	}
+}
+
+void UWGameInstance::SessionCreationRequestCompleted(FHttpRequestPtr Request, FHttpResponsePtr Response,
+	bool bConnectedSuccessfully, FGuid SessionSearchId)
+{
+	if (bConnectedSuccessfully)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Connection responded with connection was not successful!"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Connection to Coordinator Successfully!"));
+}
+
+void UWGameInstance::OnSessionCreated(FName SessionName, bool bSuccess)
+{
+	if (IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr())
+	{
+		SessionPtr->OnCreateSessionCompleteDelegates.RemoveAll(this);
+	}
+	
+	 if (bSuccess)
+	 {
+		UE_LOG(LogTemp, Warning, TEXT("세션 생성 성공!!!"));
+	 	GetWorld()->GetTimerManager().SetTimer(WaitPlayerJoinTimeoutHandle, this, &ThisClass::WiatPlayerJoinTimeOutReached, WaitPlayerJoinTimeOutDuration);
+	 	LoadLevelAndListen(LobbyLevel);
+	 }
+	 else
+	 {
+		UE_LOG(LogTemp, Warning, TEXT("Session Creation Failed"));
+		 TerminateSessionServer();
+	 }
+}
+
+void UWGameInstance::EndSessionComplete(FName SessionName, bool bSuccess)
+{
+	FGenericPlatformMisc::RequestExit(false);
+}
+
+void UWGameInstance::TerminateSessionServer()
+{
+	if (IOnlineSessionPtr SessionPtr = UWNetStatics::GetSessionPtr())
+	{
+		SessionPtr->OnEndSessionCompleteDelegates.RemoveAll(this);
+		SessionPtr->OnEndSessionCompleteDelegates.AddUObject(this, &ThisClass::EndSessionComplete);
+		if (!SessionPtr->EndSession(FName(ServerSessionName)))
+		{
+			FGenericPlatformMisc::RequestExit(false);
+		}
+	}
+	else
+	{
+		FGenericPlatformMisc::RequestExit(false);
+	}
+}
+
+void UWGameInstance::WiatPlayerJoinTimeOutReached()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Session Server shut down after %f seconds without player joining"), WaitPlayerJoinTimeOutDuration);
+	TerminateSessionServer();
+}
+
+void UWGameInstance::LoadLevelAndListen(TSoftObjectPtr<UWorld> Level)
+{
+	const FName LevelURL = FName(*FPackageName::ObjectPathToPackageName(Level.ToString()));
+
+	if (LevelURL != "")
+	{
+		FString TravelStr = FString::Printf(TEXT("%s?listen?port=%d"), *LevelURL.ToString(), SessionServerPort);
+		UE_LOG(LogTemp, Warning, TEXT("Server Traveling to : %s"), *(TravelStr));
+		GetWorld()->ServerTravel(TravelStr);
 	}
 }
 
@@ -102,236 +409,5 @@ void UWGameInstance::AssignPlayerNickName()
 		{
 			PlayerInfo.Value.PlayerNickName = FString::Printf(TEXT("%s팀 유저 %d"), PlayerInfo.Value.PlayerTeam == E_TeamID::Blue ? TEXT("블루") : TEXT("레드"), PlayerInfo.Value.PlayerTeamID + 1);
 		}
-	}
-}
-
-bool UWGameInstance::IsSessionFull()
-{
-	if (OnlineSessionInterface.IsValid())
-	{
-		FNamedOnlineSession* Session = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-		if (Session)
-		{
-			int32 CurrentPlayers = Session->RegisteredPlayers.Num();
-			int32 MaxPlayers = Session->SessionSettings.NumPublicConnections;
-
-			UE_LOG(LogTemp, Log, TEXT("현재 세션 인원 : %d / %d"), CurrentPlayers, MaxPlayers);
-			return CurrentPlayers >= MaxPlayers;
-		}
-	}
-	
-	return false;
-}
-
-void UWGameInstance::FindSessions()
-{
-	if (!OnlineSessionInterface.IsValid()) return;
-
-	SessionSearch = MakeShareable(new FOnlineSessionSearch());
-	SessionSearch->bIsLanQuery = true;
-	SessionSearch->MaxSearchResults = 10000;
-
-	SessionSearch->QuerySettings.Set(FName("AOSPortfolio"), FString("MyAOSGame"), EOnlineComparisonOp::Equals);
-	
-	OnlineSessionInterface->FindSessions(0, SessionSearch.ToSharedRef());
-	
-
-	UE_LOG(LogTemp, Log, TEXT("세션 검색 중..."));
-}
-
-void UWGameInstance::OnFindSessionComplete(bool Success)
-{
-	if (!OnlineSessionInterface.IsValid() || !Success)
-	{
-		UE_LOG(LogTemp, Log, TEXT("클라: 세션 찾기 실패"));
-		OnFindSessionFailed.Broadcast();
-		return;
-	}
-	    
-	for (auto Result : SessionSearch->SearchResults)
-	{
-		for (const TPair<FName, FOnlineSessionSetting>& SettingPair : Result.Session.SessionSettings.Settings)
-		{
-			const FName& Key = SettingPair.Key;
-			const FOnlineSessionSetting& Setting = SettingPair.Value;
-
-			UE_LOG(LogTemp, Log, TEXT("Key: %s, Value: %s"), *Key.ToString(), *Setting.Data.ToString());
-		}
-        
-		FString SessionValue;
-		Result.Session.SessionSettings.Get(FName("AOSPortfolio"), SessionValue);
-
-		if (SessionValue == FString("MyAOSGame"))
-		{
-			UE_LOG(LogTemp, Log, TEXT("찾은 세션 Key값에 대한 Value : %s"), *SessionValue);
-
-			OnFindSessionSuccess.Broadcast();
-			OnlineSessionInterface->JoinSession(0, NAME_GameSession, Result);
-			return;
-		}
-	}
-
-	OnFindSessionFailed.Broadcast();
-	UE_LOG(LogTemp, Log, TEXT("클라: 모든 검색 세션 경유"));
-}
-
-void UWGameInstance::StartJoinSession()
-{
-	IOnlineSubsystem* OSS = IOnlineSubsystem::Get();
-	if (OSS)
-	{
-		IOnlineSessionPtr Sessions = OSS->GetSessionInterface();
-		if (Sessions.IsValid() && Sessions->GetNamedSession(NAME_GameSession) != nullptr)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("남아 있던 클라 세션 파괴!"));
-			Sessions->DestroySession(NAME_GameSession);
-		}
-	}
-	
-	if (OnlineSessionInterface.IsValid())
-	{
-		FindSessions();
-	}
-}
-
-void UWGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
-{
-	if (Result == EOnJoinSessionCompleteResult::Success)
-	{
-		FString ConnectString;
-		if (OnlineSessionInterface->GetResolvedConnectString(SessionName, ConnectString))
-		{
-			APlayerController* PC = GetFirstLocalPlayerController();
-			if (PC)
-			{
-				UE_LOG(LogTemp, Log, TEXT("클라: 서버로 이동!"));
-				UE_LOG(LogTemp, Log, TEXT("%s"), *SessionName.ToString());
-				UE_LOG(LogTemp, Log, TEXT("%s"), *ConnectString);
-				PC->ClientTravel(ConnectString, ETravelType::TRAVEL_Absolute);
-			}
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("클라: 세션 Join 실패"));
-	}
-}
-
-void UWGameInstance::CreateGameSession()
-{
-	if (OnlineSessionInterface.IsValid())
-	{
-		auto ExistingSession = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-		if (ExistingSession != nullptr)
-		{
-			OnlineSessionInterface->DestroySession(NAME_GameSession); 
-		}
-		
-		SessionSettings = MakeShareable(new FOnlineSessionSettings());
-		SessionSettings->bIsLANMatch = true;
-		SessionSettings->NumPublicConnections = 1;
-		SessionSettings->bAllowJoinInProgress = true;
-		SessionSettings->bShouldAdvertise = true;
-		SessionSettings->bUseLobbiesIfAvailable = true;
-		SessionSettings->bIsDedicated = true;
-		SessionSettings->bUsesPresence = false;
-		SessionSettings->bAllowJoinViaPresence = false;
-
-		SessionSettings->Set(FName("AOSPortfolio"), FString("MyAOSGame"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 중..."));
-		OnlineSessionInterface->CreateSession(0, NAME_GameSession, *SessionSettings);
-	}
-	else
-	{
-		return;
-	}
-}
-
-void UWGameInstance::OnCreateSessionComplete(FName SessionName, bool Success)
-{
-	if (Success)
-	{
-		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 성공! : %s"), *SessionName.ToString());
-
-		FString MyValue;
-		if (SessionSettings->Get(FName("AOSPortfolio"), MyValue))
-		{
-			UE_LOG(LogTemp, Log, TEXT("서버에서 AOSPortfolio 등록 확인: %s"), *MyValue);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("서버에서 AOSPortfolio 값이 없다!"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("서버 : 세션 생성 실패!"));
-	}
-}
-
-void UWGameInstance::LeaveGameSession_Implementation()
-{
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
-	if (PC)
-	{
-		if (OutLobbyMap.IsNull()) return;
-        
-		FString MainMap = OutLobbyMap.GetAssetName();
-		UE_LOG(LogTemp, Log, TEXT("세션 떠나기 완료!"));
-		PC->ClientTravel(MainMap, ETravelType::TRAVEL_Absolute);
-	}
-
-	// 클라 세션 파괴
-	if (OnlineSessionInterface.IsValid())
-	{
-		FNamedOnlineSession* Session = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-		if (Session)
-		{
-			OnlineSessionInterface->DestroySession(NAME_GameSession);
-			UE_LOG(LogTemp, Log, TEXT("클라: 세션 Destroy 요청!"));
-		}
-	}
-}
-
-
-void UWGameInstance::DestroySession()
-{
-	if (OnlineSessionInterface.IsValid())
-	{
-		FNamedOnlineSession* Session = OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-		if (Session)
-		{
-			OnlineSessionInterface->DestroySession(NAME_GameSession);
-			UE_LOG(LogTemp, Log, TEXT("마지막 참가자라 세션을 파괴하면서 나감"));
-
-			bSessionLeaveBeforeCreateSession = false;
-			
-			if (GEngine)
-			{
-				GEngine->AddOnScreenDebugMessage(
-					-1,
-					10.f,
-					FColor::Cyan,
-					FString::Printf(TEXT("세션 파괴!")));
-			}
-		}
-		else
-		{
-			bSessionLeaveBeforeCreateSession = true;
-			UE_LOG(LogTemp, Log, TEXT("세션이 없으므로 파괴 요청 생략!"));
-		}
-	}
-}
-
-void UWGameInstance::OnDestroySessionComplete(FName SessionName, bool Success)
-{
-	if (Success)
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s 파괴 성공!"), *SessionName.ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("%s 파괴 실패!"), *SessionName.ToString());
 	}
 }
