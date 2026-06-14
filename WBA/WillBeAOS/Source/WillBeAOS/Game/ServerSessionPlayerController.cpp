@@ -1,25 +1,14 @@
 #include "Game/ServerSessionPlayerController.h"
-
 #include "LoadingScreenWidget.h"
-#include "OnlineSessionSettings.h"
-#include "WGameInstance.h"
 
 
-void AServerSessionPlayerController::ClientShowLoadingScreen_Implementation()
+void AServerSessionPlayerController::ClientShowLoadingScreen_Implementation(int32 MaxPlayers)
 {
 	MatchingWidget = CreateWidget<ULoadingScreenWidget>(this, MatchingWidgetClass);
 	if (MatchingWidget)
 	{
 		MatchingWidget->AddToViewport(0);
-		UWGameInstance* GI = Cast<UWGameInstance>(GetGameInstance());
-		/*if (GI && GI->OnlineSessionInterface.IsValid())
-		{
-			FNamedOnlineSession* Session = GI->OnlineSessionInterface->GetNamedSession(NAME_GameSession);
-			if (Session)
-			{
-				MatchingWidget->UpdateSessionMaxPlayers(Session->SessionSettings.NumPublicConnections);
-			}
-		}*/
+		MatchingWidget->UpdateSessionMaxPlayers(MaxPlayers);
 	}
 }
 
@@ -37,4 +26,9 @@ void AServerSessionPlayerController::Client_UpdateMatchingState_Implementation(b
 	{
 		MatchingWidget->bIsMatchFull = bIsFull;
 	}
+}
+
+void AServerSessionPlayerController::CloseDefaultLoadingScreen_Implementation()
+{
+	// 블루프린트에서 StopLoadingScreen() 실행
 }

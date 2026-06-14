@@ -14,21 +14,37 @@ class WILLBEAOS_API AGamePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+	virtual void BeginPlay() override;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> PossessActorClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> SpawnCameraClass;
+
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> MainLobbyLevel;
+
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> CharacterSelectLevel;
 	
 	// ---------------------------------------------
 	// 플레이 캐릭터 선택 페이즈
 	// ---------------------------------------------
 public:
+	void CheckCharacterSelectLevelLoaded();
+
+	UFUNCTION()
+	void OnLevelLoadedCallback();
+
+	UFUNCTION(Server, Reliable)
+	void Server_PossessControllerToCharacterSelect();
+	
 	void StartCharacterSelectPhase();
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> SelectCharacterWidgetClass;
 
 	UUserWidget* SelectCharacterWidget = nullptr;
-	
-	UFUNCTION(Client, Reliable)
-	void PlayerStateInfoReady();
 
 	UFUNCTION(Client, Reliable)
 	void UpdatePlayerWidget();
@@ -36,6 +52,12 @@ public:
 	// 클라 컨트롤러가 서버 컨트롤러에게 준비 됐다고 보고
 	UFUNCTION(Server, Reliable)
 	void Server_ControllerIsReady();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void CloseLoadingScreen();
+	
+	UFUNCTION(Client, Reliable)
+	void Client_StartSelectCharacter();
 
 	// 모든 플레이어가 캐릭터를 선택하지 않아 로비로 복귀
 	UFUNCTION(Client, Reliable)
@@ -162,5 +184,6 @@ protected:
 	void Server_SetPlayerReady(); // 서버에 준비 완료 신호 전송
 
 public:
-	virtual void OnPossess(APawn* InPawn) override;
+	virtual void OnPossess(APawn* NewPawn) override;
+	virtual void AcknowledgePossession(APawn* NewPawn) override;
 };

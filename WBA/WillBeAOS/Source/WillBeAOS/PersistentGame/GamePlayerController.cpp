@@ -6,13 +6,101 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Character/WCharacterBase.h"
 #include "Character/UI/SelectMapUserWidget.h"
-#include "Gimmick/Tower.h"
 #include "Kismet/GameplayStatics.h"
 #include "../Character/UI/TowerNexusHPWidget.h"
 #include "../Character/WCharacterHUD.h"
+#include "Game/WGameInstance.h"
 #include "Gimmick/PlayerSpawner.h"
 #include "Net/UnrealNetwork.h"
 
+
+void AGamePlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UE_LOG(LogTemp, Warning, TEXT("controller가 준비되었습니다."));
+
+	if (IsLocalPlayerController() && !(GIsEditor && GWorld->IsPlayInEditor()))
+	{
+		LoadingWidget = CreateWidget<UUserWidget>(this, ToInGameLoadingWidgetClass);
+		if (LoadingWidget)
+		{
+			LoadingWidget->AddToViewport(0);
+		}
+		
+		CheckCharacterSelectLevelLoaded();
+	}
+}
+
+void AGamePlayerController::CheckCharacterSelectLevelLoaded()
+{
+	FName LevelName = CharacterSelectLevel.ToSoftObjectPath().GetLongPackageFName();
+	ULevelStreaming* LevelStream = UGameplayStatics::GetStreamingLevel(this, LevelName);
+
+	if (LevelStream)
+	{
+		if (LevelStream->IsLevelVisible())
+		{
+			UE_LOG(LogTemp, Display, TEXT("레벨이 이미 로드되어 있습니다."));
+
+			FTimerHandle RenderWaitTimer;
+			GetWorld()->GetTimerManager().SetTimer(RenderWaitTimer, [this]()
+			{
+				Server_ControllerIsReady();
+				Server_PossessControllerToCharacterSelect();
+			}, 1.f, false);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Display, TEXT("레벨이 로드 중입니다. 로드 완료를 기다립니다..."));
+			LevelStream->OnLevelShown.AddUniqueDynamic(this, &AGamePlayerController::OnLevelLoadedCallback);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("서브레벨 [%s]을 찾을 수 없습니다!"), *LevelName.ToString());
+	}
+}
+
+void AGamePlayerController::OnLevelLoadedCallback()
+{
+	UE_LOG(LogTemp, Warning, TEXT("클라이언트 레벨 로드 완료!"));
+
+	FTimerHandle RenderWaitTimer;
+	GetWorld()->GetTimerManager().SetTimer(RenderWaitTimer, [this]()
+	{
+		Server_ControllerIsReady();
+		Server_PossessControllerToCharacterSelect();
+	}, 0.5f, false);
+}
+
+void AGamePlayerController::Server_PossessControllerToCharacterSelect_Implementation()
+{
+	TArray<AActor*> FoundActors;
+	AActor* PossessActor = UGameplayStatics::GetActorOfClass(this, PossessActorClass);
+
+	if (!PossessActor)
+	{
+		UE_LOG(LogTemp, Error, TEXT("캐릭터 선택 위치 액터를 찾을 수 없습니다!"));
+		return;
+	}
+	
+	FVector PossessLocation = PossessActor->GetActorLocation();
+	FRotator PossessRotation = PossessActor->GetActorRotation();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	APawn* NewCameraPawn = GetWorld()->SpawnActor<APawn>(SpawnCameraClass, PossessLocation, PossessRotation, SpawnParams);
+	if (NewCameraPawn)
+	{
+		// 4. 빙의 (서버에서 실행되므로 클라이언트로 자동 동기화됨)
+		this->SetViewTarget(NewCameraPawn);
+        
+		UE_LOG(LogTemp, Warning, TEXT("캐릭터 선택 카메라 빙의 완료: %s"), *NewCameraPawn->GetName());
+	}
+}
 
 void AGamePlayerController::StartCharacterSelectPhase()
 {
@@ -30,19 +118,6 @@ void AGamePlayerController::Server_ControllerIsReady_Implementation()
 	}
 }
 
-void AGamePlayerController::PlayerStateInfoReady_Implementation()
-{
-	SelectCharacterWidget = CreateWidget<UUserWidget>(this, SelectCharacterWidgetClass);
-	if (SelectCharacterWidget)
-	{
-		SelectCharacterWidget->AddToViewport(0);
-	}
-
-	// 위젯까지 띄운 후에 준비 클라 준비 완료됐다고 보고하기
-	UE_LOG(LogTemp, Warning, TEXT("클라이언트 준비 완료"));
-	Server_ControllerIsReady();
-}
-
 void AGamePlayerController::UpdatePlayerWidget_Implementation()
 {
 	USelectMapUserWidget* Widget = Cast<USelectMapUserWidget>(SelectCharacterWidget);
@@ -52,10 +127,39 @@ void AGamePlayerController::UpdatePlayerWidget_Implementation()
 	}
 }
 
+void AGamePlayerController::CloseLoadingScreen_Implementation()
+{
+	// 블루 프린트에서 StopLoadingScreen() 실행
+}
+
+void AGamePlayerController::Client_StartSelectCharacter_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("로딩창 지우기. 캐릭터 선택창으로 이동"));
+
+	if (LoadingWidget)
+	{
+		LoadingWidget->RemoveFromParent();
+	}
+	
+	CloseLoadingScreen();
+	
+	SelectCharacterWidget = CreateWidget<UUserWidget>(this, SelectCharacterWidgetClass);
+	if (SelectCharacterWidget)
+	{
+		SelectCharacterWidget->AddToViewport(0);
+	}
+}
+
 void AGamePlayerController::BackToLobby_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("클라이언트 게임 로비로 복귀 중..."));
-	ClientTravel("/Game/Portfolio/Menu/L_MainLobby", TRAVEL_Absolute);
+
+	if (MainLobbyLevel)
+	{
+		FString LevelName = MainLobbyLevel.ToSoftObjectPath().GetLongPackageName();
+		
+		ClientTravel(LevelName, TRAVEL_Absolute);
+	}
 }
 
 void AGamePlayerController::ToInGameLoading_Implementation()
@@ -413,19 +517,31 @@ void AGamePlayerController::Server_SetPlayerReady_Implementation()
 	}
 }
 
-void AGamePlayerController::OnPossess(APawn* InPawn)
+void AGamePlayerController::OnPossess(APawn* NewPawn)
 {
-	Super::OnPossess(InPawn);
+	Super::OnPossess(NewPawn);
 
-	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(InPawn);
+	UE_LOG(LogTemp, Warning, TEXT("OnPossess"))
+	
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(NewPawn);
 	if (PlayerChar)
 	{
+		PlayerChar->ServerSideInit();
 		if (AGamePlayerState* WPlayerState = GetPlayerState<AGamePlayerState>())
 			PlayerChar->TeamID = WPlayerState->InGamePlayerInfo.PlayerTeam;
 		UE_LOG(LogTemp, Log, TEXT("AWPlayerController::OnPossess %d"),PlayerChar->TeamID);
 	}
+}
 
-	/*OnPawnPossessed.Broadcast(InPawn);*/
+void AGamePlayerController::AcknowledgePossession(APawn* NewPawn)
+{
+	Super::AcknowledgePossession(NewPawn);
+	
+	AWCharacterBase* PlayerChar = Cast<AWCharacterBase>(NewPawn);
+	if (PlayerChar)
+	{
+		PlayerChar->ClientSideInit();
+	}
 }
 
 void AGamePlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

@@ -175,7 +175,7 @@ void AChar_Wraith::Tick(float DeltaTime)
 	}
 
 	// ESkill 장전중인가
-	if (bIsESkillUsing)
+	if (bIsESkillUsing && IsLocallyControlled())
 	{
 		UpdateTrajectory();
 	}
@@ -1156,7 +1156,6 @@ void AChar_Wraith::UpdateTrajectory()
 	PathParams.ProjectileRadius = 5.f;
 	PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
 	PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
-	//PathParams.ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
 	PathParams.ActorsToIgnore.Add(this);
 
 	FPredictProjectilePathResult PathResult;

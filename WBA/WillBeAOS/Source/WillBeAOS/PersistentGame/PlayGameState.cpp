@@ -9,6 +9,12 @@
 #include "Net/UnrealNetwork.h"
 
 
+APlayGameState::APlayGameState()
+{
+	bReplicates = true;
+	NetUpdateFrequency = 100.f;
+}
+
 void APlayGameState::SetGamePhase(EGamePhase NewGamePhase)
 {
 	if (HasAuthority() && CurrentGamePhase != NewGamePhase)
@@ -165,6 +171,16 @@ void APlayGameState::CheckPlayerIsReady(AGamePlayerController* PC)
 	if (ReadyPlayers.Num() == PlayerArray.Num())
 	{
 		UE_LOG(LogTemp, Log, TEXT("모든 플레이어 맵 로드 완료(SelectChar Map)"));
+
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+		{
+			AGamePlayerController* PlayerController = Cast<AGamePlayerController>(It->Get());
+			if (PlayerController)
+			{
+				PlayerController->Client_StartSelectCharacter();
+			}
+		}
+		
 		GetWorld()->GetTimerManager().SetTimer(CountdownTimerHandle, this, &ThisClass::UpdateCountdown, 1.f, true);
 	}
 }
@@ -366,7 +382,7 @@ void APlayGameState::TakeAllMatchPlayersInfo()
 	UE_LOG(LogTemp, Log, TEXT("게임 스테이트에 매치 플레이어 정보 넘기기 완료!(InGameMap)"));
 }
 
-void APlayGameState::CheckPlayerIsReady()
+void APlayGameState::SetGamePlayerReady()
 {
 	if (IsAllPlayerIsReady())
 	{
@@ -463,7 +479,7 @@ void APlayGameState::CheckAllPlayersReady()
 
 	if (bAllReady)
 	{
-		CheckPlayerIsReady();
+		SetGamePlayerReady();
 	}
 }
 

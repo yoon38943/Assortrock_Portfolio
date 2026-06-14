@@ -9,11 +9,27 @@ public class WillBeAOS : ModuleRules
 	public WillBeAOS(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicDefinitions.Add("_UNICODE");
+			PublicDefinitions.Add("UNICODE");
+		}
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Niagara", "OnlineSubsystem", "OnlineSubsystemEOS",
-			"OnlineSubsystemUtils", "Networking", "Http", "Json", "JsonUtilities" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Slate", "SlateCore", "Niagara", 
+			"OnlineSubsystem", "OnlineSubsystemEOS", "OnlineSubsystemUtils", "Networking", "HTTP", "Json", "JsonUtilities" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "AIModule", "NavigationSystem", "AnimGraphRuntime" });
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"AIModule", "NavigationSystem", "AnimGraphRuntime", "AsyncLoadingScreen",
+			"GameplayAbilities", "GameplayTasks", "GameplayTags"
+		});
+		
+		if (Target.Type == TargetType.Server && Target.Platform == UnrealTargetPlatform.Linux)
+		{
+			PrivateDependencyModuleNames.Add("GameLiftServerSDK");
+			PublicDefinitions.Add("WITH_GAMELIFT=1");
+		}
 
         // ���� ��� �߰�
         PublicIncludePaths.Add(ModuleDirectory);

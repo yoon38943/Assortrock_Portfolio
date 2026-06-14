@@ -16,11 +16,11 @@ struct FSkillDataTable : public FTableRowBase
 	FName SkillName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* SkillIcon;
+	UTexture2D* SkillIcon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float SkillCooldownTime;
+	float SkillCooldownTime = 0.f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UAnimMontage* SkillMontage;
+	UAnimMontage* SkillMontage = nullptr;
 };

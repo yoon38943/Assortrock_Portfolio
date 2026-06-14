@@ -92,7 +92,7 @@ void ABomb_ESkill::Explode(AActor* HitActor)
 		this,
 		BombDamage,
 		GetActorLocation(),
-		150.f,
+		200.f,
 		UDamageType::StaticClass(),
 		IgnoreActors,
 		this,

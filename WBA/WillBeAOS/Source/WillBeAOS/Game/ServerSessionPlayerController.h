@@ -16,8 +16,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> MatchingWidgetClass;
 
+	UFUNCTION(BlueprintNativeEvent)
+	void CloseDefaultLoadingScreen();
+	
 	UFUNCTION(Client, Reliable)
-	void ClientShowLoadingScreen();
+	void ClientShowLoadingScreen(int32 MaxPlayers);
 
 	UFUNCTION(Client, Reliable)
 	void Client_UpdatePlayerCount(int32 CurrentPlayers);

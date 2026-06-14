@@ -17,6 +17,8 @@ class WILLBEAOS_API APlayGameState : public AGameState
 {
 	GENERATED_BODY()
 
+	APlayGameState();
+
 public:
 	UPROPERTY(ReplicatedUsing = OnRep_ChangeGamePhase)
 	EGamePhase CurrentGamePhase = EGamePhase::StartGameWaiting;
@@ -59,7 +61,7 @@ public:
 
 	// 캐릭터 선택 카운트 다운
 	UPROPERTY(BlueprintReadOnly, Replicated)
-	float SelectCountdown = 10.0;
+	float SelectCountdown = 20.0;
 	FTimerHandle CountdownTimerHandle;
 
 	void UpdateCountdown();
@@ -113,7 +115,8 @@ public:	//GameInit 단계
 	UPROPERTY(EditAnywhere)
 	TArray<AGamePlayerController*> PlayerControllers;
 	
-	void CheckPlayerIsReady();
+	void SetGamePlayerReady();
+	
 	UFUNCTION(BlueprintCallable)
 	bool IsAllPlayerIsReady();
 	

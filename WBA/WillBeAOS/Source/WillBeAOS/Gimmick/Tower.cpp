@@ -13,7 +13,7 @@
 #include "Component/VisibleWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
-#include "PersistentGame/PlayGameMode.h"
+#include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
 
 ATower::ATower()
@@ -110,7 +110,7 @@ void ATower::BeginPlay()
 	}
 	else
 	{
-		S_InitHPPercentage();
+		//S_InitHPPercentage();
 		InitHPPercentage(CombatComp->Health, CombatComp->Max_Health);
 	}
 }
@@ -128,7 +128,7 @@ void ATower::Tick(float DeltaTime)
 
 	if (!HasAuthority() && OverlappingActors.IsValidIndex(0))
 	{
-		TargetOfActors = OverlappingActors[0];
+		TargetOfActors = OverlappingActors[0].Get();
 
 		// 타겟에 빔 조준
 		if (TargetOfActors)
@@ -137,7 +137,7 @@ void ATower::Tick(float DeltaTime)
 	
 	if (HasAuthority() && OverlappingActors.IsValidIndex(0))
 	{
-		TargetOfActors = OverlappingActors[0];
+		TargetOfActors = OverlappingActors[0].Get();
 		
 		// 공격 2초마다 한번씩 스폰
 		Delta += DeltaTime;
@@ -156,6 +156,33 @@ void ATower::Tick(float DeltaTime)
 			if (Projectile)
 			{
 				Projectile->SetHomingTarget();
+			}
+		}
+	}
+}
+
+void ATower::AddGoldToEnemyPlayer()
+{
+	if (!OverlappingActors.IsEmpty())
+	{
+		float CountOverlappingEnemyActors = 0;
+		TArray<TWeakObjectPtr<AAOSCharacter>> OverlappingEnemyActors;
+				
+		for (auto& OverlappingActor : OverlappingActors)
+		{
+			if (Cast<AWCharacterBase>(OverlappingActor.Get()) && OverlappingActor->TeamID != TeamID)
+			{
+				CountOverlappingEnemyActors++;
+				OverlappingEnemyActors.AddUnique(OverlappingActor);
+			}
+		}
+
+		for (auto& OverlappingEnemyActor : OverlappingEnemyActors)
+		{
+			AGamePlayerState* PlayerState = OverlappingEnemyActor->GetInstigatorController()->GetPlayerState<AGamePlayerState>();
+			if (PlayerState)
+			{
+				PlayerState->Server_AddGold(GetGoldReward() / CountOverlappingEnemyActors);
 			}
 		}
 	}
@@ -180,33 +207,6 @@ void ATower::BeamToTarget(FVector TargetLocation, AAOSCharacter* Target)
 	NiagaraComponent->SetVisibility(true);
 }
 
-/*void ATower::FindPlayerPC()
-{
-	if (HasAuthority()) return;
-	
-	PlayerController = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
-	FTimerHandle TowerPCTimerManager;
-	if (!PlayerController)
-	{
-		GetWorldTimerManager().SetTimer(TowerPCTimerManager, this, &ThisClass::FindPlayerPC, 0.2f, true);
-	}
-	else
-	{
-		if (TowerPCTimerManager.IsValid())
-			GetWorldTimerManager().ClearTimer(TowerPCTimerManager);
-	}
-}
-
-void ATower::FindPlayerPawn()
-{
-	if (HasAuthority()) return;
-	
-	if (PlayerController)
-	{
-		PlayerChar = Cast<AWCharacterBase>(PlayerController->GetPawn());
-	}
-}*/
-
 float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -229,20 +229,12 @@ float ATower::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 			
 			IsParticleSpawned = true;
 
-			APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
-			if (GameMode)
-			{
-				GameMode->OnObjectKilled(this, LastHitBy);
-			}
+			AddGoldToEnemyPlayer();
 		}
 
-		if ((CombatComp->GetIsDead()))
+		if (CombatComp->GetIsDead())
 		{
-			APlayGameMode* GameMode = Cast<APlayGameMode>(GetWorld()->GetAuthGameMode());
-			if (GameMode)
-			{
-				GameMode->OnObjectKilled(this, LastHitBy);
-			}
+			AddGoldToEnemyPlayer();
 
 			APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState());
 			if (GS)

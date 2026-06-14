@@ -26,8 +26,17 @@ class WILLBEAOS_API ALobbyGameMode : public AGameMode
 
 	bool IsServerTraveling = false;
 
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UWorld> NextInGameLevel;
+
+	FTimerHandle TravelTimerHandle;
+
 public:
+	void StartGame();
+	
 	void StartSelectCharacterMap();
+
+	void ExecuteServerTravel();
 
 	void AssignTeamToPlayer(APlayerController* Player);
 

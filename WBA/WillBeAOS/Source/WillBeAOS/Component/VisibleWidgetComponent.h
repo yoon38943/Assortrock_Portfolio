@@ -1,7 +1,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Character/WCharacterBase.h"
+#include "Character/UI/PlayerHPInfoBar.h"
 #include "Components/ActorComponent.h"
+#include "Interface/VisibleSightInterface.h"
 #include "VisibleWidgetComponent.generated.h"
 
 
@@ -18,16 +21,28 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	UPROPERTY(EditAnywhere)
-	UWidgetComponent* playerWidget;
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	IVisibleSightInterface* HpInterface;
+
+	UPROPERTY()
+	AWCharacterBase* OwnerCharacter;
+	
+	UPROPERTY()
+	UWidgetComponent* HealthBarWidget;
 
 	FTimerHandle visibleTimerHandle;
 	
 	void CheckVisibility();
 
+	UPROPERTY()
+	UPlayerHPInfoBar* CachedHealthBar;
+
+	void SetWidgetScaleByDistance();
+
 public:	
-	UPROPERTY(EditAnywhere)
-	float sightRadius = 4000.f;
+	UPROPERTY(EditAnywhere, category = "Distance")
+	float SightRadius = 3500.f;
 	
 	bool bIsVisibleEnemy = false;
 };

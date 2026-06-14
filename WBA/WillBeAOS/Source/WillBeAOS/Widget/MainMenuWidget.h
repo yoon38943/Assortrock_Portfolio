@@ -21,11 +21,14 @@ class WILLBEAOS_API UMainMenuWidget : public UUserWidget
 	UPROPERTY()
 	class UWGameInstance* GameInstance;
 
+	void BackToLoginMenu();
 	void SwitchToMainWidget();
 	
 public:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UButton* MatchingStartButton;
+
+	void ShowMainSwitcher();
 
 	UFUNCTION()
 	void MatchingStartButtonClicked();
@@ -39,10 +42,19 @@ public:
 	
 	UPROPERTY(meta=(BindWidget))
 	class UButton* LoginButton;
+
+	UPROPERTY(meta=(BindWidget))
+	UButton* ExitGameButton;
 	
 	UFUNCTION()
 	void LoginBtnClicked();
 
+	UFUNCTION()
+	void ExitGameBtnClicked();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void RemoveLoadingScreen();
+	
 	void LoginCompleted(bool bWasSuccessful, const FString& UserId, const FString& Error);
 
 	UFUNCTION(BlueprintNativeEvent)

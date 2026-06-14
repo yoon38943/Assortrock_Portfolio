@@ -13,6 +13,12 @@ class WILLBEAOS_API ULoadingScreenWidget : public UUserWidget
 	virtual void NativeConstruct() override;
 
 protected:
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UButton* BackButton;
+
+	UFUNCTION()
+	void BackButtonClicked();
+	
 	UPROPERTY(BlueprintReadWrite)
 	int32 SessionMaxPlayers;
 	UPROPERTY(BlueprintReadWrite)

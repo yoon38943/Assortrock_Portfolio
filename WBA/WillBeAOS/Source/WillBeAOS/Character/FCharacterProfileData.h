@@ -14,7 +14,7 @@ public:
 	FText CharacterName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UTexture2D* ProfileImage;
+	UTexture2D* ProfileImage = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<ACharacter> SelectCharacter;

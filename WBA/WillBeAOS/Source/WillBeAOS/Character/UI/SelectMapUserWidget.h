@@ -4,6 +4,8 @@
 #include "Blueprint/UserWidget.h"
 #include "SelectMapUserWidget.generated.h"
 
+enum class E_TeamID : uint8;
+
 UCLASS()
 class WILLBEAOS_API USelectMapUserWidget : public UUserWidget
 {
@@ -12,4 +14,7 @@ class WILLBEAOS_API USelectMapUserWidget : public UUserWidget
 public:
 	UFUNCTION(BlueprintNativeEvent)
 	void UpdateWidget();
+
+	UFUNCTION(BlueprintCallable)
+	void LogTeam(E_TeamID Team);
 };

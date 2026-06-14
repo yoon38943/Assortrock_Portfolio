@@ -1,5 +1,8 @@
 #include "PersistentGame/PlayGameMode.h"
 
+#if WITH_GAMELIFT
+#include "GameLiftServerSDK.h"
+#endif
 #include "GamePlayerController.h"
 #include "GamePlayerState.h"
 #include "NavigationSystem.h"
@@ -18,6 +21,20 @@
 APlayGameMode::APlayGameMode()
 {
 	GameSessionClass = AWGameSession::StaticClass();
+}
+
+void APlayGameMode::PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	Super::PreLogin(Options, Address, UniqueId, ErrorMessage);
+
+	// 이미 다른 이유로 접속이 거부되었다면 통과
+	if (!ErrorMessage.IsEmpty()) return;
+	
+	if (bIsGameEnded)
+	{
+		ErrorMessage = TEXT("이미 종료된 게임 세션입니다.");
+		UE_LOG(LogTemp, Warning, TEXT("종료된 게임에 난입 시도 발생 -> 접속 거부 처리 완료"));
+	}
 }
 
 void APlayGameMode::BeginPlay()
@@ -95,6 +112,8 @@ void APlayGameMode::StartSequentialLevelStreaming()
 void APlayGameMode::OnSequenceLevelLoaded()
 {
 	UE_LOG(LogTemp, Log, TEXT("%s 로드 완료"), *StreamingLevelSequence[CurrentStreamingLevelIndex]->GetName());
+
+	AGamePlayerController* PC = Cast<AGamePlayerController>(GetWorld()->GetFirstPlayerController());
 
 	CurrentStreamingLevelIndex++;
 	StartSequentialLevelStreaming(); // 다음 레벨 로드
@@ -383,7 +402,7 @@ void APlayGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 
 void APlayGameMode::OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer)
 {
-	if (!DestroyedObject || !Killer) { return; }
+	if (!DestroyedObject || !Killer) return;
 
 	AGamePlayerState* PlayerState = Killer->GetPlayerState<AGamePlayerState>();
 	if (PlayerState)
@@ -395,6 +414,14 @@ void APlayGameMode::OnObjectKilled(TScriptInterface<IDestructible> DestroyedObje
 void APlayGameMode::OnNexusDestroyed(E_TeamID LoseTeam)
 {
 	if (!HasAuthority()) return;
+
+	bIsGameEnded = true;
+
+#if WITH_GAMELIFT
+	// GameLift에게 더 이상 새로운 플레이어 세션을 만들지 못하게 막음.
+	FGameLiftServerSDKModule* GameLiftSdkModule = &FModuleManager::LoadModuleChecked<FGameLiftServerSDKModule>(FName("GameLiftServerSDK"));
+	GameLiftSdkModule->UpdatePlayerSessionCreationPolicy(EPlayerSessionCreationPolicy::DENY_ALL);
+#endif
 
 	APlayGameState* FGS = GetGameState<APlayGameState>();
 	if (FGS)

@@ -17,5 +17,4 @@ class WILLBEAOS_API IVisibleSightInterface
 
 public:
 	virtual class UWidgetComponent* GetHPWidgetComponent() const = 0;
-	
 };

@@ -1,8 +1,9 @@
 #include "WCharacterHUD.h"
 
+#include "AbilitySystemComponent.h"
 #include "Components/TextBlock.h"
 #include "PersistentGame/GamePlayerState.h"
-#include "Character/WCharacterBase.h"
+#include "AbilitySystemBlueprintLibrary.h"
 
 
 void UWCharacterHUD::NativeConstruct()
@@ -28,10 +29,71 @@ void UWCharacterHUD::NativeConstruct()
 	}
 
 	UpdateCharacter();
+
+	OwnerAbilitySystemComponent = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetOwningPlayerPawn());
+	if (OwnerAbilitySystemComponent)
+	{
+		SetAndBoundToGameplayAttribute(OwnerAbilitySystemComponent, UWAttributeSet::GetHealthAttribute(), UWAttributeSet::GetMaxHealthAttribute());
+	}
+}
+
+void UWCharacterHUD::SetAndBoundToGameplayAttribute(UAbilitySystemComponent* AbilitySystemComponent,
+	const FGameplayAttribute& Attribute, const FGameplayAttribute& MaxAttribute)
+{
+	if (AbilitySystemComponent)
+	{
+		bool bFound;
+		float Value = AbilitySystemComponent->GetGameplayAttributeValue(Attribute, bFound);
+		float MaxValue = AbilitySystemComponent->GetGameplayAttributeValue(MaxAttribute, bFound);
+		if (bFound)
+		{
+			SetValue(Value, MaxValue);
+		}
+
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, &ThisClass::ValueChanged);
+		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(MaxAttribute).AddUObject(this, &ThisClass::MaxValueChanged);
+	}
+}
+
+void UWCharacterHUD::SetValue(float NewValue, float NewMaxValue)
+{
+	CachedValue = NewValue;
+	CachedMaxValue = NewMaxValue;
+	
+	if (NewMaxValue == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Value Guage: %s, NewMaxValue can't be 0"), *GetName());
+		return;
+	}
+
+	float NewPercent = NewValue / NewMaxValue;
+	HealthBar->SetPercent(NewPercent);
+
+	FNumberFormattingOptions FormatOps = FNumberFormattingOptions().SetMaximumFractionalDigits(0);
+
+	CurrentHP->SetText(
+		FText::Format(
+			FTextFormat::FromString("{0} / {1}"),
+			FText::AsNumber(NewValue, &FormatOps),
+			FText::AsNumber(NewMaxValue, &FormatOps)
+		)
+	);
+}
+
+void UWCharacterHUD::ValueChanged(const FOnAttributeChangeData& Data)
+{
+	SetValue(Data.NewValue, CachedMaxValue);
+}
+
+void UWCharacterHUD::MaxValueChanged(const FOnAttributeChangeData& Data)
+{
+	SetValue(CachedValue, Data.NewValue);
 }
 
 void UWCharacterHUD::TryGetPlayerState()
 {
+	GetWorld()->GetTimerManager().ClearTimer(ErrorTimerHandle);
+	
 	APlayerController* PlayerController = GetOwningPlayer();
 	if (PlayerController)
 	{
@@ -49,7 +111,7 @@ void UWCharacterHUD::UpdateCharacter()
 {
 	// init 스탯
 	SetState();
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetState, 0.1f, true);
+	//GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::SetState, 0.1f, true);
 }
 
 float UWCharacterHUD::GetHealthBarPercentage()

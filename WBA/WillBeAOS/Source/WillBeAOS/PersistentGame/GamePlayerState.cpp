@@ -10,9 +10,18 @@
 #include "Net/UnrealNetwork.h"
 
 
+AGamePlayerState::AGamePlayerState()
+{
+	bReplicates = true;
+	NetUpdateFrequency = 100.f;
+}
+
 void AGamePlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 에디터에서 테스트할 때 사용
+	//StartInGamePhase();
 }
 
 void AGamePlayerState::StartCharacterSelectPhase()
@@ -20,39 +29,52 @@ void AGamePlayerState::StartCharacterSelectPhase()
 	Server_ReplicatePlayerInfo(GetPlayerName());
 }
 
-void AGamePlayerState::Client_PlayerInfoReady_Implementation()
+void AGamePlayerState::Client_PlayerInfoReady_Implementation(FPlayerInfoStruct PlayerInfoStruct)
 {
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetPlayerController());
-	if (PC)
+	UWGameInstance* GI = Cast<UWGameInstance>(GetGameInstance());
+	if (GI)
 	{
-		PC->PlayerStateInfoReady();
+		PlayerInfo = PlayerInfoStruct;
+		UE_LOG(LogTemp, Warning, TEXT("%s, %s"), *PlayerInfo.PlayerName, *PlayerInfo.PlayerNickName);
 	}
 }
 
 void AGamePlayerState::StartInGamePhase()
 {
 	bReplicates = true;
-    
-	// Initialize default values for the player's stats
-	MaxHP = 200;
-	SetHP(MaxHP);
-	CPower = 20;
-	CAdditionalHealth = 0;
-	CDefense = 5;
-	CCurrentExp = 0;
-	CExperience = 100;
-	CLevel = 0;
-	CAbLevel = 0;
-	CGold = 0;
-	
-	if (HasAuthority()) return;
 
-	Server_TakePlayerInfo(GetPlayerName());
+	if (HasAuthority())
+	{
+		// Initialize default values for the player's stats
+		MaxHP = 200;
+		SetHP(MaxHP);
+		CPower = 20;
+		CAdditionalHealth = 0;
+		CDefense = 5;
+		CCurrentExp = 0;
+		CExperience = 100;
+		CLevel = 0;
+		CAbLevel = 0;
+		CGold = 0;
+
+		ForceNetUpdate();
+	}
+	
+	if (!HasAuthority())
+	{
+		Server_TakePlayerInfo(GetPlayerName());
+	}
 }
 
 void AGamePlayerState::OnRep_AddSkillIcon()
 {
 	LoadSkillIcon.ExecuteIfBound();
+}
+
+void AGamePlayerState::OnRep_Health()
+{
+	UE_LOG(LogTemp, Warning, TEXT("OnRep_Health called! HP: %f, MaxHP: %f"), HP, MaxHP);
+	OnHealthChanged.Broadcast(GetHPPercentage());
 }
 
 float AGamePlayerState::GetHP()
@@ -67,12 +89,12 @@ float AGamePlayerState::GetMaxHP()
 
 void AGamePlayerState::SetHP(int32 NewHP)
 {
-	NM_SetHP(NewHP);
+	HP = NewHP;
 }
 
 float AGamePlayerState::GetHPPercentage()
 {
-	return HP / MaxHP;
+	return static_cast<float>(HP) / static_cast<float>(MaxHP);
 }
 
 void AGamePlayerState::C_SetSpeed_Implementation(float NewSpeed)
@@ -135,18 +157,7 @@ void AGamePlayerState::AddPower_Implementation(int32 Power)
 	C_SetPower(CPower);
 }
 
-void AGamePlayerState::NM_SetHP_Implementation(float NewHP)
-{
-	HP = NewHP;
-
-	AWCharacterBase* Char = Cast<AWCharacterBase>(GetPawn());
-	if (Char)
-	{
-		Char->SetHPPercentage();
-	}
-}
-
-void AGamePlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController* AttackPlayer)
+void AGamePlayerState::Server_ApplyDamage_Implementation(int32 Damage, AController* AttackPlayer, AActor* DamageCauser)
 {
 	if (HP > 0)
 	{
@@ -154,37 +165,45 @@ void AGamePlayerState::Server_ApplyDamage_Implementation(int32 Damage, AControll
 		const int32 FinalDamage = StaticCast<int32>(Damage * (1.f - Reduction));
 		if (HP > FinalDamage)
 		{
-			if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+			if (Cast<AWCharacterBase>(DamageCauser))
 			{
-				AGamePlayerState* AttackPS = AttackPlayer->GetPlayerState<AGamePlayerState>();
-				AttackPS->PlayerDamageAmount += FinalDamage;
+				if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+				{
+					AGamePlayerState* AttackPS = AttackPlayer->GetPlayerState<AGamePlayerState>();
+					AttackPS->PlayerDamageAmount += FinalDamage;
+				}
 			}
-            
-			NM_SetHP(HP -= FinalDamage);
+
+			HP -= FinalDamage;
 		}
 		else
 		{
-			if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+			if (Cast<AWCharacterBase>(DamageCauser))
 			{
-				AGamePlayerState* AttackPS = AttackPlayer->GetPlayerState<AGamePlayerState>();
-				AttackPS->PlayerDamageAmount += HP;
+				if (AttackPlayer && Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
+				{
+					AGamePlayerState* AttackPS = AttackPlayer->GetPlayerState<AGamePlayerState>();
+					AttackPS->PlayerDamageAmount += HP;
+				}
 			}
-            
-			NM_SetHP(0);
+
+			HP = 0;
 		}
         
 		if (HP <= 0)
 		{
 			AddDeathPoint(); // 데스 카운트 +1
+			
 			if (IsValid(AttackPlayer))
 			{
 				if (AWCharacterBase* AttackChar = Cast<AWCharacterBase>(AttackPlayer->GetPawn()))
 				{
-					AttackPlayer->GetPlayerState<AGamePlayerState>()->AddKillPoint();
-
+					AGamePlayerState* PS = AttackPlayer->GetPlayerState<AGamePlayerState>();
+					PS->AddKillPoint();
+					
 					if (APlayGameState* GS = Cast<APlayGameState>(GetWorld()->GetGameState()))
 					{
-						GS->CheckKilledTeam(AttackChar->CharacterTeam);
+						GS->CheckKilledTeam(PS->InGamePlayerInfo.PlayerTeam);
 					}
 				}                    
 			}
@@ -198,7 +217,7 @@ void AGamePlayerState::Server_ApplyDamage_Implementation(int32 Damage, AControll
 	}
 }
 
-bool AGamePlayerState::Server_ApplyDamage_Validate(int32 Damage, AController* AttackPlayer)
+bool AGamePlayerState::Server_ApplyDamage_Validate(int32 Damage, AController* AttackPlayer, AActor* DamageCauser)
 {
 	return Damage >= 0;
 }
@@ -262,7 +281,7 @@ void AGamePlayerState::Server_ReplicatePlayerInfo_Implementation(const FString& 
 		}
 	}
 
-	Client_PlayerInfoReady();
+	Client_PlayerInfoReady(PlayerInfo);
 }
 
 void AGamePlayerState::Server_ChooseTheCharacter_Implementation(TSubclassOf<APawn> ChosenChar, FName CharacterName)

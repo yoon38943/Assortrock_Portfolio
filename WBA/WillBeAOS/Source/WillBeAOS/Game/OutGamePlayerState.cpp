@@ -4,6 +4,6 @@ AOutGamePlayerState::AOutGamePlayerState()
 {
 	PlayerInfo.PlayerName = GetPlayerName();
 	PlayerInfo.PlayerTeam = E_TeamID::Neutral;
-	PlayerInfo.PlayerTeamID = NULL;
+	PlayerInfo.PlayerTeamID = -1;
 	PlayerInfo.SelectedCharacter = nullptr;
 }

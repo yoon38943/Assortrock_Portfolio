@@ -146,8 +146,6 @@ void UCombatComponent::CollisionTrace()
 			AActor* HitActor = LastHit.GetActor();
 			if (HitActor && !AlreadyHitActors.Contains(HitActor))
 			{
-				// 새로운 히트 오브젝트인 경우
-				UE_LOG(LogTemp, Log, TEXT("Hit: %s"), *LastHit.GetActor()->GetName());
 				// AlreadyHitActors에 추가
 				AlreadyHitActors.Add(HitActor);
 				//델리게이트 함수 호출

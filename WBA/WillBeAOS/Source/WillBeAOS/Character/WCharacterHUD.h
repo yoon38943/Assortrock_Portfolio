@@ -1,7 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AttributeSet.h"
 #include "Blueprint/UserWidget.h"
+#include "GAS/WAttributeSet.h"
 #include "PersistentGame/PlayGameState.h"
 #include "Skill/SkillType.h"
 #include "UI/SkillIconWidget.h"
@@ -15,7 +17,20 @@ UCLASS()
 class WILLBEAOS_API UWCharacterHUD : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+public: // GAS
+	void SetAndBoundToGameplayAttribute(UAbilitySystemComponent* AbilitySystemComponent, const FGameplayAttribute& Attribute, const FGameplayAttribute& MaxAttribute);
+
+	void SetValue(float NewValue, float NewMaxValue);
+
+	void ValueChanged(const FOnAttributeChangeData& Data);
+	void MaxValueChanged(const FOnAttributeChangeData& Data);
+
+	float CachedValue;
+	float CachedMaxValue;
+
+	UPROPERTY()
+	UAbilitySystemComponent* OwnerAbilitySystemComponent;
 public:
 
 	FTimerHandle TimerHandle;
@@ -32,7 +47,7 @@ public:
 	void UpdateCharacter();
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget), Category = "Health")
-	TObjectPtr<class UProgressBar>HealthBar;
+	TObjectPtr<UProgressBar>HealthBar;
 	UFUNCTION(BlueprintPure, Category = "Health")
 	float GetHealthBarPercentage();
 

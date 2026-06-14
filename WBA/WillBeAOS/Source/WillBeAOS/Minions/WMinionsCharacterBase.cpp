@@ -165,11 +165,9 @@ void AWMinionsCharacterBase::S_SetHpPercentage_Implementation(float Health, floa
 	SetHpPercentage(Health, MaxHealth);
 }
 
-void AWMinionsCharacterBase::SetHpPercentage_Implementation
-(float Health, float MaxHealth)
+void AWMinionsCharacterBase::SetHpPercentage_Implementation(float Health, float MaxHealth)
 {
-	auto Widget = Cast<UHealthBar>
-	(WidgetComponent->GetWidget());
+	auto Widget = Cast<UHealthBar>(WidgetComponent->GetWidget());
 
 	if (Widget != nullptr)
 	{
@@ -312,7 +310,7 @@ float AWMinionsCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const&
 	AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	if (!HasAuthority()) return NULL;
+	if (!HasAuthority()) return 0.f;
 	
 	LastHitBy = EventInstigator;	// 타격 캐릭터 저장
 	

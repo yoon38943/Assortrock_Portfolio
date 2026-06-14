@@ -11,7 +11,7 @@ class UCapsuleComponent;
 class USphereComponent;
 class UStaticMeshComponent;
 
-#define GOLDAMOUNT 50
+#define GOLDAMOUNT 150
 UCLASS()
 class WILLBEAOS_API ATower : public AAOSActor, public IVisibleSightInterface
 {
@@ -104,13 +104,15 @@ public://타격 관련
 	FName BoneName;
 	FHitResult OutHit;
 	// 오버랩된 액터들의 배열 ( 공격 대상들 )
-	UPROPERTY(BlueprintReadWrite, Category = SpawnActor, Replicated)
-	TArray<AAOSCharacter*> OverlappingActors = {};
+	UPROPERTY(Replicated)
+	TArray<TWeakObjectPtr<AAOSCharacter>> OverlappingActors = {};
 	ETraceTypeQuery TraceChannel;
 	TArray<AActor*> ActorsToIgnore;
 	TArray<FHitResult> OutHits;
 	
 	AController* LastHitBy;
+
+	void AddGoldToEnemyPlayer();
 
 public:
 	// ----- HP 위젯 조절 함수 -----

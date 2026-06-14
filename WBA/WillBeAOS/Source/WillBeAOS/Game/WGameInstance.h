@@ -3,16 +3,16 @@
 #include "CoreMinimal.h"
 #include "PlayerInfoStruct.h"
 #include "Engine/GameInstance.h"
-#include "Http.h"
 #include "OnlineSessionSettings.h"
-#include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "Interfaces/OnlineIdentityInterface.h"
 #include "WGameInstance.generated.h"
 
 enum class E_TeamID : uint8;
 
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnLoginCompleted, bool /*bWasSuccessful*/, const FString& /*UserId*/, const FString& /*Error*/);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMatchmakingCompleted, bool /*bWasSuccessful*/);
+DECLARE_MULTICAST_DELEGATE(FOnJoinSessionFailed);
 
 UCLASS()
 class WILLBEAOS_API UWGameInstance : public UGameInstance
@@ -21,26 +21,25 @@ class WILLBEAOS_API UWGameInstance : public UGameInstance
 
 	virtual void Init() override;
 
-public:
-	UFUNCTION(BlueprintCallable, Category = Matchmaking)
-	void StartMatchmaking();
+	int32 CurrentGameVersion = 100;
 
+public:
 	FOnMatchmakingCompleted OnMatchmakingCompleted;
+	FOnJoinSessionFailed OnJoinSessionFailed;
 	
 /******************************************/
 /*				  로그인                   */
 /******************************************/
 public:
+	void AutoLogin();
+	void ManualLogin();
 	bool IsLoggedIn() const;
-	bool IsLoggingIn() const;
-	void ClientAccountPortalLogin();
 
 	FOnLoginCompleted OnLoginCompleted;
 	
 private:
-	void ClinetLogin(const FString& Type, const FString& Id, const FString& Token);
+	void ClientLogin(const FString& LoginType);
 	void LoginCompleted(int NumOfLocalPlayers, bool bWasSuccessful, const FUniqueNetId& UserId, const FString& Error);
-	FDelegateHandle LoggingInDelegatedHandle;
 
 /******************************************/
 /*              세션 관리 부분              */
@@ -49,16 +48,48 @@ public:
 	void PlayerJoined(const FUniqueNetIdRepl& UniqueId);
 	void PlayerLeft(const FUniqueNetIdRepl& UniqueId);
 
-	void RequestCreateAndJoinSession(const FName& NewSessionName);
+	void StartGlobalSessionSearch();
+
+	void LeaveSession();
+	void LeaveSessionCompleted(FName SessionName, bool bWasSuccessful);
 
 private:
-	void SessionCreationRequestCompleted(FHttpRequestPtr Request, FHttpResponsePtr Response, bool bConnectedSuccessfully, FGuid SessionSearchId);
+	int32 FindSessionCount = 1;
 	
-	void FindSessions();
-	void OnFindeSessionsComplete(bool bWasSuccessful);
+	void StopAllSessionFindings();
+	void StopFindingCreatedSession();
+	void StopGlobalSessionSearch();
+	void StopGlobalSessionTimeOut();
+	void FindGlobalSessions();
+	void GlobalSessionSearchCompleted(bool bWasSuccessful);
 
-	void JoinGameSession(const FOnlineSessionSearchResult& SearchResult);
-	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+	FTimerHandle FindCreatedSessionTimerHandle;
+	FTimerHandle FindCreatedSessionTimeoutTimerHandle;
+	FTimerHandle GlobalSessionSearchTimerHandle;
+	FTimerHandle GlobalSessionSearchTimeoutTimerHandle;
+
+	TArray<FOnlineSessionSearchResult> SessionSearchResults;
+
+	int32 CurrentSessionIndex = 0;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Session Search")
+	float GlobalSessionSearchInterval = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Session Search")
+	float GlobalSessionTimeoutDuration = 15.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Session Search")
+	float FindCreatedSessionSearchInterval = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Session Search")
+	float FindCreatedSessionTimeoutDuration = 60.f;
+	
+	void JoinSessionWithSearchResult();
+	void OnDestroySessionCOmplete(FName SessionName, bool bWasSuccessful);
+	void InternalJoinSession();
+	void JoinSessionCompleted(FName SessionName, EOnJoinSessionCompleteResult::Type JoinResult, int Port);
+
+	TSharedPtr<class FOnlineSessionSearch> Sessionsearch;
 	
 	void CreateSession();
 	void OnSessionCreated(FName SessionName, bool bSuccess);

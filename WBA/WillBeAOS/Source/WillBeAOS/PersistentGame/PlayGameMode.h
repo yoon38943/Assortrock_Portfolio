@@ -16,11 +16,13 @@ class WILLBEAOS_API APlayGameMode : public AGameMode
 
 	APlayGameMode();
 
+	virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+
 	APlayGameState* GS;
 
 	virtual void BeginPlay() override;
 
-
+	bool bIsGameEnded = false;
 	
 	// ---------------------------------------------
 	// 플레이어 선택 게임 모드

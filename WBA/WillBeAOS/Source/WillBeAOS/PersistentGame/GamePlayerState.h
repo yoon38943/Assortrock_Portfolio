@@ -7,11 +7,14 @@
 
 DECLARE_DELEGATE(FLoadSkillIcon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillCooldown, FSkillUsedInfo, UsedSkillInfo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHealthChanged, float, NewHealth);
 
 UCLASS()
 class WILLBEAOS_API AGamePlayerState : public APlayerState
 {
 	GENERATED_BODY()
+
+	AGamePlayerState();
 
 protected:
 	virtual void BeginPlay() override;
@@ -26,7 +29,7 @@ public:
 	FPlayerInfoStruct PlayerInfo;
 
 	UFUNCTION(Client, Reliable)
-	void Client_PlayerInfoReady();
+	void Client_PlayerInfoReady(FPlayerInfoStruct PlayerInfoStruct);
 
 	UFUNCTION(BlueprintCallable, Server, Reliable)
 	void Server_ChooseTheCharacter(TSubclassOf<APawn> ChosenChar, FName CharacterName);
@@ -41,6 +44,8 @@ public:
 	// ---------------------------------------------
 	public:
 	void StartInGamePhase();
+
+	void AfterCharacterSpawn();
 	
 	UPROPERTY(Replicated)
 	bool bIsGameReady = false;
@@ -65,12 +70,17 @@ public:
 	class APlayerSpawner* PlayerSpawner;
 	
 protected:
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing=OnRep_Health)
 	float HP;
 	UPROPERTY(Replicated)
 	float MaxHP;
+
+	UFUNCTION()
+	void OnRep_Health();
 	
 public:
+	FOnHealthChanged OnHealthChanged;
+	
 	UFUNCTION(BlueprintPure)
 	float GetHP();
 	UFUNCTION(BlueprintPure)
@@ -78,9 +88,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetHP(int32 NewHP);
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_ApplyDamage(int32 Damage, AController* AttackPlayer);
-	UFUNCTION(NetMulticast, Reliable)
-	void NM_SetHP(float NewHP);
+	void Server_ApplyDamage(int32 Damage, AController* AttackPlayer, AActor* DamageCauser);
 
 	UFUNCTION(BlueprintPure)
 	float GetHPPercentage();

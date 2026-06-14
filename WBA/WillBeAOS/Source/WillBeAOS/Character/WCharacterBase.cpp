@@ -1,5 +1,6 @@
 #include "WCharacterBase.h"
-
+#include "GAS/WAbilitySystemComponent.h"
+#include "GAS/WAttributeSet.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -42,8 +43,12 @@ AWCharacterBase::AWCharacterBase()
 
 	HPInfoBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPInfoBar"));
 	HPInfoBarComponent->SetupAttachment(GetRootComponent());
-	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, 140.f));
-	HPInfoBarComponent->SetVisibility(false);
+	HPInfoBarComponent->SetRelativeLocation(FVector(0.f, 0.f, BaseWidgetHeight));
+	
+	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
+
+	WAbilitySystemComponent = CreateDefaultSubobject<UWAbilitySystemComponent>(TEXT("ASC"));
+	WAttributeSet = CreateDefaultSubobject<UWAttributeSet>(TEXT("AttributeSet"));
 
 	SetReplicateMovement(true);
 	bAlwaysRelevant = true;
@@ -54,6 +59,36 @@ AWCharacterBase::AWCharacterBase()
 	TurningInPlace = E_TurningInPlace::E_NotTurning;
 
 	bReplicates = true;
+}
+
+void AWCharacterBase::ServerSideInit()
+{
+	WAbilitySystemComponent->InitAbilityActorInfo(this, this);
+	WAbilitySystemComponent->ApplyInitialEffects();
+	WAbilitySystemComponent->GiveInitialAbilities();
+}
+
+void AWCharacterBase::ClientSideInit()
+{
+	WAbilitySystemComponent->InitAbilityActorInfo(this, this);
+}
+
+void AWCharacterBase::HandleAbilityInput(const FInputActionValue& Value, EWAbilityInputID InputID)
+{
+	bool bPressed = Value.Get<bool>();
+	if (bPressed)
+	{
+		GetAbilitySystemComponent()->AbilityLocalInputPressed((int32)InputID);
+	}
+	else
+	{
+		GetAbilitySystemComponent()->AbilityLocalInputReleased((int32)InputID);
+	}
+}
+
+UAbilitySystemComponent* AWCharacterBase::GetAbilitySystemComponent() const
+{
+	return WAbilitySystemComponent;
 }
 
 void AWCharacterBase::BeginPlay()
@@ -82,9 +117,9 @@ void AWCharacterBase::BeginPlay()
 	}
 	
 	if (!HasAuthority())
-	{
+	{		
+		ConfigureOverHeadHealthWidget();
 		SetHPInfoBarColor();
-		SetHPPercentage();
 		ShowNickName();
 	}
 	else
@@ -145,11 +180,15 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
-		EnhancedInputComponent->BindAction(IA_Behavior, ETriggerEvent::Started, this, &AWCharacterBase::Attack);
 		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::Input_QSkill);
 		EnhancedInputComponent->BindAction(IA_SkillE, ETriggerEvent::Started, this, &AWCharacterBase::Input_ESkill);
 		// R 스킬 자리
 		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
+
+		for (const TPair<EWAbilityInputID, UInputAction*>& InputActionPair : GameplayAbilityInputActions)
+		{
+			EnhancedInputComponent->BindAction(InputActionPair.Value, ETriggerEvent::Triggered, this, &AWCharacterBase::HandleAbilityInput, InputActionPair.Key);
+		}
 	}
 }
 
@@ -292,35 +331,22 @@ void AWCharacterBase::SetHPInfoBarColor()
 	}
 }
 
-void AWCharacterBase::SetHPPercentage()
+void AWCharacterBase::ConfigureOverHeadHealthWidget()
 {
-	AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
-	if (PS)
+	if (!HPInfoBarComponent)
 	{
-		if (UPlayerHPInfoBar* HPInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget()))
-		{
-			HPInfoBar->PlayerHPBar->SetPercent(PS->GetHPPercentage());
-			HPInfoBar->InvalidateLayoutAndVolatility();
-		}
-		else
-		{
-			// 위젯이 아직 안 붙었을 경우 딜레이 후 재시도
-			TWeakObjectPtr<AWCharacterBase> WeakThis(this);
-			
-			FTimerHandle Handle;
-			GetWorld()->GetTimerManager().SetTimer(Handle, [WeakThis]()
-			{
-				if (WeakThis.IsValid())
-				{
-					WeakThis->SetHPPercentage();
-				}
-			}, 0.1f, false);
-		}
+		return;
 	}
-	else
+
+	if (IsLocallyControlled())
 	{
-		FTimerHandle Handle;
-		GetWorld()->GetTimerManager().SetTimer(Handle, this, &ThisClass::SetHPPercentage, 0.1f, false);
+		HPInfoBarComponent->SetHiddenInGame(true);
+	}
+
+	UPlayerHPInfoBar* HpInfoBar = Cast<UPlayerHPInfoBar>(HPInfoBarComponent->GetWidget());
+	if (HpInfoBar)
+	{
+		HpInfoBar->SetAndBoundToGameplayAttribute(WAbilitySystemComponent, UWAttributeSet::GetHealthAttribute(), UWAttributeSet::GetMaxHealthAttribute());
 	}
 }
 
@@ -784,13 +810,24 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 	if (HasAuthority())
 	{
 		Server_EnterCombat();
-		
-		LastHitBy = EventInstigator;
+
+		FTimerHandle SaveDamagedByEnemyTimer;
+		if (Cast<AWCharacterBase>(DamageCauser))
+		{
+			LastHitBy = EventInstigator;
+
+			if (SaveDamagedByEnemyTimer.IsValid())
+			{
+				GetWorld()->GetTimerManager().ClearTimer(SaveDamagedByEnemyTimer);
+			}
+			
+			GetWorld()->GetTimerManager().SetTimer(SaveDamagedByEnemyTimer, this, &ThisClass::ClearLastHitBy, 7.f, false);
+		}
 		
 		AGamePlayerState* PS = Cast<AGamePlayerState>(GetPlayerState());
 		if (PS)
 		{
-			PS->Server_ApplyDamage(DamageAmount, EventInstigator);
+			PS->Server_ApplyDamage(DamageAmount, LastHitBy, DamageCauser);
 		}
 	}
 
@@ -801,6 +838,11 @@ float AWCharacterBase::TakeDamage(float DamageAmount, FDamageEvent const& Damage
 	}
 	
 	return DamageAmount;
+}
+
+void AWCharacterBase::ClearLastHitBy()
+{
+	LastHitBy = nullptr;
 }
 
 void AWCharacterBase::HandleGameEnd()

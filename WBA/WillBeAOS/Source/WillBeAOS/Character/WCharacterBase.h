@@ -7,12 +7,17 @@
 #include "Character/Skill/SkillType.h"
 #include "Interface/VisibleSightInterface.h"
 #include "Struct_Enum/WalkSpeedStruct.h"
+#include "AbilitySystemInterface.h"
+#include "GAS/UWGameplayAbilityTypes.h"
+#include "UI/PlayerHPInfoBar.h"
 #include "WCharacterBase.generated.h"
 
 #define PLAYERKILLGOLD 100
 
 class UWCharAnimInstance;
 class AGamePlayerState;
+class UWAbilitySystemComponent; // forward-declare our custom ASC
+class UWAttributeSet; // forward-declare our custom AttributeSet
 
 class AWolf;
 struct FInputActionValue;
@@ -21,11 +26,16 @@ class UAnimMontage;
 class UWidgetComponent;
 
 UCLASS()
-class WILLBEAOS_API AWCharacterBase : public AAOSCharacter, public ISkillInterface, public IVisibleSightInterface
+class WILLBEAOS_API AWCharacterBase : public AAOSCharacter, public ISkillInterface, public IVisibleSightInterface, public IAbilitySystemInterface
 {
 
 	GENERATED_BODY()
 
+public:
+	AWCharacterBase();
+	void ServerSideInit();
+	void ClientSideInit();
+	
 protected:
 	//컴포넌트
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"));
@@ -67,6 +77,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UWidgetComponent* HPInfoBarComponent;
 
+	float BaseWidgetHeight = 160.f;
+
 	UPROPERTY(EditAnywhere, Category = "Color")
 	FLinearColor BlueTeamHPColor;
 	UPROPERTY(EditAnywhere, Category = "Color")
@@ -79,21 +91,19 @@ public:
 	FTimerHandle HealingTimerHandle;
 	
 	virtual void SetHPInfoBarColor();
-	
-	virtual void SetHPPercentage();
+
+	void ConfigureOverHeadHealthWidget();
 
 	virtual void ShowNickName();
+
+	// 거리에 따라 위젯을 on/off 시키는 컴포넌트
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Vision")
+	class UVisibleWidgetComponent* SightComp;
 
 	// 플레이어 거리 계산
 	FTimerHandle CheckTimerHandle;
 
-	UPROPERTY(EditAnywhere, Category = "Distance")
-	float VisibleWidgetDistance = 5000.f;
-
-	virtual class UWidgetComponent* GetHPWidgetComponent() const override { return HPInfoBarComponent; }
-	
-public:
-	AWCharacterBase();
+	virtual UWidgetComponent* GetHPWidgetComponent() const override { return HPInfoBarComponent; }
 
 private: 
 	//입력 에셋
@@ -104,7 +114,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Move;
 	UPROPERTY(EditAnywhere, Category = Input)
-	UInputAction* IA_Behavior;
+	UInputAction* IA_BasicAttack;
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_SkillQ;
 	UPROPERTY(EditAnywhere, Category = Input)
@@ -112,6 +122,24 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	UInputAction* IA_Recall;
 
+	UPROPERTY(EditAnywhere, Category = Input)
+	TMap<EWAbilityInputID, UInputAction*> GameplayAbilityInputActions;
+
+	void HandleAbilityInput(const FInputActionValue& Value, EWAbilityInputID InputID);
+
+
+public:
+	/*********************************************************/
+	// GAS 시스템
+	/*********************************************************/
+
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+private:
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAbilitySystemComponent* WAbilitySystemComponent;
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAttributeSet* WAttributeSet;
+	
 public:
 	UWCharAnimInstance* Anim;
 	UPROPERTY(BlueprintReadWrite, Category = "Health")
@@ -229,6 +257,8 @@ public:
 	void HandleApplyPointDamage(FHitResult LastHit);//?�인???��?지�?줄시 ?�리게이?�로 ?�출???�수
 	UFUNCTION(BlueprintCallable, Category = "Combat")//TakeDamage ?�수 ?�버?�이??
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser);
+
+	void ClearLastHitBy();
 
 	//게임 엔딩
 	void HandleGameEnd();
