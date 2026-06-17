@@ -14,7 +14,7 @@ class WILLBEAOS_API UANS_Shinbi_BasicAttackTrace : public UAnimNotifyState
 	virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference) override;
 	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 
-	FVector PrevStartLocation;
+	FVector PrevMidLocation;
 
 	UPROPERTY()
 	TArray<TWeakObjectPtr<AActor>> HitActors;

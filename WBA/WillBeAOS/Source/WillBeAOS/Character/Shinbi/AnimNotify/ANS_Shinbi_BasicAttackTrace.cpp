@@ -7,19 +7,30 @@
 void UANS_Shinbi_BasicAttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                                float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
+	if (!MeshComp->GetOwner()->HasAuthority()) return;
+	
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration);
 
+	MeshComp->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
 	HitActors.Empty();
-	PrevStartLocation = MeshComp->GetSocketLocation("Sword_Root");
+
+	FVector CurrentStart = MeshComp->GetSocketLocation("Sword_Root");
+	FVector CurrentEnd = MeshComp->GetSocketLocation("Sword_Tip");
+	PrevMidLocation = (CurrentStart + CurrentEnd) * 0.5f;
 }
 
 void UANS_Shinbi_BasicAttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
 	float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
 {
+	if (!MeshComp->GetOwner()->HasAuthority()) return;
+
 	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime);
 
 	FVector CurrentStart = MeshComp->GetSocketLocation("Sword_Root");
 	FVector CurrentEnd = MeshComp->GetSocketLocation("Sword_Tip");
+
+	FVector CurrentMidLocation = (CurrentStart + CurrentEnd) * 0.5f;
 
 	FVector BladeDirection = (CurrentStart - CurrentEnd).GetSafeNormal();
 
@@ -36,12 +47,23 @@ void UANS_Shinbi_BasicAttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 
 	MeshComp->GetWorld()->SweepMultiByObjectType(
 		HitResults,
-		PrevStartLocation,
-		CurrentStart,
+		PrevMidLocation,
+		CurrentMidLocation,
 		BladeRotation,
 		ObjectParams,
-		FCollisionShape::MakeCapsule(15.f, BladeLength * 0.5f),
+		FCollisionShape::MakeCapsule(20.f, BladeLength * 0.5f),
 		Params);
+
+	/*DrawDebugCapsule(
+		MeshComp->GetWorld(),
+		CurrentMidLocation,
+		BladeLength * 0.5f,
+		15.f,
+		BladeRotation,
+		HitResults.Num() > 0 ? FColor::Red : FColor::Green,
+		false,
+		2.f
+	);*/
 
 	for (FHitResult Result : HitResults)
 	{
@@ -60,14 +82,17 @@ void UANS_Shinbi_BasicAttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 		FGameplayAbilityTargetData_SingleTargetHit* TargetData = new FGameplayAbilityTargetData_SingleTargetHit(Result);
 		EventData.TargetData.Add(TargetData);
 
+		UE_LOG(LogTemp, Warning, TEXT("SendGameplayEvent 호출 - 대상: %s"), *HitActor->GetName());
 		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(MeshComp->GetOwner(), EventTag, EventData);
 	}
 
-	PrevStartLocation = CurrentStart;
+	PrevMidLocation = CurrentMidLocation;
 }
 
 void UANS_Shinbi_BasicAttackTrace::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
+	if (!MeshComp->GetOwner()->HasAuthority()) return;
+
 	Super::NotifyEnd(MeshComp, Animation);
 
 	HitActors.Empty();
