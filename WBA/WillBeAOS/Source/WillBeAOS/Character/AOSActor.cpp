@@ -5,7 +5,6 @@
 AAOSActor::AAOSActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
 void AAOSActor::BeginPlay()

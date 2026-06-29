@@ -125,7 +125,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	TMap<EWAbilityInputID, UInputAction*> GameplayAbilityInputActions;
 
-	void HandleAbilityInput(const FInputActionValue& Value, EWAbilityInputID InputID);
+	void HandleAbilityInputPressed(const FInputActionValue& Value, EWAbilityInputID InputID);
+	void HandleAbilityInputReleased(const FInputActionValue& Value, EWAbilityInputID InputID);
 
 
 public:
@@ -139,6 +140,16 @@ private:
 	UWAbilitySystemComponent* WAbilitySystemComponent;
 	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
 	UWAttributeSet* WAttributeSet;
+
+public:
+	/*********************************************************/
+	// Skill Ability / 스킬 어빌리티
+	/*********************************************************/
+
+	UPROPERTY()
+	UDecalComponent* SkillForwardDecal;
+
+	void MoveDecalToCameraForward();
 	
 public:
 	UWCharAnimInstance* Anim;

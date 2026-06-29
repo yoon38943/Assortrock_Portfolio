@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Destructible.h"
 #include "GameFramework/Character.h"
+#include "Interface/GetInfoInterface.h"
 #include "AOSCharacter.generated.h"
 
 UCLASS()
-class WILLBEAOS_API AAOSCharacter : public ACharacter, public IDestructible
+class WILLBEAOS_API AAOSCharacter : public ACharacter, public IGetInfoInterface
 {
 	GENERATED_BODY()
 

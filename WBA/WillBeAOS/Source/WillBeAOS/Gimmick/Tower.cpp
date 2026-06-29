@@ -31,6 +31,9 @@ ATower::ATower()
 	OverlapTrigger = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapTrigger"));
 	OverlapTrigger->SetupAttachment(GetRootComponent());
 
+	HitCollision = CreateDefaultSubobject<UCapsuleComponent>("HitCollision");
+	HitCollision->SetupAttachment(GetRootComponent());
+
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(GetRootComponent());
 
@@ -57,6 +60,8 @@ ATower::ATower()
 	SetGoldReward(GOLDAMOUNT);
 
 	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
+
+	StaticMesh->SetReceivesDecals(false);
 }
 
 void ATower::InitHPPercentage(float Health, float MaxHealth)

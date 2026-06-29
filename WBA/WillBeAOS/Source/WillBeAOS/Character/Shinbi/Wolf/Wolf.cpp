@@ -1,73 +1,34 @@
 #include "Character/Shinbi/Wolf/Wolf.h"
 
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Character/AOSActor.h"
-#include "Character/AOSCharacter.h"
+#include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
-#include "PersistentGame/GamePlayerState.h"
+#include "Particles/ParticleSystemComponent.h"
 
 
 AWolf::AWolf()
 {
+	TrailEffect = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("TrailEffect"));
+	TrailEffect->SetupAttachment(RootComponent);
+	
 	PrimaryActorTick.bCanEverTick = true;
-	bReplicates = true;
-
-	RootCollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("RootComponent"));
-	RootComponent = RootCollisionComponent;
-
-	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
-	SkeletalMeshComponent->SetupAttachment(RootCollisionComponent);
-	
-	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionComponent"));
-	CollisionComponent->SetupAttachment(SkeletalMeshComponent);
-	CollisionComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	CollisionComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Overlap);
-	CollisionComponent->SetGenerateOverlapEvents(true);
-	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AWolf::OnOverlapBegin);
-	
-	bAlwaysRelevant = true;
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
 }
 
-void AWolf::BeginPlay()
+void AWolf::LaunchWolf(AActor* InInstigator)
 {
-	Super::BeginPlay();
-}
+	WolfInstigator = InInstigator;
+    
+	PrevLocation = GetActorLocation();
 
-void AWolf::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{	
-	if (!HasAuthority()) return;
-	if (OtherActor == GetOwner()) return;
-	AAOSActor* HitActor = Cast<AAOSActor>(OtherActor);
-	AAOSCharacter* HitChar = Cast<AAOSCharacter>(OtherActor);
-	if (!HitActor && !HitChar) return;
-	if ((HitActor && HitActor->TeamID == TeamID) || (HitChar && HitChar->TeamID == TeamID)) return;
-	
-	if (HitActors.Contains(OtherActor)) return;
-	HitActors.AddUnique(OtherActor);
-	
-	float Damage = 0;
-	AController* Ctrl = Cast<AController>(GetOwner()->GetInstigatorController());
-	if (Ctrl)
+	if (DashMontage)
 	{
-		AGamePlayerState* PS = Ctrl->GetPlayerState<AGamePlayerState>();
-		if (PS)
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance)
 		{
-			Damage = PS->CPower * 2.f;
+			AnimInstance->Montage_Play(DashMontage);
 		}
-	}
-	
-	if (Damage > 0)
-	{
-		UGameplayStatics::ApplyPointDamage(
-			OtherActor,
-			Damage,
-			GetActorForwardVector(),
-			SweepResult,
-			GetInstigatorController(),
-			this,
-			UDamageType::StaticClass()
-			);
 	}
 }
 
@@ -75,6 +36,163 @@ void AWolf::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector SocketLocation = SkeletalMeshComponent->GetSocketLocation(FName("j_spine_3"));
-	CollisionComponent->SetWorldLocation(SocketLocation);
+	if (bIsDisappear) return;
+
+	DashToForward(DeltaTime);
+	
+	if (HasAuthority())
+	{
+		CheckPathHit();
+	}
+}
+
+void AWolf::DashToForward(float DeltaTime)
+{
+	if (TotalMoveDistance >= DashEndDistance)
+	{
+		Explosion(GetActorLocation());
+		return;
+	}
+	
+	TotalMoveDistance += DashSpeed * DeltaTime;
+	FVector NewLocation = GetActorLocation() + (GetActorForwardVector() * DashSpeed * DeltaTime);
+	SetActorLocation(NewLocation);
+}
+
+void AWolf::Explosion(const FVector& ImpactLocation)
+{
+	Disappear();
+
+	Explode_Particle_Multicast(ImpactLocation);
+
+	TArray<FOverlapResult> Overlaps;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(WolfInstigator);
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+	GetWorld()->OverlapMultiByObjectType(
+		Overlaps,
+		ImpactLocation,
+		FQuat::Identity,
+		ObjectParams,
+		FCollisionShape::MakeSphere(ExplosionRadius),
+		Params
+	);
+
+	//DrawDebugSphere(GetWorld(), GetActorLocation(), ExplosionRadius, 16, Overlaps.Num() > 0 ? FColor::Green : FColor::Red, false, 3.f);
+
+	for (const auto& Overlap : Overlaps)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *Overlap.GetActor()->GetName());
+		AActor* HitActor = Overlap.GetActor();
+		if (!HitActor) continue;
+
+		IGetInfoInterface* TargetTeam = Cast<IGetInfoInterface>(HitActor);
+		IGetInfoInterface* SourceTeam = Cast<IGetInfoInterface>(GetInstigator());
+
+		if (!TargetTeam || !SourceTeam) continue;
+		if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
+
+		FGameplayEventData EventData;
+		EventData.Target = HitActor;
+		EventData.Instigator = WolfInstigator;
+
+		FGameplayAbilityTargetData_ActorArray* TargetData = new FGameplayAbilityTargetData_ActorArray;
+		TargetData->TargetActorArray.Add(HitActor);
+		EventData.TargetData.Add(TargetData);
+
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), EventDamageTag, EventData);
+	}
+}
+
+void AWolf::Explode_Particle_Multicast_Implementation(const FVector& ImpactLocation)
+{
+	UGameplayStatics::SpawnEmitterAtLocation(
+		GetWorld(),
+		ExplodeParticle,
+		ImpactLocation,
+		GetActorRotation()
+	);
+}
+
+void AWolf::Disappear_Implementation()
+{
+	bIsDisappear = true;
+	
+	SetActorTickEnabled(false);
+	SetActorEnableCollision(false);
+
+	GetMesh()->SetVisibility(false);
+	
+	if (TrailEffect)
+		TrailEffect->DeactivateSystem();
+
+	SetLifeSpan(3.f);
+}
+
+void AWolf::CheckPathHit()
+{	
+	FVector CurrentLocation = GetActorLocation();
+
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredActor(WolfInstigator);
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_GameTraceChannel1);
+
+	GetWorld()->SweepMultiByObjectType(
+		HitResults,
+		PrevLocation,
+		CurrentLocation,
+		FQuat::Identity,
+		ObjectParams,
+		FCollisionShape::MakeBox(FVector(70, 20, 40)),
+		Params
+	);
+
+	/*DrawDebugBox(
+		GetWorld(),
+		CurrentLocation,
+		FVector(70, 20, 40),
+		GetActorForwardVector().ToOrientationQuat(),
+		HitResults.Num() > 0 ? FColor::Green : FColor::Red,
+		false,
+		5.0f
+	);*/
+
+	for (FHitResult HitResult : HitResults)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (!HitActor || HitActors.Contains(HitActor)) continue;
+
+		IGetInfoInterface* TargetTeam = Cast<IGetInfoInterface>(HitActor);
+		IGetInfoInterface* SourceTeam = Cast<IGetInfoInterface>(GetInstigator());
+
+		if (!TargetTeam || !SourceTeam) continue;
+		if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
+
+		HitActors.Add(HitActor);
+
+		if (Cast<AWCharacterBase>(HitActor) || Cast<AAOSActor>(HitActor))
+		{
+			Explosion(HitResult.ImpactPoint);
+			return;
+		}
+
+		FGameplayEventData EventData;
+		EventData.Target = HitActor;
+		EventData.Instigator = WolfInstigator;
+
+		FGameplayAbilityTargetData_SingleTargetHit* TargetData = new FGameplayAbilityTargetData_SingleTargetHit(HitResult);
+		EventData.TargetData.Add(TargetData);
+
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), EventDamageTag, EventData);
+	}
+
+	PrevLocation = CurrentLocation;
 }

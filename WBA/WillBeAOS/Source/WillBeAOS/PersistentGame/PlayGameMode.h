@@ -4,7 +4,7 @@
 #include "GameFramework/GameMode.h"
 #include "PlayGameMode.generated.h"
 
-class IDestructible;
+class IGetInfoInterface;
 enum class E_TeamID : uint8;
 class AGamePlayerState;
 class APlayGameState;
@@ -116,7 +116,7 @@ public:
 
 	// 몬스터 사망시 이벤트
 	UFUNCTION()
-	void OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer);
+	void OnObjectKilled(TScriptInterface<IGetInfoInterface> DestroyedObject, AController* Killer);
 
 	// 넥서스 파괴
 	void OnNexusDestroyed(E_TeamID LoseTeam);

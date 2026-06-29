@@ -23,6 +23,8 @@ ANexus::ANexus()
 	
 	bReplicates = true;
 	bAlwaysRelevant = true;
+
+	NexusMeshComponent->SetReceivesDecals(false);
 }
 
 void ANexus::DestroyNexus()

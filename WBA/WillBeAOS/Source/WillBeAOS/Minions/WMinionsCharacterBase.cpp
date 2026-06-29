@@ -10,6 +10,8 @@
 #include "HealthBar.h"
 #include "Character/WCharacterBase.h"
 #include "Component/VisibleWidgetComponent.h"
+#include "GAS/WAbilitySystemComponent.h"
+#include "GAS/WAttributeSet.h"
 #include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/PlayGameMode.h"
@@ -27,11 +29,19 @@ AWMinionsCharacterBase::AWMinionsCharacterBase()
 	WidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 200.f));
 	WidgetComponent->SetVisibility(false);
 
+	WAbilitySystemComponent = CreateDefaultSubobject<UWAbilitySystemComponent>(TEXT("ASC"));
+	WAttributeSet = CreateDefaultSubobject<UWAttributeSet>(TEXT("AttributeSet"));
+
 	bAlwaysRelevant = true;
 	
 	SetGoldReward(MINIONKILLGOLD);
 
 	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
+}
+
+UAbilitySystemComponent* AWMinionsCharacterBase::GetAbilitySystemComponent() const
+{
+	return WAbilitySystemComponent;
 }
 
 void AWMinionsCharacterBase::HandleGameEnd()
@@ -48,6 +58,8 @@ void AWMinionsCharacterBase::HandleGameEnd()
 void AWMinionsCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	WAbilitySystemComponent->InitAbilityActorInfo(this, this);
 	
 	CombatComponent->DelegateDead.BindUObject(this, &ThisClass::Dead);
 	//HandleApplyPointDamage 멀티델리게이트 바인딩

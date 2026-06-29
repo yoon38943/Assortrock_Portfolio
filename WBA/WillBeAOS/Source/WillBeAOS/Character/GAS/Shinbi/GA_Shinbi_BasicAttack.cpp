@@ -12,6 +12,8 @@ void UGA_Shinbi_BasicAttack::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
 	const FGameplayEventData* TriggerEventData)
 {
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	
 	if (!K2_CommitAbility())
 	{
 		K2_EndAbility();
@@ -108,7 +110,6 @@ void UGA_Shinbi_BasicAttack::ComboChangedEventReceived(FGameplayEventData Data)
 
 void UGA_Shinbi_BasicAttack::DoDamage(FGameplayEventData Data)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DoDamage"));
 	AActor* HitActor = const_cast<AActor*>(Data.Target.Get());
 	if (!HitActor) return;
 

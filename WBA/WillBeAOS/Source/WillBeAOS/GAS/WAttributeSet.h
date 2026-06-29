@@ -18,6 +18,7 @@ class WILLBEAOS_API UWAttributeSet : public UAttributeSet
 public:
 	ATTRIBUTE_ACCESSORS(UWAttributeSet, Health)	
 	ATTRIBUTE_ACCESSORS(UWAttributeSet, MaxHealth)
+	ATTRIBUTE_ACCESSORS(UWAttributeSet, AttackStat)
 	virtual void GetLifetimeReplicatedProps( TArray< class FLifetimeProperty > & OutLifetimeProps ) const override;
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
@@ -30,9 +31,15 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_MaxHealth)
 	FGameplayAttributeData MaxHealth;
 
+	UPROPERTY(ReplicatedUsing = OnRep_AttackStat)
+	FGameplayAttributeData AttackStat;
+
 	UFUNCTION()
 	void OnRep_Health(const FGameplayAttributeData& OldValue);
 
 	UFUNCTION()
 	void OnRep_MaxHealth(const FGameplayAttributeData& OldValue);
+
+	UFUNCTION()
+	void OnRep_AttackStat(const FGameplayAttributeData& OldValue);
 };

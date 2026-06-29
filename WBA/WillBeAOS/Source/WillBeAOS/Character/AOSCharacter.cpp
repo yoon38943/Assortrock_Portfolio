@@ -1,4 +1,6 @@
 #include "AOSCharacter.h"
+
+#include "Components/CapsuleComponent.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -6,6 +8,8 @@ AAOSCharacter::AAOSCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	GetCapsuleComponent()->SetReceivesDecals(false);
+	GetMesh()->SetReceivesDecals(false);
 }
 
 void AAOSCharacter::BeginPlay()

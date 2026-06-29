@@ -78,6 +78,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	USphereComponent* OverlapTrigger;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UCapsuleComponent* HitCollision;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* StaticMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* AttackStartPoint;

@@ -11,4 +11,6 @@ class WILLBEAOS_API UWGameplayAbility : public UGameplayAbility
 	
 protected:
 	class UAnimInstance* GetOwnerAnimInstance() const;
+
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 };

@@ -1,12 +1,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "Character/AOSCharacter.h"
 #include "Interface/VisibleSightInterface.h"
 #include "WMinionsCharacterBase.generated.h"
 
 #define MINIONKILLGOLD 30
 
+class UAbilitySystemComponent;
+class UWAttributeSet;
+class UWAbilitySystemComponent;
 class AGamePlayerController;
 class AWCharacterBase;
 class UAnimMontage;
@@ -17,7 +21,7 @@ class UProgressBar;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEnemyDetectedSignature, AActor*, DetectedActor);
 
 UCLASS()
-class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter, public IVisibleSightInterface
+class WILLBEAOS_API AWMinionsCharacterBase : public AAOSCharacter, public IVisibleSightInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -31,6 +35,17 @@ public:
 
 public:
 	AWMinionsCharacterBase();
+	
+	/*********************************************************/
+	// GAS 시스템
+	/*********************************************************/
+
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+private:
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAbilitySystemComponent* WAbilitySystemComponent;
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAttributeSet* WAttributeSet;
 
 public:
 	// ----- HP 위젯 조절 함수 -----

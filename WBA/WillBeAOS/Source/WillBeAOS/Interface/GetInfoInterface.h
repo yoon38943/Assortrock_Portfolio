@@ -3,15 +3,15 @@
 #include "CoreMinimal.h"
 #include "WEnumFile.h"
 #include "UObject/Interface.h"
-#include "Destructible.generated.h"
+#include "GetInfoInterface.generated.h"
 
 UINTERFACE(MinimalAPI)
-class UDestructible : public UInterface
+class UGetInfoInterface : public UInterface
 {
 	GENERATED_BODY()
 };
 
-class WILLBEAOS_API IDestructible
+class WILLBEAOS_API IGetInfoInterface
 {
 	GENERATED_BODY()
 

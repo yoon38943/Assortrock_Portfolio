@@ -400,7 +400,7 @@ void APlayGameMode::RespawnPlayer(APawn* Player, AController* PlayerController)
 	}
 }
 
-void APlayGameMode::OnObjectKilled(TScriptInterface<IDestructible> DestroyedObject, AController* Killer)
+void APlayGameMode::OnObjectKilled(TScriptInterface<IGetInfoInterface> DestroyedObject, AController* Killer)
 {
 	if (!DestroyedObject || !Killer) return;
 

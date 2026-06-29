@@ -12,12 +12,18 @@ void UWAttributeSet::OnRep_MaxHealth(const FGameplayAttributeData& OldValue)
 	GAMEPLAYATTRIBUTE_REPNOTIFY(UWAttributeSet, MaxHealth, OldValue);
 }
 
+void UWAttributeSet::OnRep_AttackStat(const FGameplayAttributeData& OldValue)
+{
+	GAMEPLAYATTRIBUTE_REPNOTIFY(UWAttributeSet, AttackStat, OldValue);
+}
+
 void UWAttributeSet::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION_NOTIFY(ThisClass, Health, COND_None, REPNOTIFY_Always);
 	DOREPLIFETIME_CONDITION_NOTIFY(ThisClass, MaxHealth, COND_None, REPNOTIFY_Always);
+	DOREPLIFETIME_CONDITION_NOTIFY(ThisClass, AttackStat, COND_None, REPNOTIFY_Always);
 }
 
 void UWAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)

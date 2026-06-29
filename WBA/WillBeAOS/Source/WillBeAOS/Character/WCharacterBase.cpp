@@ -11,6 +11,7 @@
 #include "CombatComponent.h"
 #include "WCharAnimInstance.h"
 #include "Component/VisibleWidgetComponent.h"
+#include "Components/DecalComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/ProgressBar.h"
 #include "Components/SceneComponent.h"
@@ -73,22 +74,33 @@ void AWCharacterBase::ClientSideInit()
 	WAbilitySystemComponent->InitAbilityActorInfo(this, this);
 }
 
-void AWCharacterBase::HandleAbilityInput(const FInputActionValue& Value, EWAbilityInputID InputID)
+void AWCharacterBase::HandleAbilityInputPressed(const FInputActionValue& Value, EWAbilityInputID InputID)
 {
-	bool bPressed = Value.Get<bool>();
-	if (bPressed)
-	{
-		GetAbilitySystemComponent()->AbilityLocalInputPressed((int32)InputID);
-	}
-	else
-	{
-		GetAbilitySystemComponent()->AbilityLocalInputReleased((int32)InputID);
-	}
+	GetAbilitySystemComponent()->AbilityLocalInputPressed((int32)InputID);
+}
+
+void AWCharacterBase::HandleAbilityInputReleased(const FInputActionValue& Value, EWAbilityInputID InputID)
+{
+	GetAbilitySystemComponent()->AbilityLocalInputReleased((int32)InputID);
 }
 
 UAbilitySystemComponent* AWCharacterBase::GetAbilitySystemComponent() const
 {
 	return WAbilitySystemComponent;
+}
+
+void AWCharacterBase::MoveDecalToCameraForward()
+{
+	if (SkillForwardDecal && IsLocallyControlled())
+	{
+		FRotator ControlRotation = GetControlRotation();
+		FRotator DecalRotation = FRotator(-90.f, ControlRotation.Yaw + 90.f, 0.f);
+		SkillForwardDecal->SetWorldRotation(DecalRotation);
+
+		FVector ForwardXY = FRotator(0.f, ControlRotation.Yaw, 0.f).Vector();
+		FVector NewLocation = GetActorLocation() + ForwardXY * 700.f;
+		SkillForwardDecal->SetWorldLocation(NewLocation);
+	}
 }
 
 void AWCharacterBase::BeginPlay()
@@ -160,6 +172,8 @@ void AWCharacterBase::Tick(float DeltaTime)
 	AimOffset(DeltaTime);
 
 	VisibleOutline();
+
+	MoveDecalToCameraForward();
 }
 
 void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -180,14 +194,14 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
-		EnhancedInputComponent->BindAction(IA_SkillQ, ETriggerEvent::Started, this, &AWCharacterBase::Input_QSkill);
 		EnhancedInputComponent->BindAction(IA_SkillE, ETriggerEvent::Started, this, &AWCharacterBase::Input_ESkill);
 		// R 스킬 자리
 		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 
 		for (const TPair<EWAbilityInputID, UInputAction*>& InputActionPair : GameplayAbilityInputActions)
 		{
-			EnhancedInputComponent->BindAction(InputActionPair.Value, ETriggerEvent::Triggered, this, &AWCharacterBase::HandleAbilityInput, InputActionPair.Key);
+			EnhancedInputComponent->BindAction(InputActionPair.Value, ETriggerEvent::Started, this, &AWCharacterBase::HandleAbilityInputPressed, InputActionPair.Key);
+			EnhancedInputComponent->BindAction(InputActionPair.Value, ETriggerEvent::Completed, this, &AWCharacterBase::HandleAbilityInputReleased, InputActionPair.Key);
 		}
 	}
 }
