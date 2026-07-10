@@ -48,6 +48,9 @@ protected:
 	void AimOffset(float DeltaTime);
 
 	void SetCombatRotationMode(bool bIsAiming);
+
+public:
+	UCameraComponent* GetFollowCamera() const { return FollowCamera; };
 	
 public:
 	FRotator StartAimRotation;

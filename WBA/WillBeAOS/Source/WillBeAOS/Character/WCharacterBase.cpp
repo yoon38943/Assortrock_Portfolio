@@ -402,6 +402,12 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
+	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(
+		FGameplayTag::RequestGameplayTag("ability.state.movement.blocked")))
+	{
+		return;
+	}
+	
 	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
 	if (PC && PC->IsRecalling)
 	{

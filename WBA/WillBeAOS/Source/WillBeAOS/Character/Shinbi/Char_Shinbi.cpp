@@ -194,7 +194,6 @@ void AChar_Shinbi::SpawnWolfSkill()
 	SpawnParams.Instigator = GetInstigator();
 	
 	AWolf* ShinbiWolf = GetWorld()->SpawnActor<AWolf>(WolfClass, SpawnLocation, SpawnRotation, SpawnParams);
-	ShinbiWolf->TeamID = TeamID;
 }
 
 void AChar_Shinbi::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const

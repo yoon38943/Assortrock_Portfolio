@@ -11,6 +11,8 @@
 #include "Components/ProgressBar.h"
 #include "../Minions/HealthBar.h"
 #include "Component/VisibleWidgetComponent.h"
+#include "GAS/WAbilitySystemComponent.h"
+#include "GAS/WAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "PersistentGame/GamePlayerState.h"
@@ -22,17 +24,17 @@ ATower::ATower()
 	
 	PrimaryActorTick.bCanEverTick = true;
 
-	DefaultSceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
-	SetRootComponent(DefaultSceneRoot);
+	FakeRootCollision = CreateDefaultSubobject<USphereComponent>("FakeRootCollision");
+	SetRootComponent(FakeRootCollision);
+	
+	HitCollision = CreateDefaultSubobject<UCapsuleComponent>("HitCollision");
+	HitCollision->SetupAttachment(GetRootComponent());
 
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("NiagaraParticleSystem"));
 	NiagaraComponent->SetupAttachment(GetRootComponent());
 
 	OverlapTrigger = CreateDefaultSubobject<USphereComponent>(TEXT("OverlapTrigger"));
 	OverlapTrigger->SetupAttachment(GetRootComponent());
-
-	HitCollision = CreateDefaultSubobject<UCapsuleComponent>("HitCollision");
-	HitCollision->SetupAttachment(GetRootComponent());
 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(GetRootComponent());
@@ -55,6 +57,9 @@ ATower::ATower()
 	OverlapTrigger->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapBegin);
 	OverlapTrigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlap);
 
+	WAbilitySystemComponent = CreateDefaultSubobject<UWAbilitySystemComponent>(TEXT("ASC"));
+	WAttributeSet = CreateDefaultSubobject<UWAttributeSet>(TEXT("AttributeSet"));
+
 	bAlwaysRelevant = true;
 
 	SetGoldReward(GOLDAMOUNT);
@@ -62,6 +67,11 @@ ATower::ATower()
 	SightComp = CreateDefaultSubobject<UVisibleWidgetComponent>(TEXT("SightComponent"));
 
 	StaticMesh->SetReceivesDecals(false);
+}
+
+UAbilitySystemComponent* ATower::GetAbilitySystemComponent() const
+{
+	return WAbilitySystemComponent;
 }
 
 void ATower::InitHPPercentage(float Health, float MaxHealth)

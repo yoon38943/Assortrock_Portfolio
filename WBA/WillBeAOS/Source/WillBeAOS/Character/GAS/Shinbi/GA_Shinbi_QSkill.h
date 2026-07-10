@@ -14,16 +14,15 @@ class WILLBEAOS_API UGA_Shinbi_QSkill : public UWGameplayAbility
 	GENERATED_BODY()
 	
 public:
-	void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	virtual void CancelAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateCancelAbility) override;
 
 protected:
 	UPROPERTY()
 	AWCharacterBase* Player;
 
 private:
-	UPROPERTY()
-	TArray<TWeakObjectPtr<AActor>> HitActors;
-
 	UFUNCTION()
 	void SpawnDashWolf(FGameplayEventData Data);
 
@@ -41,12 +40,6 @@ private:
 
 	UFUNCTION()
 	void OnInputReleased(float TimeHeld);
-
-	UFUNCTION()
-	void Shinbi_QSKill_DoDamage(FGameplayEventData Data);
-
-	UPROPERTY(EditAnywhere, Category = "Gameplay Effect")
-	TSubclassOf<UGameplayEffect> Shinbi_QSkill_DamageEffect;
 
 	static FGameplayTag GetQSkillSpawnWolfEventTag();
 	static FGameplayTag GetQSkillDashDamageEventTag();

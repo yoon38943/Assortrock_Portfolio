@@ -2,6 +2,9 @@
 #include "Components/SceneComponent.h"
 #include "Components/BoxComponent.h"
 #include "../Character/CombatComponent.h"
+#include "Components/SphereComponent.h"
+#include "GAS/WAbilitySystemComponent.h"
+#include "GAS/WAttributeSet.h"
 #include "Kismet/GameplayStatics.h"
 #include "PersistentGame/PlayGameMode.h"
 #include "PersistentGame/PlayGameState.h"
@@ -10,16 +13,19 @@ ANexus::ANexus()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	DefaultSceneRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
-	SetRootComponent(DefaultSceneRootComponent);
-
+	FakeRootCollision = CreateDefaultSubobject<USphereComponent>("FakeRootCollision");
+	SetRootComponent(FakeRootCollision);
+	
 	NexusMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("NexusMesh"));
-	NexusMeshComponent->SetupAttachment(DefaultSceneRootComponent);
+	NexusMeshComponent->SetupAttachment(GetRootComponent());
 
 	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 
 	EndingCameraComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EndingCamera"));
-	EndingCameraComponent->SetupAttachment(DefaultSceneRootComponent);
+	EndingCameraComponent->SetupAttachment(GetRootComponent());
+
+	WAbilitySystemComponent = CreateDefaultSubobject<UWAbilitySystemComponent>(TEXT("ASC"));
+	WAttributeSet = CreateDefaultSubobject<UWAttributeSet>(TEXT("AttributeSet"));
 	
 	bReplicates = true;
 	bAlwaysRelevant = true;
@@ -30,6 +36,11 @@ ANexus::ANexus()
 void ANexus::DestroyNexus()
 {
 	NM_DestroyNexus();
+}
+
+UAbilitySystemComponent* ANexus::GetAbilitySystemComponent() const
+{
+	return WAbilitySystemComponent;
 }
 
 void ANexus::NM_DestroyNexus_Implementation()

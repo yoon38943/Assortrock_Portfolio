@@ -13,7 +13,7 @@ class UStaticMeshComponent;
 
 #define GOLDAMOUNT 150
 UCLASS()
-class WILLBEAOS_API ATower : public AAOSActor, public IVisibleSightInterface
+class WILLBEAOS_API ATower : public AAOSActor, public IVisibleSightInterface, public IAbilitySystemInterface
 {
 
 	GENERATED_BODY()
@@ -30,6 +30,17 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "GameState")
 	class APlayGameState* AWGS;
+
+	/*********************************************************/
+	// GAS 시스템
+	/*********************************************************/
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+private:
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAbilitySystemComponent* WAbilitySystemComponent;
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAttributeSet* WAttributeSet;
 	
 protected://체력관련
 	
@@ -67,12 +78,12 @@ public://스폰
 	float Delta;
 	
 	void spawn();
+
+	UStaticMeshComponent* GetMesh() { return StaticMesh; }
 	
-public:	
-	UPROPERTY(EditAnywhere)
-	USceneComponent* DefaultSceneRoot;
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCapsuleComponent* CapsuleCollisionComponet;*/
+public:
+	UPROPERTY(EditDefaultsOnly)
+	USphereComponent* FakeRootCollision;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UNiagaraComponent* NiagaraComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

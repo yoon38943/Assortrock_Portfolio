@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/BoxComponent.h"
 #include "Game/WGameInstance.h"
 #include "GameFramework/Pawn.h"
 #include "Wolf.generated.h"
@@ -16,7 +15,6 @@ public:
 
 	void LaunchWolf(AActor* InInstigator);
 
-	E_TeamID TeamID;
 
 protected:
 	virtual void Tick(float DeltaTime) override;
@@ -25,9 +23,6 @@ protected:
 	UParticleSystemComponent* TrailEffect;
 	
 private:
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
-	UAnimMontage* DashMontage;
-
 	float DashSpeed = 1300.f;
 	float DashEndDistance = 1200.f;
 
@@ -65,4 +60,9 @@ private:
 	bool bIsDisappear = false;
 	
 	void CheckPathHit();
+
+	UPROPERTY(EditAnywhere, Category = "Gameplay Effect")
+	TSubclassOf<UGameplayEffect> Shinbi_QSkill_DamageEffect;
+	
+	void ApplyDamageToTarget(AActor* HitActor, FHitResult& HitResult, bool bExplosion);
 };

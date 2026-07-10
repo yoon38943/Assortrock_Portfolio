@@ -2,6 +2,7 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/GameplayAbilityTypes.h"
+#include "Interface/GetInfoInterface.h"
 
 
 void UANS_Shinbi_BasicAttackTrace::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
@@ -68,10 +69,13 @@ void UANS_Shinbi_BasicAttackTrace::NotifyTick(USkeletalMeshComponent* MeshComp, 
 	for (FHitResult Result : HitResults)
 	{
 		AActor* HitActor = Result.GetActor();
-		if (HitActors.Contains(HitActor))
-		{
-			continue;
-		}
+		if (!HitActor || HitActors.Contains(HitActor)) continue;
+
+		IGetInfoInterface* TargetTeam = Cast<IGetInfoInterface>(HitActor);
+		IGetInfoInterface* SourceTeam = Cast<IGetInfoInterface>(MeshComp->GetOwner());
+
+		if (!TargetTeam || !SourceTeam) continue;
+		//if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
 
 		HitActors.Add(HitActor);
 

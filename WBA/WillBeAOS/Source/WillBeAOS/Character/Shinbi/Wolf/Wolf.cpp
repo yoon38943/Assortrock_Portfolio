@@ -21,15 +21,6 @@ void AWolf::LaunchWolf(AActor* InInstigator)
 	WolfInstigator = InInstigator;
     
 	PrevLocation = GetActorLocation();
-
-	if (DashMontage)
-	{
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance)
-		{
-			AnimInstance->Montage_Play(DashMontage);
-		}
-	}
 }
 
 void AWolf::Tick(float DeltaTime)
@@ -94,17 +85,10 @@ void AWolf::Explosion(const FVector& ImpactLocation)
 		IGetInfoInterface* SourceTeam = Cast<IGetInfoInterface>(GetInstigator());
 
 		if (!TargetTeam || !SourceTeam) continue;
-		if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
+		//if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
 
-		FGameplayEventData EventData;
-		EventData.Target = HitActor;
-		EventData.Instigator = WolfInstigator;
-
-		FGameplayAbilityTargetData_ActorArray* TargetData = new FGameplayAbilityTargetData_ActorArray;
-		TargetData->TargetActorArray.Add(HitActor);
-		EventData.TargetData.Add(TargetData);
-
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), EventDamageTag, EventData);
+		FHitResult HitResult;
+		ApplyDamageToTarget(HitActor, HitResult, true);
 	}
 }
 
@@ -174,7 +158,7 @@ void AWolf::CheckPathHit()
 		IGetInfoInterface* SourceTeam = Cast<IGetInfoInterface>(GetInstigator());
 
 		if (!TargetTeam || !SourceTeam) continue;
-		if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
+		//if (TargetTeam->GetTeamID() == SourceTeam->GetTeamID()) continue;
 
 		HitActors.Add(HitActor);
 
@@ -184,15 +168,38 @@ void AWolf::CheckPathHit()
 			return;
 		}
 
-		FGameplayEventData EventData;
-		EventData.Target = HitActor;
-		EventData.Instigator = WolfInstigator;
-
-		FGameplayAbilityTargetData_SingleTargetHit* TargetData = new FGameplayAbilityTargetData_SingleTargetHit(HitResult);
-		EventData.TargetData.Add(TargetData);
-
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(GetOwner(), EventDamageTag, EventData);
+		ApplyDamageToTarget(HitActor, HitResult, false);
 	}
 
 	PrevLocation = CurrentLocation;
+}
+
+void AWolf::ApplyDamageToTarget(AActor* HitActor, FHitResult& HitResult, bool bExplosion)
+{
+	if (!HitActor) return;
+
+	UAbilitySystemComponent* SourceASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(WolfInstigator);
+	if (!SourceASC) return;
+
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
+	if (!TargetASC) return;
+
+	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+	EffectContext.AddInstigator(WolfInstigator, this);
+	if (!bExplosion) EffectContext.AddHitResult(HitResult);
+
+	UE_LOG(LogTemp, Warning, TEXT("Effect 포인터: %p, 이름: %s"),
+	*Shinbi_QSkill_DamageEffect,
+	Shinbi_QSkill_DamageEffect ? *Shinbi_QSkill_DamageEffect->GetName() : TEXT("NULL"));
+
+	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(Shinbi_QSkill_DamageEffect, 1.f, EffectContext);
+	if (!SpecHandle.IsValid()) return;
+
+	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
+		SpecHandle,
+		FGameplayTag::RequestGameplayTag("ability.data.damage"),
+		2.5f
+	);
+
+	SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 }

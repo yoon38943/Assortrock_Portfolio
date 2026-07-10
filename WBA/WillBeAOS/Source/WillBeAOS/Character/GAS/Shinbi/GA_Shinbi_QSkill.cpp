@@ -21,8 +21,6 @@ void UGA_Shinbi_QSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 		return;
 	}
 
-	HitActors.Empty();
-
 	AActor* Avatar = GetAvatarActorFromActorInfo();
 	if (!Avatar) return;
 	
@@ -31,13 +29,6 @@ void UGA_Shinbi_QSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	if (ActorInfo->IsLocallyControlled())
 	{
 		SpawnDashRangeDecal();
-	}
-
-	if (K2_HasAuthority())
-	{		
-		UAbilityTask_WaitGameplayEvent* WaitDashEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, GetQSkillDashDamageEventTag());
-		WaitDashEventTask->EventReceived.AddDynamic(this, &ThisClass::Shinbi_QSKill_DoDamage);
-		WaitDashEventTask->ReadyForActivation();
 	}
 
 	FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
@@ -58,36 +49,45 @@ void UGA_Shinbi_QSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 
 void UGA_Shinbi_QSkill::SpawnDashWolf(FGameplayEventData Data)
 {
-	AActor* AvatarActor = GetAvatarActorFromActorInfo();
-	if (!AvatarActor) return;
-	
-	FVector OwnerCharacterLocation = AvatarActor->GetActorLocation();
-	FRotator OwnerCharacterRotation = AvatarActor->GetActorRotation();
-	FVector ForwardVector = AvatarActor->GetActorForwardVector();
-
-	float SpawDistance = 100.f;
-	FVector SpawnLocation = OwnerCharacterLocation + (ForwardVector * SpawDistance);
-
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = AvatarActor;
-	SpawnParams.Instigator = Cast<APawn>(AvatarActor);
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	AWolf* Wolf = GetWorld()->SpawnActor<AWolf>(
-		WolfClass,
-		SpawnLocation,
-		OwnerCharacterRotation,
-		SpawnParams
-	);
-
-	if (Wolf)
+	if (K2_HasAuthority())
 	{
-		Wolf->LaunchWolf(AvatarActor);
+		AActor* AvatarActor = GetAvatarActorFromActorInfo();
+		if (!AvatarActor) return;
+	
+		FVector OwnerCharacterLocation = AvatarActor->GetActorLocation();
+		FRotator OwnerCharacterRotation = AvatarActor->GetActorRotation();
+		FVector ForwardVector = AvatarActor->GetActorForwardVector();
+
+		float SpawDistance = 100.f;
+		FVector SpawnLocation = OwnerCharacterLocation + (ForwardVector * SpawDistance);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = AvatarActor;
+		SpawnParams.Instigator = Cast<APawn>(AvatarActor);
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		AWolf* Wolf = GetWorld()->SpawnActor<AWolf>(
+			WolfClass,
+			SpawnLocation,
+			OwnerCharacterRotation,
+			SpawnParams
+		);
+
+		if (Wolf)
+		{
+			Wolf->LaunchWolf(AvatarActor);
+		}
 	}
+
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+	if (ASC) ASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
 }
 
 void UGA_Shinbi_QSkill::OnInputReleased(float TimeHeld)
-{
+{	
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+	if (ASC) ASC->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
+	
 	const FGameplayAbilityActivationInfo ActivationInfo = GetCurrentActivationInfo();
 
 	if (!CommitAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), ActivationInfo))
@@ -121,72 +121,20 @@ void UGA_Shinbi_QSkill::OnInputReleased(float TimeHeld)
 			}
 		}
 		
-		UAbilityTask_PlayMontageAndWait* PlayComboMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, QSkill_SpawnDashWolf_Montage);
-		PlayComboMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::K2_EndAbility);
-		PlayComboMontageTask->OnCancelled.AddDynamic(this, &ThisClass::K2_EndAbility);
-		PlayComboMontageTask->OnCompleted.AddDynamic(this, &ThisClass::K2_EndAbility);
-		PlayComboMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::K2_EndAbility);
-		PlayComboMontageTask->ReadyForActivation();
+		UAbilityTask_PlayMontageAndWait* PlayQSkillMontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(this, NAME_None, QSkill_SpawnDashWolf_Montage);
+		PlayQSkillMontageTask->OnBlendOut.AddDynamic(this, &ThisClass::K2_EndAbility);
+		PlayQSkillMontageTask->OnCancelled.AddDynamic(this, &ThisClass::K2_EndAbility);
+		PlayQSkillMontageTask->OnCompleted.AddDynamic(this, &ThisClass::K2_EndAbility);
+		PlayQSkillMontageTask->OnInterrupted.AddDynamic(this, &ThisClass::K2_EndAbility);
+		PlayQSkillMontageTask->ReadyForActivation();
 	}
 
-	if (K2_HasAuthority())
+	if (HasAuthorityOrPredictionKey(GetCurrentActorInfo(), &ActivationInfo))
 	{
 		UAbilityTask_WaitGameplayEvent* WaitSpawnWolfEventTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(this, GetQSkillSpawnWolfEventTag());
 		WaitSpawnWolfEventTask->EventReceived.AddDynamic(this, &ThisClass::SpawnDashWolf);
 		WaitSpawnWolfEventTask->ReadyForActivation();
 	}
-}
-
-void UGA_Shinbi_QSkill::Shinbi_QSKill_DoDamage(FGameplayEventData Data)
-{
-	AActor* HitActor = const_cast<AActor*>(Data.Target.Get());
-	if (!HitActor) return;
-
-	if (HitActors.Contains(HitActor)) return;
-	HitActors.Add(HitActor);
-
-	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(HitActor);
-	if (!TargetASC) return;
-
-	FGameplayEffectContextHandle EffectContext = MakeEffectContext(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo());
-	
-	if (Data.TargetData.IsValid(0))
-	{
-		if (Data.TargetData.Get(0)->GetHitResult())
-		{
-			const FHitResult* HitResult = Data.TargetData.Get(0)->GetHitResult();
-			if (HitResult)
-			{
-				EffectContext.AddHitResult(*HitResult);
-			}
-		}
-		
-		if (!Data.TargetData.Get(0)->GetActors().IsEmpty())
-		{
-			TArray<TWeakObjectPtr<AActor>> ActorArray;
-			for (auto& Actor : Data.TargetData.Get(0)->GetActors())
-			{
-				ActorArray.Add(Actor);
-			}
-			
-			EffectContext.AddActors(ActorArray);
-		}
-	}
-
-	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(Shinbi_QSkill_DamageEffect, GetAbilityLevel(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo()));
-	if (!SpecHandle.IsValid()) return;
-
-	SpecHandle.Data->SetContext(EffectContext);
-
-	UAbilitySystemBlueprintLibrary::AssignTagSetByCallerMagnitude(
-		SpecHandle,
-		FGameplayTag::RequestGameplayTag("ability.shinbi.qskill.damageratio"),
-		1.5f
-	);
-
-	FGameplayAbilityTargetDataHandle TargetDataHandle = Data.TargetData;
-	
-	(void)ApplyGameplayEffectSpecToTarget(GetCurrentAbilitySpecHandle(), CurrentActorInfo, CurrentActivationInfo, SpecHandle, TargetDataHandle);
 }
 
 FGameplayTag UGA_Shinbi_QSkill::GetQSkillSpawnWolfEventTag()
@@ -221,4 +169,29 @@ void UGA_Shinbi_QSkill::SpawnDashRangeDecal()
 	{
 		Player->SkillForwardDecal = SpawnedDecal;
 	}
+}
+
+void UGA_Shinbi_QSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
+	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
+	ASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.charging"));
+	ASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
+	
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UGA_Shinbi_QSkill::CancelAbility(const FGameplayAbilitySpecHandle Handle,
+	const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo,
+	bool bReplicateCancelAbility)
+{
+	if (Player->SkillForwardDecal)
+	{
+		Player->SkillForwardDecal->DestroyComponent();
+		Player->SkillForwardDecal = nullptr;
+	}
+
+	K2_EndAbility();
+	
+	Super::CancelAbility(Handle, ActorInfo, ActivationInfo, bReplicateCancelAbility);
 }

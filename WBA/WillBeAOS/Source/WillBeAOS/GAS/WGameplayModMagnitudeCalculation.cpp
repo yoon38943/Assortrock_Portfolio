@@ -25,12 +25,14 @@ float UWGameplayModMagnitudeCalculation::CalculateBaseMagnitude_Implementation(c
 	GetCapturedAttributeMagnitude(AttackPowerDef, Spec, EvalParams, AttackPower);
 
 	float SkillRatio = Spec.GetSetByCallerMagnitude(
-		FGameplayTag::RequestGameplayTag("ability.shinbi.qskill.damageratio"),
+		FGameplayTag::RequestGameplayTag("ability.data.damage"),
 		false,
 		1.0f
 	);
 
 	float FinalDamage = AttackPower * SkillRatio;
+
+	UE_LOG(LogTemp, Display, TEXT("Damage : %f"), FinalDamage);
 
 	return -FinalDamage;
 }

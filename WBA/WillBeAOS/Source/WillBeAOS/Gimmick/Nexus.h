@@ -1,12 +1,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
 #include "Character/AOSActor.h"
 #include "GameFramework/Actor.h"
 #include "Nexus.generated.h"
 
+class USphereComponent;
+class UWAbilitySystemComponent;
+class UWAttributeSet;
+
 UCLASS()
-class WILLBEAOS_API ANexus : public AAOSActor
+class WILLBEAOS_API ANexus : public AAOSActor, public IAbilitySystemInterface
 {
 	
 	GENERATED_BODY()
@@ -26,9 +31,9 @@ public: //채력 관련
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* DefaultSceneRootComponent;
+
+	UPROPERTY(EditDefaultsOnly)
+	USphereComponent* FakeRootCollision;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UStaticMeshComponent* NexusMeshComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
@@ -39,9 +44,21 @@ protected:
 public:	
 	ANexus();
 
+	UStaticMeshComponent* GetMesh() { return NexusMeshComponent; }
+
 	void DestroyNexus();
 
 	UFUNCTION(NetMulticast, reliable)
 	void NM_DestroyNexus();
 
+	/*********************************************************/
+	// GAS 시스템
+	/*********************************************************/
+	
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+private:
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAbilitySystemComponent* WAbilitySystemComponent;
+	UPROPERTY(VisibleDefaultsOnly, Category = "Gameplay Ability")
+	UWAttributeSet* WAttributeSet;
 };
