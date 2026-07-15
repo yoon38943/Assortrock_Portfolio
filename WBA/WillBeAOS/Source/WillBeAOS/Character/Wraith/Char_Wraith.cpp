@@ -1,9 +1,10 @@
 #include "Char_Wraith.h"
 
-#include "AOSActor.h"
-#include "CombatComponent.h"
-#include "WCharAnimInstance.h"
+#include "Bomb_ESkill.h"
+#include "Character/AOSActor.h"
+#include "Character/WCharAnimInstance.h"
 #include "Camera/CameraComponent.h"
+#include "Character/CombatComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
@@ -18,10 +19,8 @@
 #include "PersistentGame/GamePlayerController.h"
 #include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
-#include "Struct_Enum/WalkSpeedStruct.h"
-#include "Wraith/Bomb_ESkill.h"
-#include "Wraith/Projectile_Normal.h"
-#include "Wraith/Projectile_QSkill.h"
+#include "Projectile/Projectile_Normal.h"
+#include "Projectile/Projectile_QSkill.h"
 
 
 AChar_Wraith::AChar_Wraith()
@@ -196,21 +195,6 @@ void AChar_Wraith::StopMove(const FInputActionValue& Value)
 	}
 }
 
-void AChar_Wraith::CallRecall()
-{
-	if (bIsQSkillUsing)
-	{
-		ZoomOutScope();
-	}
-
-	if (bIsESkillUsing)
-	{
-		PutInTheBomb();
-	}
-	
-	Super::CallRecall();
-}
-
 TOptional<FHitResult> AChar_Wraith::CheckTargettingInCenter()
 {
 	FVector WorldLocation, WorldDirection;
@@ -307,7 +291,7 @@ TOptional<FHitResult> AChar_Wraith::CheckTargettingInCenter()
 	}
 }
 
-void AChar_Wraith::Attack()
+/*void AChar_Wraith::Attack()
 {
 	if (bIsQSkillUsing)
 	{
@@ -359,7 +343,7 @@ void AChar_Wraith::ClientAttack()
 void AChar_Wraith::Behavior()
 {
 	// Wraith는 따로 만들기 위해 비워둠
-}
+}*/
 
 void AChar_Wraith::PlayNormalAttackAnim()
 {
@@ -676,12 +660,6 @@ void AChar_Wraith::QSkill_Shot()
 	{
 		float CurrentTime = GetWorld()->GetTimeSeconds();
 		if (CurrentTime - PS->LastUseQSkillTime < QSkillCooldownTime) return;
-	}
-
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC && PC->IsRecalling)
-	{
-		PC->Server_CancelRecall();
 	}
 	
 	UseNewSkill(ESkillSlot::Q);
@@ -1033,12 +1011,6 @@ void AChar_Wraith::ESKill_Bomb()
 	{
 		float CurrentTime = GetWorld()->GetTimeSeconds();
 		if (CurrentTime - PS->LastUseESkillTime < ESkillCooldownTime) return;
-	}
-
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC && PC->IsRecalling)
-	{
-		PC->Server_CancelRecall();
 	}
 	
 	UseNewSkill(ESkillSlot::E);

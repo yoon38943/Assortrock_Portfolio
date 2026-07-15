@@ -1,6 +1,6 @@
 #include "Character/UI/SkillIconWidget.h"
 
-#include "Character/Shinbi/Skill/SkillDataTable.h"
+#include "Character/Skill/SkillDataTable.h"
 #include "GameFramework/GameStateBase.h"
 #include "PersistentGame/GamePlayerState.h"
 
@@ -20,42 +20,38 @@ void USkillIconWidget::NativeConstruct()
 	{
 		CooldownProgress->SetVisibility(ESlateVisibility::Hidden);
 	}
-
-	APlayerController* PC = GetOwningPlayer();
-	if (PC)
+	
+	AGamePlayerState* PS = Cast<AGamePlayerState>(GetOwningPlayer()); 
+	if (PS)
 	{
-		AGamePlayerState* PS = PC->GetPlayerState<AGamePlayerState>(); 
-		if (PS)
+		PS->LoadSkillIcon.BindUObject(this, &ThisClass::LoadSkillIcon);
+		PS->OnSkillCooldown.AddDynamic(this, &ThisClass::Handle_SkillUsed);
+		
+		if (SkillIcon && PS->InGamePlayerInfo.SelectedCharacter)
 		{
-			PS->LoadSkillIcon.BindUObject(this, &ThisClass::LoadSkillIcon);
-			PS->OnSkillCooldown.AddDynamic(this, &ThisClass::Handle_SkillUsed);
-			if (SkillIcon && PS->InGamePlayerInfo.SelectedCharacter)
+			AWCharacterBase* DefaultCharacter = PS->InGamePlayerInfo.SelectedCharacter->GetDefaultObject<AWCharacterBase>();
+			if (DefaultCharacter)
 			{
-				AWCharacterBase* DefaultCharacter = PS->InGamePlayerInfo.SelectedCharacter->GetDefaultObject<AWCharacterBase>();
-				if (DefaultCharacter)
+				FName SkillIDName;
+				switch (SkillID)
 				{
-					FName SkillIDName;
-					switch (SkillID)
-					{
-					case ESkillSlot::Q:
-						SkillIDName = "QSkill";
-						break;
-					case ESkillSlot::E:
-						SkillIDName = "Eskill";
-						break;
-					case ESkillSlot::R:
-						SkillIDName = "RSkill";
-						break;
-					}
-					
-					FSkillDataTable* DataTable = DefaultCharacter->SkillDataTable->FindRow<FSkillDataTable>(SkillIDName, TEXT(""));
-					if (DataTable)
-					{
-						UTexture2D* SkillImage = DataTable->SkillIcon;
-						SkillIcon->SetBrushFromTexture(SkillImage);
-					}
+				case ESkillSlot::Q:
+					SkillIDName = "QSkill";
+					break;
+				case ESkillSlot::E:
+					SkillIDName = "Eskill";
+					break;
+				case ESkillSlot::R:
+					SkillIDName = "RSkill";
+					break;
 				}
 				
+				FSkillDataTable* DataTable = DefaultCharacter->SkillDataTable->FindRow<FSkillDataTable>(SkillIDName, TEXT(""));
+				if (DataTable)
+				{
+					UTexture2D* SkillImage = DataTable->SkillIcon;
+					SkillIcon->SetBrushFromTexture(SkillImage);
+				}
 			}
 		}
 	}
@@ -66,7 +62,7 @@ void USkillIconWidget::LoadSkillIcon()
 	APlayerController* PC = GetOwningPlayer();
 	if (PC)
 	{
-		AGamePlayerState* PS = PC->GetPlayerState<AGamePlayerState>(); 
+		AGamePlayerState* PS = PC->GetPlayerState<AGamePlayerState>();
 		if (PS)
 		{
 			if (SkillIcon)

@@ -1,6 +1,5 @@
-#include "Character/Wraith/Projectile_QSkill.h"
-
-#include "Character/Char_Wraith.h"
+#include "Projectile_QSkill.h"
+#include "../Char_Wraith.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"

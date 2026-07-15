@@ -9,11 +9,11 @@
 #include "Struct_Enum/WalkSpeedStruct.h"
 #include "AbilitySystemInterface.h"
 #include "GAS/UWGameplayAbilityTypes.h"
-#include "UI/PlayerHPInfoBar.h"
 #include "WCharacterBase.generated.h"
 
 #define PLAYERKILLGOLD 100
 
+class UGameplayAbility;
 class UWCharAnimInstance;
 class AGamePlayerState;
 class UWAbilitySystemComponent; // forward-declare our custom ASC
@@ -128,9 +128,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = Input)
 	TMap<EWAbilityInputID, UInputAction*> GameplayAbilityInputActions;
 
-	void HandleAbilityInputPressed(const FInputActionValue& Value, EWAbilityInputID InputID);
-	void HandleAbilityInputReleased(const FInputActionValue& Value, EWAbilityInputID InputID);
-
 
 public:
 	/*********************************************************/
@@ -148,6 +145,9 @@ public:
 	/*********************************************************/
 	// Skill Ability / 스킬 어빌리티
 	/*********************************************************/
+	
+	void HandleAbilityInputPressed(const FInputActionValue& Value, EWAbilityInputID InputID);
+	void HandleAbilityInputReleased(const FInputActionValue& Value, EWAbilityInputID InputID);
 
 	UPROPERTY()
 	UDecalComponent* SkillForwardDecal;
@@ -181,36 +181,34 @@ public:
 	void Server_SetControlRotationYaw(FRotator YawRotation);
 	
 	// ---- 귀환 관련 함수 ----
-	bool IsRecalling;
-	
-	virtual void CallRecall();
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recall")
+	TObjectPtr<UParticleSystem> RecallParticle;
+
+	void RecallAbilityInputPressed(const FInputActionValue& Value, TSubclassOf<UGameplayAbility> AbilityClass);
 
 	UPROPERTY(EditAnywhere, Category = "Recall")
 	UAnimMontage* StartRecallMontage;
 	UPROPERTY(EditAnywhere, Category = "Recall")
 	UAnimMontage* CompleteRecallMontage;
 
-	UFUNCTION(Server, Reliable)
+	UAnimMontage* GetStartRecallMontage() const { return StartRecallMontage; }
+	UAnimMontage* GetCompleteRecallMontage() const { return CompleteRecallMontage; }
+
+	/*UFUNCTION(Server, Reliable)
 	void ServerPlayMontage(UAnimMontage* Montage);
 	UFUNCTION(NetMulticast, Reliable)
-	void MultiPlayMontage(UAnimMontage* Montage);
+	void NM_StopPlayMontage();*/
 	UFUNCTION(NetMulticast, Reliable)
-	void NM_StopPlayMontage();
+	void MultiPlayMontage(UAnimMontage* Montage);
 
 	// ---- 타겟 관리 함수 ----
+	UPROPERTY()
 	TArray<AActor*> AttackTarget;
-	
+
+	UPROPERTY()
 	TArray<AActor*> CurrentTarget;
 	
 	// ---- Attack 관련 함수 ----
-	virtual void Attack();
-	virtual void Behavior();
-	virtual void ClientAttack();
-	UFUNCTION(Server, Reliable)
-	void S_Behavior();
-	UFUNCTION(NetMulticast, Reliable)
-	void NM_Behavior(int32 Combo);
-
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	bool IsCombat = false;
 

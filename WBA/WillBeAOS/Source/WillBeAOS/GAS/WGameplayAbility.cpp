@@ -1,6 +1,7 @@
 #include "GAS/WGameplayAbility.h"
 
 #include "Character/WCharacterBase.h"
+#include "PersistentGame/GamePlayerController.h"
 
 class UAnimInstance* UWGameplayAbility::GetOwnerAnimInstance() const
 {

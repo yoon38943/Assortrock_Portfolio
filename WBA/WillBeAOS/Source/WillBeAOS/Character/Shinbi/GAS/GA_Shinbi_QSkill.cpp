@@ -1,6 +1,6 @@
-#include "Character/GAS/Shinbi/GA_Shinbi_QSkill.h"
+#include "Character/Shinbi/GAS/GA_Shinbi_QSkill.h"
 
-#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputRelease.h"

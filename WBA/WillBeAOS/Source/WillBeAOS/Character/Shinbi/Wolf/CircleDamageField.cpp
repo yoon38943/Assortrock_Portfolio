@@ -2,7 +2,6 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/GameplayAbilityTypes.h"
-#include "Character/AOSActor.h"
 #include "Components/SphereComponent.h"
 #include "Gimmick/Nexus.h"
 #include "Gimmick/Tower.h"

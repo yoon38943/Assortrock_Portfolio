@@ -1,8 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "WCharacterBase.h"
-#include "Shinbi/Skill/SkillDataTable.h"
+#include "Character/WCharacterBase.h"
+#include "Character/Skill/SkillDataTable.h"
 #include "Char_Shinbi.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnQSkillUsed, FString, CharacterName, float, SkillCollTime);

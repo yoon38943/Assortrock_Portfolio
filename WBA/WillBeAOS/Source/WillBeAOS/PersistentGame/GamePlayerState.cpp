@@ -5,7 +5,7 @@
 #include "PlayGameState.h"
 #include "Character/WCharacterBase.h"
 #include "Character/WCharacterHUD.h"
-#include "Character/Shinbi/Skill/SkillDataTable.h"
+#include "Character/Skill/SkillDataTable.h"
 #include "Game/WGameInstance.h"
 #include "Net/UnrealNetwork.h"
 

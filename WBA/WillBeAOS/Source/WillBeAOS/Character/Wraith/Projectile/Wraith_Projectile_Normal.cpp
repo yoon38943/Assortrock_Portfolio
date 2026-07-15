@@ -1,14 +1,9 @@
-#include "Character/Wraith/Wraith_Projectile_Normal.h"
-
-#include "KismetTraceUtils.h"
-#include "Character/AOSActor.h"
-#include "Character/Char_Wraith.h"
+#include "Wraith_Projectile_Normal.h"
+#include "../Char_Wraith.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
-#include "PersistentGame/GamePlayerController.h"
-#include "PersistentGame/GamePlayerState.h"
+
 
 AWraith_Projectile_Normal::AWraith_Projectile_Normal()
 {

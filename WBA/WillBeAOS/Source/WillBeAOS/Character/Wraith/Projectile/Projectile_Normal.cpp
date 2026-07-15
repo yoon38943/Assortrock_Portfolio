@@ -1,6 +1,5 @@
-#include "Character/Wraith/Projectile_Normal.h"
-
-#include "Character/Char_Wraith.h"
+#include "Projectile_Normal.h"
+#include "../Char_Wraith.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Particles/ParticleSystemComponent.h"
 

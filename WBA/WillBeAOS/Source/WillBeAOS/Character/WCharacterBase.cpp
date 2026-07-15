@@ -106,10 +106,6 @@ void AWCharacterBase::MoveDecalToCameraForward()
 void AWCharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority())
-		UE_LOG(LogTemp, Warning, TEXT("AWCharacterBase::BeginPlay()"));
-	//HandleApplyPointDamage 멀티델리게이트 바인딩
-	CombatComp->DelegatePointDamage.AddUObject(this, &ThisClass::HandleApplyPointDamage);
 
 	APlayGameMode* GM = Cast<APlayGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GM)
@@ -163,17 +159,12 @@ void AWCharacterBase::Tick(float DeltaTime)
 	
 	UpdateAcceleration();
 
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC)
-	{
-		IsRecalling = PC->IsRecalling;
-	}
-
 	AimOffset(DeltaTime);
 
 	VisibleOutline();
 
-	MoveDecalToCameraForward();
+	if (IsLocallyControlled())
+		MoveDecalToCameraForward();
 }
 
 void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -194,9 +185,6 @@ void AWCharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AWCharacterBase::Look);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AWCharacterBase::Move);
 		EnhancedInputComponent->BindAction(IA_Move, ETriggerEvent::Completed, this, &AWCharacterBase::StopMove);
-		EnhancedInputComponent->BindAction(IA_SkillE, ETriggerEvent::Started, this, &AWCharacterBase::Input_ESkill);
-		// R 스킬 자리
-		EnhancedInputComponent->BindAction(IA_Recall, ETriggerEvent::Started, this, &ThisClass::CallRecall);
 
 		for (const TPair<EWAbilityInputID, UInputAction*>& InputActionPair : GameplayAbilityInputActions)
 		{
@@ -402,17 +390,12 @@ void AWCharacterBase::Look(const FInputActionValue& Value)
 
 void AWCharacterBase::Move(const FInputActionValue& Value)
 {
-	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(
-		FGameplayTag::RequestGameplayTag("ability.state.movement.blocked")))
-	{
+	if (GetAbilitySystemComponent()->HasMatchingGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.movement.blocked")))
 		return;
-	}
-	
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC && PC->IsRecalling)
-	{
-		PC->Server_CancelRecall();
-	}
+
+	FGameplayTagContainer CancelTags;
+	CancelTags.AddTag(FGameplayTag::RequestGameplayTag("ability.state.recall"));
+	GetAbilitySystemComponent()->CancelAbilities(&CancelTags);
 	
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
@@ -534,57 +517,10 @@ void AWCharacterBase::UpdateMovementSpeedData(float Multiplier)
 	}
 }
 
-void AWCharacterBase::NM_StopPlayMontage_Implementation()
+/*void AWCharacterBase::NM_StopPlayMontage_Implementation()
 {
 	StopAnimMontage();
-}
-
-void AWCharacterBase::Attack()
-{
-	if (bIsDead == true) return;
-	
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC && PC->IsRecalling)
-	{
-		PC->Server_CancelRecall();
-	}
-	
-	if (!HasAuthority())
-	{
-		ClientAttack();
-		S_Behavior();
-	}
-}
-
-void AWCharacterBase::Behavior()
-{
-	Server_EnterCombat();
-	
-	CombatComp->SetCollisionMesh(GetMesh());
-	if (CombatComp != nullptr)
-	{
-		//공격중이 아닐시
-		if (CombatComp->IsAttackEnable() == true)
-		{
-			//공격중 활성화
-			CombatComp->SetCombatEnable(false);
-			//콤보 로직
-			if ((CombatComp->GetAttackCount()) < AttackMontages.Num())
-			{
-				NM_Behavior(CombatComp->GetAttackCount());
-				CombatComp->AddAttackCount(1);
-				if (CombatComp->GetAttackCount() >= AttackMontages.Num())
-				{
-					CombatComp->ResetCombo();
-				}
-			}
-		}
-	}
-}
-
-void AWCharacterBase::ClientAttack()
-{
-}
+}*/
 
 void AWCharacterBase::Server_EnterCombat_Implementation()
 {
@@ -637,16 +573,6 @@ void AWCharacterBase::Handle_UseSkillButton(ESkillSlot Skillslot)
 	// 자식 함수에서 정의
 }
 
-void AWCharacterBase::S_Behavior_Implementation()
-{
-	Behavior();
-}
-
-void AWCharacterBase::NM_Behavior_Implementation(int32 Combo)
-{
-	ACharacter::PlayAnimMontage(AttackMontages[Combo]);
-}
-
 void AWCharacterBase::UpdateAcceleration()
 {
 	float CurrentSpeed = GetCharacterMovement()->Velocity.Size();
@@ -667,19 +593,19 @@ bool AWCharacterBase::Server_SetControlRotationYaw_Validate(FRotator YawRotation
 	return true;
 }
 
-void AWCharacterBase::CallRecall()
+void AWCharacterBase::RecallAbilityInputPressed(const FInputActionValue& Value,
+	TSubclassOf<UGameplayAbility> AbilityClass)
 {
-	AGamePlayerController* PC = Cast<AGamePlayerController>(GetController());
-	if (PC)
+	if (UAbilitySystemComponent* ASC = GetAbilitySystemComponent())
 	{
-		PC->StartRecall();
+		ASC->TryActivateAbilityByClass(AbilityClass);
 	}
 }
 
-void AWCharacterBase::ServerPlayMontage_Implementation(UAnimMontage* Montage)
+/*void AWCharacterBase::ServerPlayMontage_Implementation(UAnimMontage* Montage)
 {
 	MultiPlayMontage(Montage);
-}
+}*/
 
 void AWCharacterBase::MultiPlayMontage_Implementation(UAnimMontage* Montage)
 {

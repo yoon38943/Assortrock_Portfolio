@@ -1,4 +1,4 @@
-#include "Character/GAS/Shinbi/GA_Shinbi_BasicAttack.h"
+#include "Character/Shinbi/GAS/GA_Shinbi_BasicAttack.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
@@ -96,6 +96,7 @@ void UGA_Shinbi_BasicAttack::ComboChangedEventReceived(FGameplayEventData Data)
 {
 	FGameplayTag EventTag = Data.EventTag;
 
+	// 테스트 해보니 사실상 의미 없는 코드, 어차피 몽타주 하나가 끝나면 자동으로 초기화 됨
 	if (EventTag == GetComboChangeEventEndTag())
 	{
 		NextComboName = NAME_None;

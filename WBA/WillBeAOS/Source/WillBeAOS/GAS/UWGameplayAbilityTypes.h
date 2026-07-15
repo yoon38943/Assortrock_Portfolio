@@ -11,6 +11,7 @@ enum class EWAbilityInputID : uint8
 	AbilityTwo				UMETA(DisplayName = "AbilityTwo"),
 	AbilityThree			UMETA(DisplayName = "AbilityThree"),
 	AbilityFour				UMETA(DisplayName = "AbilityFour"),
+	Recall					UMETA(DisplayName = "Recall"),
 	Confirm					UMETA(DisplayName = "Confirm"),
 	Cancel					UMETA(DisplayName = "Cancel")
 };

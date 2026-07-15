@@ -1,11 +1,10 @@
-#include "Character/Char_Shinbi.h"
+#include "Char_Shinbi.h"
 
-#include "AOSActor.h"
+#include "Character/AOSActor.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Net/UnrealNetwork.h"
-#include "PersistentGame/GamePlayerState.h"
 #include "PersistentGame/PlayGameState.h"
-#include "Shinbi/Wolf/Wolf.h"
+#include "Wolf/Wolf.h"
 
 
 AChar_Shinbi::AChar_Shinbi()

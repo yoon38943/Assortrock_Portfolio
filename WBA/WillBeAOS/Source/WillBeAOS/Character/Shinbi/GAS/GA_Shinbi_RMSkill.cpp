@@ -1,5 +1,4 @@
-#include "Character/GAS/Shinbi/GA_Shinbi_RMSkill.h"
-
+#include "Character/Shinbi/GAS/GA_Shinbi_RMSkill.h"
 #include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitInputPress.h"
@@ -79,8 +78,6 @@ void UGA_Shinbi_RMSkill::StartDash()
 
 	UCapsuleComponent* Collision = Avatar->GetCapsuleComponent();
 	if (Collision) Collision->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
-	UMeshComponent* Mesh = Avatar->GetMesh();
-	if (Mesh) Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Ignore);
 	
 	FRotator ControlRot = Avatar->GetControlRotation();
 	FVector Direction = FRotator(0, ControlRot.Yaw, 0).Vector();
@@ -119,8 +116,6 @@ void UGA_Shinbi_RMSkill::OnDashLanded()
 
 	UCapsuleComponent* Collision = Avatar->GetCapsuleComponent();
 	if (Collision) Collision->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
-	UMeshComponent* Mesh = Avatar->GetMesh();
-	if (Mesh) Mesh->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
 
 	if (!DashMontageEnded)
 	{
@@ -158,7 +153,6 @@ void UGA_Shinbi_RMSkill::OnNextDashInput(float TimeWaited)
 
 void UGA_Shinbi_RMSkill::EndDashAbility()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Why Dash End"));
 	GetWorld()->GetTimerManager().ClearTimer(ReactivationTimer);
 	GetWorld()->GetTimerManager().ClearTimer(CastingTagTimer);
 

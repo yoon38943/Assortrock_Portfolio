@@ -1,7 +1,7 @@
 #include "Character/Wraith/Bomb_ESkill.h"
 
 #include "Character/AOSCharacter.h"
-#include "Character/Char_Wraith.h"
+#include "Char_Wraith.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/GameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"

@@ -3,9 +3,9 @@
 #include "CoreMinimal.h"
 #include "Character/WCharacterBase.h"
 #include "PersistentGame/PlayGameState.h"
-#include "Shinbi/Skill/SkillDataTable.h"
-#include "Struct_Enum/WalkSpeedStruct.h"
-#include "Wraith/Enum/ShootingMode.h"
+#include "Character/Skill/SkillDataTable.h"
+#include "Character/Struct_Enum/WalkSpeedStruct.h"
+#include "Enum/ShootingMode.h"
 #include "Char_Wraith.generated.h"
 
 
@@ -45,8 +45,6 @@ protected:
 
 public:
 	
-	virtual void CallRecall() override;
-	
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_ChangeMode)
 	ShootingMode shootingMode = ShootingMode::NonCombat;
 
@@ -71,10 +69,10 @@ public:
 	// 공격
 	bool CanAttack = true;
 
-	virtual void Attack() override;
+	/*virtual void Attack() override;
 
 	virtual void ClientAttack() override;
-	virtual void Behavior() override;
+	virtual void Behavior() override;*/
 	void PlayNormalAttackAnim();
 
 	float BulletSpeed = 12000.f;

@@ -1,4 +1,4 @@
-#include "Character/Wraith/Wraith_Projectile_Enhanced.h"
+#include "Wraith_Projectile_Enhanced.h"
 
 
 void AWraith_Projectile_Enhanced::BeginPlay()

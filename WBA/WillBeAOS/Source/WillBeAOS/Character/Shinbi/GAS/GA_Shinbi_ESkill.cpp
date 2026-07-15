@@ -1,4 +1,4 @@
-#include "Character/GAS/Shinbi/GA_Shinbi_ESkill.h"
+#include "Character/Shinbi/GAS/GA_Shinbi_ESkill.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"

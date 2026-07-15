@@ -39,5 +39,14 @@ void UWAttributeSet::PostGameplayEffectExecute(const struct FGameplayEffectModCa
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+
+		if (Data.EvaluatedData.Magnitude < 0.f)
+		{
+			UAbilitySystemComponent* TargetASC = &Data.Target;
+
+			FGameplayTagContainer CancelTags;
+			CancelTags.AddTag(FGameplayTag::RequestGameplayTag("ability.state.recall"));
+			TargetASC->CancelAbilities(&CancelTags);
+		}
 	}
 }
