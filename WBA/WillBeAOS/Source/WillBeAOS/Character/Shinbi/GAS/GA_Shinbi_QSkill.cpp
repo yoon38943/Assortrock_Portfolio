@@ -34,7 +34,7 @@ void UGA_Shinbi_QSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 	FGameplayAbilitySpec* Spec = GetCurrentAbilitySpec();
 	if (Spec && !Spec->InputPressed)
 	{
-		OnInputReleased(0.f);
+		OnInputReleased(0.f);	// 키를 즉시 떼는 경우
 	}
 	else
 	{
@@ -89,12 +89,6 @@ void UGA_Shinbi_QSkill::OnInputReleased(float TimeHeld)
 	if (ASC) ASC->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
 	
 	const FGameplayAbilityActivationInfo ActivationInfo = GetCurrentActivationInfo();
-
-	if (!CommitAbility(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), ActivationInfo))
-	{
-		K2_EndAbility();
-		return;
-	}
 	
 	if (Player->SkillForwardDecal)
 	{
@@ -135,16 +129,13 @@ void UGA_Shinbi_QSkill::OnInputReleased(float TimeHeld)
 		WaitSpawnWolfEventTask->EventReceived.AddDynamic(this, &ThisClass::SpawnDashWolf);
 		WaitSpawnWolfEventTask->ReadyForActivation();
 	}
+
+	ApplyCooldown();
 }
 
 FGameplayTag UGA_Shinbi_QSkill::GetQSkillSpawnWolfEventTag()
 {
 	return FGameplayTag::RequestGameplayTag("ability.shinbi.qskill.spawn");
-}
-
-FGameplayTag UGA_Shinbi_QSkill::GetQSkillDashDamageEventTag()
-{
-	return FGameplayTag::RequestGameplayTag("ability.shinbi.qskill.damage");
 }
 
 void UGA_Shinbi_QSkill::SpawnDashRangeDecal()
@@ -171,8 +162,25 @@ void UGA_Shinbi_QSkill::SpawnDashRangeDecal()
 	}
 }
 
+void UGA_Shinbi_QSkill::ApplyCooldown()
+{
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffectClass, 1.f);
+
+	if (SpecHandle.IsValid())
+	{
+		SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("ability.data.cooldown"), CooldownTime);
+
+		ApplyGameplayEffectSpecToOwner(
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActorInfo(),
+			GetCurrentActivationInfoRef(),
+			SpecHandle
+		);
+	}
+}
+
 void UGA_Shinbi_QSkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
-	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+                                   const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	ASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.charging"));

@@ -15,9 +15,10 @@ class WILLBEAOS_API UGA_Shinbi_RMSkill : public UWGameplayAbility
 protected:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
-	static FGameplayTag GetRMSkillDashEventTag();
-
 private:
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> RecastCooldownEffect;
+	
 	UPROPERTY()
 	AWCharacterBase* PlayerChar;
 	
@@ -33,7 +34,7 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	UParticleSystem* Dash_Camera_Particle;
 
-	float ReactivationTime = 5.f;
+	float ReactivationTime = 4.f;
 
 	float DashSpeed = 7000.f;
 
@@ -58,6 +59,13 @@ private:
 
 	UFUNCTION()
 	void OnNextDashInput(float TimeWaited);
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cooldown")
+	TSubclassOf<UGameplayEffect> CooldownEffectClass;
+
+	float CooldownTime = 8.f;
+
+	void ApplyCooldown();
 	
 	void EndDashAbility();
 };

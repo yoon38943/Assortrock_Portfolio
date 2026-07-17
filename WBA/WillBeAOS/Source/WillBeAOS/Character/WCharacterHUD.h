@@ -4,7 +4,6 @@
 #include "AttributeSet.h"
 #include "Blueprint/UserWidget.h"
 #include "GAS/WAttributeSet.h"
-#include "PersistentGame/PlayGameState.h"
 #include "Skill/SkillType.h"
 #include "UI/SkillIconWidget.h"
 #include "WCharacterHUD.generated.h"
@@ -84,6 +83,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	USkillIconWidget* ESkillWidget;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	USkillIconWidget* RMSkillWidget;
 
 public:
 	void SetState();

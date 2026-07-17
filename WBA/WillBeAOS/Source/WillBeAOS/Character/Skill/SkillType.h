@@ -7,6 +7,7 @@ UENUM(BlueprintType)
 enum class ESkillSlot : uint8
 {
 	None = 0,
+	RM,
 	Q,
 	E,
 	R

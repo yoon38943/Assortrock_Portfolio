@@ -42,7 +42,6 @@ private:
 	void OnInputReleased(float TimeHeld);
 
 	static FGameplayTag GetQSkillSpawnWolfEventTag();
-	static FGameplayTag GetQSkillDashDamageEventTag();
 
 	UPROPERTY()
 	UDecalComponent* SpawnedDecal;
@@ -51,4 +50,15 @@ private:
 	UMaterialInterface* SkillRangeDecalMaterial;
 	
 	void SpawnDashRangeDecal();
+
+	/*************************************************/
+	// 쿨타임
+	/*************************************************/
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cooldown")
+	TSubclassOf<UGameplayEffect> CooldownEffectClass;
+
+	float CooldownTime = 8.f;  // 나중에 레벨별 쿨다운으로 변경해보기
+
+	void ApplyCooldown();
 };

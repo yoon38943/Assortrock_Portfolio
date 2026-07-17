@@ -15,7 +15,8 @@ class WILLBEAOS_API UGA_Shinbi_ESkill : public UWGameplayAbility
 	
 public:
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-
+	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
 	TSubclassOf<ACirclingWolves> WolvesClass;
@@ -47,5 +48,10 @@ private:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<ACircleDamageField> DamageFieldClass;
 
-	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGameplayEffect> CooldownEffectClass;
+
+	float CooldownTime = 12.f;
+	
+	void ApplyCooldown();
 };

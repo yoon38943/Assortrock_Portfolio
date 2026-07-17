@@ -18,7 +18,7 @@ void UGA_Shinbi_ESkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle,
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	if (!K2_CommitAbility())
+	if (!CanActivateAbility(Handle, ActorInfo))
 	{
 		K2_EndAbility();
 		return;
@@ -103,6 +103,8 @@ void UGA_Shinbi_ESkill::SpawnCircleWolves(FGameplayEventData Data)
 		}
 	}
 
+	ApplyCooldown();
+
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo();
 	ASC->RemoveLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
 }
@@ -122,6 +124,23 @@ void UGA_Shinbi_ESkill::SpawnLensFlare()
 		FRotator::ZeroRotator,
 		EAttachLocation::KeepRelativeOffset
 	);
+}
+
+void UGA_Shinbi_ESkill::ApplyCooldown()
+{
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffectClass, 1.f);
+
+	if (SpecHandle.IsValid())
+	{
+		SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("ability.data.cooldown"), CooldownTime);
+
+		ApplyGameplayEffectSpecToOwner(
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActorInfo(),
+			GetCurrentActivationInfoRef(),
+			SpecHandle
+		);
+	}
 }
 
 void UGA_Shinbi_ESkill::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,

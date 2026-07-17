@@ -441,7 +441,6 @@ void AWCharacterBase::VisibleOutline()
 
 				for (auto& Actor : DeleteActors)
 				{
-					UE_LOG(LogTemp, Warning, TEXT("%s"), *Actor->GetName());
 					AttackTarget.Remove(Actor);
 				}
 			}

@@ -1,6 +1,7 @@
 #include "Character/Shinbi/Wolf/Wolf.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
 #include "Character/AOSActor.h"
 #include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
@@ -187,10 +188,6 @@ void AWolf::ApplyDamageToTarget(AActor* HitActor, FHitResult& HitResult, bool bE
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 	EffectContext.AddInstigator(WolfInstigator, this);
 	if (!bExplosion) EffectContext.AddHitResult(HitResult);
-
-	UE_LOG(LogTemp, Warning, TEXT("Effect 포인터: %p, 이름: %s"),
-	*Shinbi_QSkill_DamageEffect,
-	Shinbi_QSkill_DamageEffect ? *Shinbi_QSkill_DamageEffect->GetName() : TEXT("NULL"));
 
 	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(Shinbi_QSkill_DamageEffect, 1.f, EffectContext);
 	if (!SpecHandle.IsValid()) return;

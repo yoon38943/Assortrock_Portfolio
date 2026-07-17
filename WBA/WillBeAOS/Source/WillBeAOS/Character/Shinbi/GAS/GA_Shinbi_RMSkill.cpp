@@ -23,11 +23,6 @@ void UGA_Shinbi_RMSkill::ActivateAbility(const FGameplayAbilitySpecHandle Handle
 	PerformDash();
 }
 
-FGameplayTag UGA_Shinbi_RMSkill::GetRMSkillDashEventTag()
-{
-	return FGameplayTag::RequestGameplayTag("ability.shinbi.rmskill.dashland");
-}
-
 void UGA_Shinbi_RMSkill::PerformDash()
 {
 	CurrentDashStacks--;
@@ -38,6 +33,7 @@ void UGA_Shinbi_RMSkill::PerformDash()
 		{
 			FGameplayAbilityActivationInfo ActivationInfo = GetCurrentActivationInfo();
 			CommitAbilityCooldown(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), ActivationInfo, false);
+			ApplyCooldown();
 			
 			EndDashAbility();
 		}, ReactivationTime, false);
@@ -48,6 +44,7 @@ void UGA_Shinbi_RMSkill::PerformDash()
 	{
 		FGameplayAbilityActivationInfo ActivationInfo = GetCurrentActivationInfo();
 		CommitAbilityCooldown(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), ActivationInfo, false);
+		ApplyCooldown();
 		
 		DashMontageEnded = true;
 		StartDash();
@@ -62,6 +59,10 @@ void UGA_Shinbi_RMSkill::StartDash()
 		ASC->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.casting"));
 		ASC->AddLooseGameplayTag(FGameplayTag::RequestGameplayTag("ability.state.movement.blocked"));
 	}
+
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(RecastCooldownEffect, 1.f);
+	SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("ability.data.internalcooldown"), ReactivationTime);
+	ApplyGameplayEffectSpecToOwner(GetCurrentAbilitySpecHandle(), GetCurrentActorInfo(), GetCurrentActivationInfoRef(), SpecHandle);
 
 	UGameplayStatics::SpawnEmitterAttached(
 		Dash_Camera_Particle,
@@ -149,6 +150,23 @@ void UGA_Shinbi_RMSkill::OnNextDashInput(float TimeWaited)
 	GetWorld()->GetTimerManager().ClearTimer(ReactivationTimer);
 
 	PerformDash();
+}
+
+void UGA_Shinbi_RMSkill::ApplyCooldown()
+{
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingGameplayEffectSpec(CooldownEffectClass, 1.f);
+
+	if (SpecHandle.IsValid())
+	{
+		SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag("ability.data.cooldown"), CooldownTime);
+
+		ApplyGameplayEffectSpecToOwner(
+			GetCurrentAbilitySpecHandle(),
+			GetCurrentActorInfo(),
+			GetCurrentActivationInfoRef(),
+			SpecHandle
+		);
+	}
 }
 
 void UGA_Shinbi_RMSkill::EndDashAbility()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Game/WGameInstance.h"
 #include "GameFramework/Pawn.h"
 #include "Wolf.generated.h"
@@ -38,9 +39,6 @@ private:
 	AActor* WolfInstigator; 
 
 	TArray<TWeakObjectPtr<AActor>> HitActors;
-
-	UPROPERTY(EditAnywhere, Category = "Gameplay Ability")
-	FGameplayTag EventDamageTag;
 
 	FVector PrevLocation;
 
